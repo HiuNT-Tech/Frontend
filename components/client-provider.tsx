@@ -17,6 +17,7 @@ import { Sidebar } from './layout/sidebar';
 import { Header } from './layout/header';
 import { ModalConfirmInstance } from './modal/static-method-confirm';
 import { LoadingBarProvider } from './providers/LoadingBarProvider';
+import { AiAssistantProvider } from './ai-assistant/ai-assistant-provider';
 
 export default function ClientProviders({
   children,
@@ -32,14 +33,16 @@ export default function ClientProviders({
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <LoadingBarProvider>
-            <div className="h-screen flex flex-col overflow-hidden">
-              <Header />
-              <div className="flex flex-1 overflow-hidden">
-                {showSidebar && <Sidebar />}
-                <div className="flex-1 overflow-auto">{children}</div>
+            <AiAssistantProvider>
+              <div className="h-screen flex flex-col overflow-hidden">
+                <Header />
+                <div className="flex flex-1 overflow-hidden">
+                  {showSidebar && <Sidebar />}
+                  <div className="flex-1 overflow-auto">{children}</div>
+                </div>
+                <ModalConfirmInstance />
               </div>
-              <ModalConfirmInstance />
-            </div>
+            </AiAssistantProvider>
           </LoadingBarProvider>
         </QueryClientProvider>
       </Provider>

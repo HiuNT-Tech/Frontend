@@ -24,6 +24,7 @@ import { DescriptionCard } from './description-card';
 import { EditableTitle } from './edit-form-fields';
 import type { EditFormData } from './edit-form-fields';
 import { CommentList, StickyCommentBar } from './comment-section';
+import { AiCardActions } from '@/components/ai-assistant/ai-card-actions';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentUser } from '@/redux/user/userSlice';
 import { getRoleFlags } from '@/hooks/use-board-role';
@@ -399,6 +400,13 @@ export default function IssueDetailPage() {
           )}
 
           <div className="flex items-center gap-2 shrink-0">
+            {!isEditMode && (
+              <AiCardActions
+                cardId={card.id}
+                cardCode={card.cardCode}
+                canContribute={isContributor}
+              />
+            )}
             {isEditMode ? (
               <>
                 <Button
