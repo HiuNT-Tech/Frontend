@@ -72,6 +72,7 @@ const vi = {
     addIssue: 'Thêm công việc',
     issue: 'Công việc',
     chat: 'Chat',
+    aiAssistant: 'Trợ lý AI',
     board: 'Bảng',
     settings: 'Cài đặt',
   },
@@ -752,6 +753,144 @@ const vi = {
     passwordRule:
       'Mật khẩu phải có ít nhất 1 chữ cái, 1 số và tối thiểu 8 ký tự.',
     passwordConfirmation: 'Xác nhận mật khẩu không khớp!',
+  },
+  aiAssistant: {
+    contextCard: 'Đang xem {{code}}',
+    contextCardHint: 'Trợ lý sẽ ưu tiên card bạn đang mở.',
+    loadingConversation: 'Đang tải hội thoại…',
+    conversations: {
+      title: 'Hội thoại',
+      new: 'Mới',
+      empty: 'Chưa có hội thoại nào. Hỏi gì đó để bắt đầu.',
+      deleteTitle: 'Xoá hội thoại',
+      deleteConfirm: 'Xoá hội thoại "{{title}}"? Không thể hoàn tác.',
+      deleted: 'Đã xoá hội thoại',
+    },
+    cardActions: {
+      title: 'Hỏi AI về card này',
+      summarize: 'Tóm tắt card',
+      nextSteps: 'Gợi ý bước tiếp theo',
+      rewriteDescription: 'Viết lại mô tả',
+      draftComment: 'Soạn comment cập nhật',
+      prompts: {
+        summarize:
+          'Tóm tắt card {{code}}: mục tiêu, tiến độ hiện tại (dựa trên mô tả và các comment gần nhất), điểm cần chú ý.',
+        nextSteps:
+          'Dựa trên card {{code}} và các comment gần nhất, gợi ý các bước tiếp theo cần làm, ngắn gọn theo thứ tự ưu tiên.',
+        rewriteDescription:
+          'Viết lại mô tả của card {{code}} cho rõ ràng và có cấu trúc (bối cảnh, yêu cầu, tiêu chí hoàn thành), giữ nguyên ý gốc, rồi đề xuất cập nhật mô tả đó vào card.',
+        draftComment:
+          'Soạn giúp một comment cập nhật tiến độ cho card {{code}} dựa trên mô tả và các comment gần nhất. Chỉ trả về nội dung comment (markdown) để mình copy, không giải thích thêm.',
+      },
+    },
+    addIssue: {
+      button: 'Gợi ý mô tả',
+      promptWithTitle:
+        'Mình đang tạo card có tiêu đề "{{title}}". Gợi ý mô tả gồm bối cảnh, yêu cầu và tiêu chí hoàn thành. Trả về markdown để mình dán vào form, không cần tạo card.',
+      promptNoTitle:
+        'Mình đang tạo card mới. Gợi ý mô tả gồm bối cảnh, yêu cầu và tiêu chí hoàn thành cho card: ',
+    },
+    title: 'Trợ lý AI',
+    newChat: 'Chat mới',
+    openFull: 'Mở trang đầy đủ',
+    close: 'Đóng',
+    placeholder: 'Hỏi về board, hoặc nhờ tạo / sửa card…',
+    hint: 'Enter để gửi · Shift+Enter xuống dòng · Ctrl+J bật/tắt',
+    send: 'Gửi',
+    stop: 'Dừng',
+    retry: 'Thử lại',
+    copy: 'Sao chép',
+    copied: 'Đã sao chép',
+    emptyTitle: 'Mình có thể giúp gì cho board này?',
+    emptyDescription:
+      'Hỏi về tiến độ, tìm card, hoặc nhờ tạo / sửa card bằng ngôn ngữ tự nhiên.',
+    guestNotice:
+      'Bạn có quyền xem: có thể hỏi và thống kê, không tạo/sửa card.',
+    noBoard: 'Mở Trợ lý AI từ một board dự án.',
+    moreCards: 'và {{count}} card khác — hỏi cụ thể hơn để thu hẹp.',
+    suggestions: {
+      stats: {
+        label: 'Thống kê theo trạng thái',
+        prompt:
+          'Thống kê số card theo trạng thái và cho biết tiến độ chung của board.',
+      },
+      overdue: {
+        label: 'Card nào đang quá hạn?',
+        prompt: 'Card nào đang quá hạn? Ai phụ trách?',
+      },
+      mine: {
+        label: 'Việc của tôi tuần này',
+        prompt: 'Liệt kê các card đang giao cho tôi, ưu tiên card sắp đến hạn.',
+      },
+      create: {
+        label: 'Tạo card từ mô tả',
+        prompt: 'Tạo card mới: ',
+      },
+    },
+    tool: {
+      search_cards: 'Đã tìm card',
+      get_card: 'Đã đọc card',
+      get_statistics: 'Đã thống kê',
+      propose_create_card: 'Đã soạn đề xuất tạo card',
+      propose_update_card: 'Đã soạn đề xuất cập nhật',
+      propose_delete_card: 'Đã soạn đề xuất xoá',
+    },
+    fields: {
+      title: 'Tiêu đề',
+      description: 'Mô tả',
+      column: 'Trạng thái',
+      columnId: 'Trạng thái',
+      priority: 'Ưu tiên',
+      assignee: 'Người thực hiện',
+      assigneeUserId: 'Người thực hiện',
+      issueType: 'Loại',
+      issueTypeId: 'Loại',
+      version: 'Version',
+      versionId: 'Version',
+      startDate: 'Ngày bắt đầu',
+      dueDate: 'Hạn',
+      estimatedHours: 'Giờ ước tính',
+      actualHours: 'Giờ thực tế',
+      cardCode: 'Mã card',
+    },
+    proposal: {
+      heading: 'Đề xuất',
+      type: {
+        create_card: 'Tạo card mới',
+        update_card: 'Cập nhật',
+        delete_card: 'Xoá',
+      },
+      apply: {
+        create_card: 'Tạo card',
+        update_card: 'Áp dụng',
+        delete_card: 'Xoá card',
+      },
+      cancel: 'Huỷ',
+      applied: 'Đã áp dụng {{code}}',
+      cancelled: 'Đã huỷ',
+      failed: 'Áp dụng thất bại',
+      openCard: 'Mở card',
+      deleteWarning: 'Card sẽ bị xoá khỏi board. Hành động không hoàn tác.',
+      toast: {
+        create_card: 'Đã tạo card {{code}}',
+        update_card: 'Đã cập nhật {{code}}',
+        delete_card: 'Đã xoá {{code}}',
+      },
+    },
+    error: {
+      generic: 'Không gọi được trợ lý. Vui lòng thử lại.',
+      AI_NOT_CONFIGURED:
+        'Trợ lý AI chưa được cấu hình trên server (thiếu API key).',
+      AI_AUTH_FAILED: 'Server bị từ chối API key của nhà cung cấp AI.',
+      AI_RATE_LIMITED: 'Nhà cung cấp AI đang quá tải, thử lại sau ít phút.',
+      AI_UPSTREAM_ERROR: 'Nhà cung cấp AI trả về lỗi. Thử lại nhé.',
+      AI_REFUSED: 'Trợ lý từ chối yêu cầu này.',
+      AI_OUTPUT_TRUNCATED: 'Câu trả lời bị cắt, hãy thử yêu cầu ngắn hơn.',
+      RATE_LIMITED: 'Bạn gửi hơi nhanh, thử lại sau 1 phút.',
+      NOT_BOARD_MEMBER: 'Bạn không phải thành viên của board này.',
+      NETWORK: 'Mất kết nối tới server.',
+      INTERNAL_ERROR: 'Có lỗi xảy ra. Vui lòng thử lại.',
+    },
   },
 };
 

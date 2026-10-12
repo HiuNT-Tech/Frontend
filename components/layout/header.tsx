@@ -12,6 +12,7 @@ import { Title } from '@/components/ui/title';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { ProjectsDropdown } from '@/components/layout/projects-dropdown';
+import { AiTriggerButton } from '@/components/ai-assistant/ai-trigger-button';
 
 const LANGUAGE_OPTIONS = [
   {
@@ -123,6 +124,7 @@ export function Header() {
           placeholder={t('appBar.placeholder.search')}
           prefixIcon={Images.gray.Search}
         />
+        <AiTriggerButton />
         <button>
           <Image src={Images.Alert} alt="logo" className="cursor-pointer" />
         </button>

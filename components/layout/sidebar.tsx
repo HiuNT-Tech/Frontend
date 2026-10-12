@@ -11,6 +11,7 @@ import {
 } from 'next/navigation';
 import { useState } from 'react';
 import Images from '@/assets';
+import Icons from '@/assets/icons';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,11 @@ export const getMenuItems = (boardId?: string) => [
     titleKey: 'sidebar.issue',
     icon: Images.IconList,
     href: boardId ? `/project/${boardId}/issues` : '/issues',
+  },
+  {
+    titleKey: 'sidebar.aiAssistant',
+    icon: Icons.Sparkles,
+    href: boardId ? `/project/${boardId}/assistant` : '/assistant',
   },
   {
     titleKey: 'sidebar.board',

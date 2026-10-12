@@ -27,6 +27,8 @@ export interface MarkdownEditorProps {
   className?: string;
   classNameContainer?: string;
   required?: boolean;
+  /** Extra controls rendered at the right of the label row (before the Preview toggle). */
+  headerActions?: React.ReactNode;
   /** Show the built-in Edit/Preview toggle. Set to false when the parent already renders its own preview. */
   previewable?: boolean;
   rows?: number;
@@ -188,6 +190,7 @@ export function MarkdownEditor({
   required,
   previewable = true,
   rows = 6,
+  headerActions,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -208,7 +211,7 @@ export function MarkdownEditor({
 
   return (
     <div className={cn('space-y-1', classNameContainer)}>
-      {(label || previewable) && (
+      {(label || previewable || headerActions) && (
         <div className="flex items-center justify-between">
           {label ? (
             <label className="text-sm font-medium text-theme-neutral-11">
@@ -218,15 +221,18 @@ export function MarkdownEditor({
           ) : (
             <span />
           )}
-          {previewable && (
-            <button
-              type="button"
-              onClick={() => setIsPreviewing(p => !p)}
-              className="text-xs text-theme-main hover:underline cursor-pointer"
-            >
-              {isPreviewing ? 'Edit' : 'Preview'}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {headerActions}
+            {previewable && (
+              <button
+                type="button"
+                onClick={() => setIsPreviewing(p => !p)}
+                className="text-xs text-theme-main hover:underline cursor-pointer"
+              >
+                {isPreviewing ? 'Edit' : 'Preview'}
+              </button>
+            )}
+          </div>
         </div>
       )}
       <div

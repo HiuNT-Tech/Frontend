@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
+import { AiSuggestDescriptionButton } from '@/components/ai-assistant/ai-suggest-description-button';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { TimePicker } from '@/components/ui/time-picker';
@@ -502,6 +503,9 @@ export default function AddIssuePage() {
                 value={formData.description}
                 onChange={value => handleChange('description', value)}
                 placeholder={t('addIssue.placeholder.description')}
+                headerActions={
+                  <AiSuggestDescriptionButton title={formData.title} />
+                }
               />
 
               {/* Attachments */}

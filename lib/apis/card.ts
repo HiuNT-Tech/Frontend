@@ -1,4 +1,4 @@
-import { sendGet, sendPutFormData } from '@/utils/authorizeAxios';
+import { sendDelete, sendGet, sendPutFormData } from '@/utils/authorizeAxios';
 import { API_ROOT } from '@/utils/constants';
 import type {
   Card,
@@ -36,5 +36,9 @@ export const CardService = {
       formData.append('removeAttachmentIds', String(id));
     });
     return await sendPutFormData(`${API_ROOT}/v1/cards/${cardId}`, formData);
+  },
+
+  delete: async (cardId: EntityId): Promise<{ id: EntityId }> => {
+    return await sendDelete(`${API_ROOT}/v1/cards/${cardId}`);
   },
 };

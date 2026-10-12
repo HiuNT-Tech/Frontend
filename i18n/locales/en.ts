@@ -77,6 +77,7 @@ const en = {
     addIssue: 'Add Issue',
     issue: 'Issue',
     chat: 'Chat',
+    aiAssistant: 'AI Assistant',
     board: 'Board',
     settings: 'Settings',
   },
@@ -759,6 +760,147 @@ const en = {
     passwordRule:
       'Password must include at least 1 letter, a number, and at least 8 characters.',
     passwordConfirmation: 'Password Confirmation does not match!',
+  },
+  aiAssistant: {
+    contextCard: 'Viewing {{code}}',
+    contextCardHint: 'The assistant will focus on the card you have open.',
+    loadingConversation: 'Loading conversation…',
+    conversations: {
+      title: 'Conversations',
+      new: 'New',
+      empty: 'No conversations yet. Ask something to start.',
+      deleteTitle: 'Delete conversation',
+      deleteConfirm:
+        'Delete the conversation "{{title}}"? This cannot be undone.',
+      deleted: 'Conversation deleted',
+    },
+    cardActions: {
+      title: 'Ask AI about this card',
+      summarize: 'Summarize card',
+      nextSteps: 'Suggest next steps',
+      rewriteDescription: 'Rewrite description',
+      draftComment: 'Draft a status comment',
+      prompts: {
+        summarize:
+          'Summarize card {{code}}: goal, current progress (from the description and latest comments), and things to watch.',
+        nextSteps:
+          'Based on card {{code}} and its latest comments, suggest the next steps in priority order, briefly.',
+        rewriteDescription:
+          'Rewrite the description of card {{code}} so it is clear and structured (context, requirements, acceptance criteria), keeping the original meaning, then propose updating the card with it.',
+        draftComment:
+          'Draft a progress-update comment for card {{code}} based on its description and latest comments. Return only the comment text (markdown) so I can copy it, no extra explanation.',
+      },
+    },
+    addIssue: {
+      button: 'Suggest description',
+      promptWithTitle:
+        'I am creating a card titled "{{title}}". Suggest a description with context, requirements and acceptance criteria. Return markdown I can paste into the form; do not create the card.',
+      promptNoTitle:
+        'I am creating a new card. Suggest a description with context, requirements and acceptance criteria for: ',
+    },
+    title: 'AI Assistant',
+    newChat: 'New chat',
+    openFull: 'Open full page',
+    close: 'Close',
+    placeholder: 'Ask about the board, or ask to create / update a card…',
+    hint: 'Enter to send · Shift+Enter for a new line · Ctrl+J to toggle',
+    send: 'Send',
+    stop: 'Stop',
+    retry: 'Retry',
+    copy: 'Copy',
+    copied: 'Copied',
+    emptyTitle: 'How can I help with this board?',
+    emptyDescription:
+      'Ask about progress, find cards, or create / update cards in plain language.',
+    guestNotice:
+      'You have view access: you can ask questions and get statistics, not change cards.',
+    noBoard: 'Open the AI Assistant from a project board.',
+    moreCards:
+      'and {{count}} more — ask something more specific to narrow down.',
+    suggestions: {
+      stats: {
+        label: 'Statistics by status',
+        prompt:
+          'Count cards by status and summarize the overall progress of this board.',
+      },
+      overdue: {
+        label: 'Which cards are overdue?',
+        prompt: 'Which cards are overdue, and who owns them?',
+      },
+      mine: {
+        label: 'My work this week',
+        prompt: 'List the cards assigned to me, most urgent due dates first.',
+      },
+      create: {
+        label: 'Create a card from a description',
+        prompt: 'Create a new card: ',
+      },
+    },
+    tool: {
+      search_cards: 'Searched cards',
+      get_card: 'Read card',
+      get_statistics: 'Computed statistics',
+      propose_create_card: 'Drafted a create proposal',
+      propose_update_card: 'Drafted an update proposal',
+      propose_delete_card: 'Drafted a delete proposal',
+    },
+    fields: {
+      title: 'Title',
+      description: 'Description',
+      column: 'Status',
+      columnId: 'Status',
+      priority: 'Priority',
+      assignee: 'Assignee',
+      assigneeUserId: 'Assignee',
+      issueType: 'Type',
+      issueTypeId: 'Type',
+      version: 'Version',
+      versionId: 'Version',
+      startDate: 'Start date',
+      dueDate: 'Due date',
+      estimatedHours: 'Estimated hours',
+      actualHours: 'Actual hours',
+      cardCode: 'Card code',
+    },
+    proposal: {
+      heading: 'Proposal',
+      type: {
+        create_card: 'Create card',
+        update_card: 'Update',
+        delete_card: 'Delete',
+      },
+      apply: {
+        create_card: 'Create card',
+        update_card: 'Apply',
+        delete_card: 'Delete card',
+      },
+      cancel: 'Cancel',
+      applied: 'Applied {{code}}',
+      cancelled: 'Cancelled',
+      failed: 'Failed to apply',
+      openCard: 'Open card',
+      deleteWarning:
+        'The card will be removed from the board. This cannot be undone.',
+      toast: {
+        create_card: 'Created card {{code}}',
+        update_card: 'Updated {{code}}',
+        delete_card: 'Deleted {{code}}',
+      },
+    },
+    error: {
+      generic: 'Could not reach the assistant. Please try again.',
+      AI_NOT_CONFIGURED:
+        'The AI assistant is not configured on the server (missing API key).',
+      AI_AUTH_FAILED: 'The AI provider rejected the server API key.',
+      AI_RATE_LIMITED: 'The AI provider is busy, try again in a few minutes.',
+      AI_UPSTREAM_ERROR: 'The AI provider returned an error. Please retry.',
+      AI_REFUSED: 'The assistant declined this request.',
+      AI_OUTPUT_TRUNCATED: 'The answer was cut off, try a shorter request.',
+      RATE_LIMITED: 'You are sending too fast, try again in a minute.',
+      NOT_BOARD_MEMBER: 'You are not a member of this board.',
+      NETWORK: 'Lost connection to the server.',
+      INTERNAL_ERROR: 'Something went wrong. Please try again.',
+    },
   },
 };
 
