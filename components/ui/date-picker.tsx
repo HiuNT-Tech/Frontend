@@ -9,12 +9,10 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Images from '@/assets';
 
-
-export interface DatePickerProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    'type' | 'value' | 'onChange' | 'size'
-  > {
+export interface DatePickerProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'value' | 'onChange' | 'size'
+> {
   label?: string;
   error?: string;
   className?: string;
