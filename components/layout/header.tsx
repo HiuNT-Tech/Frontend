@@ -13,6 +13,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { ProjectsDropdown } from '@/components/layout/projects-dropdown';
 import { AiTriggerButton } from '@/components/ai-assistant/ai-trigger-button';
+import { NotificationBell } from '@/components/layout/notification-bell';
 
 const LANGUAGE_OPTIONS = [
   {
@@ -125,9 +126,7 @@ export function Header() {
           prefixIcon={Images.gray.Search}
         />
         <AiTriggerButton />
-        <button>
-          <Image src={Images.Alert} alt="logo" className="cursor-pointer" />
-        </button>
+        <NotificationBell />
         <div>
           <Select
             className="cursor-pointer z-50 w-23"

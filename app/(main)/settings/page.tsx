@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { replaceWithUpdatedSearchParams } from '@/lib/url';
 import { ProfileTab } from './ProfileTab';
 import { PasswordTab } from './PasswordTab';
+import { NotificationsTab } from './NotificationsTab';
 
 export default function AccountSettingsPage() {
   const { t } = useTranslation();
@@ -51,6 +52,11 @@ export default function AccountSettingsPage() {
                 key: 'password',
                 label: t('accountSettings.tabs.password'),
                 children: <PasswordTab />,
+              },
+              {
+                key: 'notifications',
+                label: t('accountSettings.tabs.notifications'),
+                children: <NotificationsTab />,
               },
             ]}
             className="[&_.ant-tabs-nav]:mb-0 [&_.ant-tabs-nav]:border-b [&_.ant-tabs-nav]:border-theme-neutral-4 [&_.ant-tabs-nav]:px-8 [&_.ant-tabs-nav]:pt-3 [&_.ant-tabs-tab]:py-4 [&_.ant-tabs-tab+.ant-tabs-tab]:ml-8 [&_.ant-tabs-tab-btn]:text-sm [&_.ant-tabs-tab-btn]:font-medium [&_.ant-tabs-tab-btn]:text-theme-neutral-8 [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:text-theme-neutral-11 [&_.ant-tabs-ink-bar]:bg-theme-main [&_.ant-tabs-content-holder]:px-8 [&_.ant-tabs-content-holder]:py-6"

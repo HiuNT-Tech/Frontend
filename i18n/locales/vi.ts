@@ -450,6 +450,31 @@ const vi = {
         save: 'Lưu',
       },
     },
+    notifications: {
+      title: 'Tuỳ chọn thông báo',
+      description:
+        'Chọn loại thông báo bạn muốn nhận trong ứng dụng và qua email. Thay đổi được lưu tự động.',
+      notAvailable: 'Không áp dụng',
+      channel: {
+        IN_APP: 'Trong ứng dụng',
+        EMAIL: 'Email',
+      },
+      type: {
+        CARD_ASSIGNED: 'Được giao thẻ',
+        CARD_UPDATED: 'Thẻ được cập nhật',
+        CARD_STATUS_CHANGED: 'Thẻ đổi trạng thái',
+        COMMENT_MENTIONED: 'Được nhắc đến trong bình luận',
+        BOARD_INVITED: 'Được mời vào board',
+        INVITATION_ACCEPTED: 'Lời mời được chấp nhận',
+        MEMBER_ROLE_CHANGED: 'Vai trò trên board thay đổi',
+        CARD_DUE_SOON: 'Thẻ sắp đến hạn',
+        CARD_OVERDUE: 'Thẻ quá hạn',
+      },
+      toast: {
+        saved: 'Đã lưu tuỳ chọn thông báo',
+        failed: 'Lưu tuỳ chọn thất bại, đã khôi phục trạng thái cũ.',
+      },
+    },
   },
   dashboard: {
     title: 'Bảng điều khiển',
@@ -527,6 +552,7 @@ const vi = {
     tabs: {
       profile: 'Hồ sơ',
       password: 'Mật khẩu',
+      notifications: 'Thông báo',
     },
     profile: {
       heading: 'Thông tin cá nhân',
@@ -691,6 +717,9 @@ const vi = {
       postError: 'Đăng bình luận thất bại',
       updateSuccess: 'Đã cập nhật bình luận',
       deleteSuccess: 'Đã xoá bình luận',
+      mention: {
+        noResult: 'Không tìm thấy thành viên',
+      },
     },
     unassigned: 'Chưa giao',
     none: '—',
@@ -752,6 +781,49 @@ const vi = {
     signIn: 'Đăng nhập',
     createAccount: 'Tạo tài khoản',
     goDashboard: 'Về Dashboard',
+  },
+  notifications: {
+    title: 'Thông báo',
+    bellAriaLabel: 'Mở thông báo',
+    tabs: {
+      all: 'Tất cả',
+      unread: 'Chưa đọc',
+    },
+    markAllRead: 'Đánh dấu tất cả đã đọc',
+    markRead: 'Đánh dấu đã đọc',
+    delete: 'Xóa thông báo',
+    viewAll: 'Xem tất cả',
+    empty: 'Chưa có thông báo nào.',
+    emptyUnread: 'Bạn đã đọc hết thông báo.',
+    loadError: 'Không tải được thông báo.',
+    loadMore: 'Tải thêm',
+    unknownActor: 'Người dùng đã xóa',
+    filter: {
+      board: 'Board',
+      allBoards: 'Tất cả board',
+    },
+    toast: {
+      new: '{{text}}',
+      newMany: 'Bạn có {{count}} thông báo mới',
+      newMany_one: 'Bạn có {{count}} thông báo mới',
+      newMany_other: 'Bạn có {{count}} thông báo mới',
+    },
+    text: {
+      CARD_ASSIGNED: '{{actor}} đã gán {{cardCode}} cho bạn',
+      CARD_UPDATED: '{{actor}} đã cập nhật {{cardCode}} ({{fields}})',
+      CARD_STATUS_CHANGED:
+        '{{actor}} chuyển {{cardCode}} từ {{fromColumn}} sang {{toColumn}}',
+      COMMENT_MENTIONED:
+        '{{actor}} nhắc đến bạn trong {{cardCode}}: "{{excerpt}}"',
+      BOARD_INVITED:
+        '{{actor}} mời bạn vào board {{boardTitle}} với vai trò {{role}}',
+      INVITATION_ACCEPTED:
+        '{{actor}} đã chấp nhận lời mời vào board {{boardTitle}}',
+      MEMBER_ROLE_CHANGED:
+        '{{actor}} đổi vai trò của bạn trong {{boardTitle}} từ {{oldRole}} sang {{newRole}}',
+      CARD_DUE_SOON: '{{cardCode}} đến hạn vào {{dueDate}}',
+      CARD_OVERDUE: '{{cardCode}} đã quá hạn {{days}} ngày',
+    },
   },
   notFound: {
     title: '404',

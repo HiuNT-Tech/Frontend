@@ -19,6 +19,7 @@ import { ModalConfirmInstance } from './modal/static-method-confirm';
 import { LoadingBarProvider } from './providers/LoadingBarProvider';
 import { AiAssistantProvider } from './ai-assistant/ai-assistant-provider';
 import { DocumentTitle } from './document-title';
+import { NotificationSocketBridge } from './shared/notifications/NotificationSocketBridge';
 
 export default function ClientProviders({
   children,
@@ -34,6 +35,7 @@ export default function ClientProviders({
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <LoadingBarProvider>
+            <NotificationSocketBridge />
             <AiAssistantProvider>
               <div className="h-screen flex flex-col overflow-hidden">
                 <DocumentTitle />

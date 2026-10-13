@@ -1,5 +1,10 @@
 import type { ColorStatusKey } from '@/constant/data';
-import type { BoardInvitationStatus } from '@/config/enum';
+import type {
+  BoardInvitationStatus,
+  NotificationChannel,
+  NotificationSessionReason,
+  NotificationType,
+} from '@/config/enum';
 
 // Types for Board, Column, and Card entities
 export type EntityId = number;
@@ -276,6 +281,8 @@ export interface LoginUserResponse {
 
 export interface RefreshTokenResponse {
   accessToken: string;
+  /** BE thực trả kèm (AuthService.refreshToken); socket hook dùng để cập nhật Redux. */
+  refreshToken?: string;
 }
 
 export interface User {
@@ -442,4 +449,164 @@ export interface UpdateCommentRequest {
   content: string;
   attachments?: File[];
   removeAttachmentIds?: EntityId[];
+}
+
+// ─── Notification ──────────────────────────────────────────────
+// Khớp NotificationResponseDto + payload README 4.4. BE chỉ lưu type + payload thô;
+// FE (phần 07) render câu chữ theo i18n.
+
+export interface NotificationActor {
+  id: EntityId;
+  displayName: string;
+  avatar: string | null;
+}
+
+export interface BaseNotificationPayload {
+  boardTitle: string;
+  boardCode: string;
+  /** snapshot lúc tạo; ưu tiên actor.displayName (live), fallback về đây; undefined khi actor là hệ thống */
+  actorDisplayName?: string;
+}
+
+export interface CardNotificationPayload extends BaseNotificationPayload {
+  cardCode: string;
+  cardTitle: string;
+}
+
+export type NotificationPayloadMap = {
+  [NotificationType.CARD_ASSIGNED]: CardNotificationPayload;
+  [NotificationType.CARD_UPDATED]: CardNotificationPayload & {
+    changedFields: string[];
+  };
+  [NotificationType.CARD_STATUS_CHANGED]: CardNotificationPayload & {
+    fromColumn: string;
+    toColumn: string;
+  };
+  [NotificationType.COMMENT_MENTIONED]: CardNotificationPayload & {
+    commentExcerpt: string;
+  };
+  [NotificationType.BOARD_INVITED]: BaseNotificationPayload & {
+    role: BoardMemberRole;
+    invitationToken: string;
+  };
+  [NotificationType.INVITATION_ACCEPTED]: BaseNotificationPayload & {
+    role: BoardMemberRole;
+  };
+  [NotificationType.MEMBER_ROLE_CHANGED]: BaseNotificationPayload & {
+    oldRole: BoardMemberRole;
+    newRole: BoardMemberRole;
+  };
+  [NotificationType.CARD_DUE_SOON]: CardNotificationPayload & {
+    dueDate: string;
+  };
+  [NotificationType.CARD_OVERDUE]: CardNotificationPayload & {
+    dueDate: string;
+    daysOverdue: number;
+  };
+};
+
+/**
+ * Payload "mở": mọi key tùy chọn để FE không crash khi BE thêm type mới hoặc
+ * thiếu key (README 4.4 + phần 07). Dùng NotificationOf<T> khi cần kiểu chặt theo type.
+ */
+export interface NotificationPayload {
+  boardTitle?: string;
+  boardCode?: string;
+  actorDisplayName?: string;
+  cardCode?: string;
+  cardTitle?: string;
+  changedFields?: string[];
+  fromColumn?: string;
+  toColumn?: string;
+  commentExcerpt?: string;
+  role?: BoardMemberRole;
+  invitationToken?: string;
+  oldRole?: BoardMemberRole;
+  newRole?: BoardMemberRole;
+  dueDate?: string;
+  daysOverdue?: number;
+}
+
+export interface Notification {
+  id: EntityId;
+  type: NotificationType;
+  actor: NotificationActor | null;
+  boardId: EntityId | null;
+  cardId: EntityId | null;
+  commentId: EntityId | null;
+  invitationId: EntityId | null;
+  payload: NotificationPayload;
+  /** ISO 8601; null = chưa đọc */
+  readAt: string | null;
+  /** ISO 8601 */
+  createdAt: string;
+}
+
+/** Thu hẹp theo type để render payload có kiểu (vd NotificationOf<NotificationType.CARD_ASSIGNED>). */
+export type NotificationOf<T extends NotificationType> = Omit<
+  Notification,
+  'type' | 'payload'
+> & { type: T; payload: NotificationPayloadMap[T] };
+
+/** Phần filter nằm trong query key; cursor/limit KHÔNG nằm trong key (cursor là pageParam). */
+export interface NotificationListFilter {
+  unreadOnly?: boolean;
+  boardId?: EntityId;
+}
+
+/** Query string thật gửi lên GET /v1/me/notifications (README 4.5 #1). */
+export interface NotificationListParams extends NotificationListFilter {
+  cursor?: string;
+  /** mặc định 20, min 1, max 50 */
+  limit?: number;
+}
+
+export interface NotificationListResponse {
+  items: Notification[];
+  /** số notification khớp filter (không phải số item trong trang) */
+  total: number;
+  nextCursor: string | null;
+  /** tổng chưa đọc toàn cục, không theo board */
+  unreadCount: number;
+}
+
+export interface UnreadCountResponse {
+  unreadCount: number;
+}
+
+export interface MarkAllReadRequest {
+  boardId?: EntityId;
+}
+
+export interface MarkAllReadResponse {
+  updated: number;
+  unreadCount: number;
+}
+
+export interface DeleteNotificationResponse {
+  deleted: true;
+  unreadCount: number;
+}
+
+/** payload socket event notification.session (README 4.6) */
+export interface NotificationSessionEvent {
+  reason: NotificationSessionReason;
+}
+
+// ─── Notification preferences (README 4.5 #6/#7) ───────────────
+export interface NotificationPreferenceItem {
+  type: NotificationType;
+  channel: NotificationChannel;
+  enabled: boolean;
+}
+
+/** GET/PUT trả đủ mọi cặp hợp lệ đã merge default: 19 item (không có (BOARD_INVITED, EMAIL)). Đi nhánh paginated nhờ total. */
+export interface NotificationPreferencesResponse {
+  items: NotificationPreferenceItem[];
+  total: number;
+}
+
+/** PUT body: 1..19 item, không trùng cặp. FE chỉ gửi các ô vừa đổi. */
+export interface UpdatePreferencesRequest {
+  items: NotificationPreferenceItem[];
 }

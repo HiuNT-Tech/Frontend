@@ -89,3 +89,22 @@ export const CardSkeleton: React.FC = () => (
     </div>
   </div>
 );
+
+/* ── Notification List Skeleton ─────────────────────────────────── */
+
+/** Placeholder cho danh sách thông báo (avatar + 2 dòng chữ). */
+export const NotificationListSkeleton: React.FC<{ rows?: number }> = ({
+  rows = 4,
+}) => (
+  <ul className="divide-y divide-theme-neutral-4" aria-hidden="true">
+    {Array.from({ length: rows }).map((_, i) => (
+      <li key={i} className="flex gap-3 px-4 py-3">
+        <SkeletonBlock className="h-8 w-8 shrink-0 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <SkeletonBlock className="h-4 w-11/12" />
+          <SkeletonBlock className="h-3 w-1/3" />
+        </div>
+      </li>
+    ))}
+  </ul>
+);

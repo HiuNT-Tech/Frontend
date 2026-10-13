@@ -457,6 +457,31 @@ const en = {
         save: 'Save',
       },
     },
+    notifications: {
+      title: 'Notification preferences',
+      description:
+        'Choose which notifications you receive in the app and by email. Changes are saved automatically.',
+      notAvailable: 'Not available',
+      channel: {
+        IN_APP: 'In-app',
+        EMAIL: 'Email',
+      },
+      type: {
+        CARD_ASSIGNED: 'Card assigned to you',
+        CARD_UPDATED: 'Card updated',
+        CARD_STATUS_CHANGED: 'Card status changed',
+        COMMENT_MENTIONED: 'Mentioned in a comment',
+        BOARD_INVITED: 'Invited to a board',
+        INVITATION_ACCEPTED: 'Invitation accepted',
+        MEMBER_ROLE_CHANGED: 'Board role changed',
+        CARD_DUE_SOON: 'Card due soon',
+        CARD_OVERDUE: 'Card overdue',
+      },
+      toast: {
+        saved: 'Notification preferences saved',
+        failed: 'Saving failed, previous settings restored.',
+      },
+    },
   },
   dashboard: {
     title: 'Dashboard',
@@ -534,6 +559,7 @@ const en = {
     tabs: {
       profile: 'Profile',
       password: 'Password',
+      notifications: 'Notifications',
     },
     profile: {
       heading: 'Personal information',
@@ -698,6 +724,9 @@ const en = {
       postError: 'Failed to post comment',
       updateSuccess: 'Comment updated',
       deleteSuccess: 'Comment deleted',
+      mention: {
+        noResult: 'No members found',
+      },
     },
     unassigned: 'Unassigned',
     none: '—',
@@ -759,6 +788,43 @@ const en = {
     signIn: 'Sign in',
     createAccount: 'Create account',
     goDashboard: 'Go to Dashboard',
+  },
+  notifications: {
+    title: 'Notifications',
+    bellAriaLabel: 'Open notifications',
+    tabs: { all: 'All', unread: 'Unread' },
+    markAllRead: 'Mark all as read',
+    markRead: 'Mark as read',
+    delete: 'Delete notification',
+    viewAll: 'View all',
+    empty: 'No notifications yet.',
+    emptyUnread: 'You are all caught up.',
+    loadError: 'Could not load notifications.',
+    loadMore: 'Load more',
+    unknownActor: 'Deleted user',
+    filter: { board: 'Board', allBoards: 'All boards' },
+    toast: {
+      new: '{{text}}',
+      newMany: 'You have {{count}} new notifications',
+      newMany_one: 'You have {{count}} new notification',
+      newMany_other: 'You have {{count}} new notifications',
+    },
+    text: {
+      CARD_ASSIGNED: '{{actor}} assigned {{cardCode}} to you',
+      CARD_UPDATED: '{{actor}} updated {{cardCode}} ({{fields}})',
+      CARD_STATUS_CHANGED:
+        '{{actor}} moved {{cardCode}} from {{fromColumn}} to {{toColumn}}',
+      COMMENT_MENTIONED:
+        '{{actor}} mentioned you in {{cardCode}}: "{{excerpt}}"',
+      BOARD_INVITED:
+        '{{actor}} invited you to board {{boardTitle}} as {{role}}',
+      INVITATION_ACCEPTED:
+        '{{actor}} accepted the invitation to board {{boardTitle}}',
+      MEMBER_ROLE_CHANGED:
+        '{{actor}} changed your role in {{boardTitle}} from {{oldRole}} to {{newRole}}',
+      CARD_DUE_SOON: '{{cardCode}} is due on {{dueDate}}',
+      CARD_OVERDUE: '{{cardCode}} is {{days}} day(s) overdue',
+    },
   },
   notFound: {
     title: '404',

@@ -16,7 +16,7 @@ export interface SystemCommentDiffProps {
 // Key trong delta là tên field ổn định do BE sinh ra (xem
 // CardHistoryService.toDiffable) — map sang nhãn hiển thị theo ngôn ngữ
 // đang chọn thay vì hiển thị thẳng key.
-const FIELD_LABEL_KEYS: Record<string, string> = {
+export const FIELD_LABEL_KEYS: Record<string, string> = {
   title: 'addIssue.label.title',
   description: 'addIssue.label.description',
   priority: 'addIssue.label.priority',

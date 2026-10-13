@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { toastHelpers } from '@/hooks/use-toast';
 import config from '@/config';
 import { API_ROOT } from '@/utils/constants';
+import type { RefreshTokenResponse } from '@/config/interface';
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -26,8 +27,62 @@ const authorizedAxiosInstance = axios.create({
   timeout: 10 * 60 * 1000,
 });
 
-// Tránh gọi refresh-token nhiều lần song song
-let refreshTokenPromise: Promise<unknown> | null = null;
+const unwrapItem = (data: any) => {
+  if (
+    data &&
+    typeof data === 'object' &&
+    !Array.isArray(data) &&
+    'item' in data
+  ) {
+    return (data as { item: unknown }).item;
+  }
+  return data;
+};
+
+// Tránh gọi refresh-token nhiều lần song song (axios 410 và socket TOKEN_EXPIRED dùng chung)
+let refreshTokenPromise: Promise<RefreshTokenResponse> | null = null;
+
+/**
+ * Gọi GET /v1/auth/refresh_token bằng axios gốc (không qua interceptor). Cookie mới do BE set.
+ * Thất bại → toast + chuyển /login + reject (giữ nguyên hành vi cũ của interceptor).
+ * Dùng cho interceptor 410 và cho socket (hooks/use-notification-socket.ts).
+ */
+export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
+  if (!refreshTokenPromise) {
+    refreshTokenPromise = axios
+      .get(`${API_ROOT}/v1/auth/refresh_token`, {
+        withCredentials: true,
+      })
+      // BE trả { item: { accessToken, refreshToken } } (ResponseInterceptor bọc object đơn)
+      .then(res => unwrapItem(res.data) as RefreshTokenResponse)
+      .catch((refreshError: AxiosError) => {
+        // Refresh thất bại → buộc logout
+        let refreshMessage = refreshError.message;
+        if (
+          refreshError.response?.data &&
+          typeof refreshError.response.data === 'object' &&
+          'message' in refreshError.response.data
+        ) {
+          refreshMessage = (refreshError.response.data as { message: string })
+            .message;
+        }
+
+        toastHelpers.error({ description: refreshMessage });
+
+        if (typeof window !== 'undefined') {
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
+        }
+
+        throw refreshError;
+      })
+      .finally(() => {
+        refreshTokenPromise = null;
+      });
+  }
+  return refreshTokenPromise;
+};
 
 // Cấu hình Interceptors
 // Interceptor request: Can thiệp vào giữa những cái request API
@@ -68,42 +123,8 @@ authorizedAxiosInstance.interceptors.response.use(
 
       originalRequest._retry = true;
 
-      // Nếu chưa có promise refresh đang chạy thì tạo mới
-      if (!refreshTokenPromise) {
-        refreshTokenPromise = axios
-          .get(`${API_ROOT}/v1/auth/refresh_token`, {
-            withCredentials: true,
-          })
-          .catch((refreshError: AxiosError) => {
-            // Refresh thất bại → buộc logout
-            let refreshMessage = refreshError.message;
-            if (
-              refreshError.response?.data &&
-              typeof refreshError.response.data === 'object' &&
-              'message' in refreshError.response.data
-            ) {
-              refreshMessage = (
-                refreshError.response.data as { message: string }
-              ).message;
-            }
-
-            toastHelpers.error({ description: refreshMessage });
-
-            if (typeof window !== 'undefined') {
-              if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/login';
-              }
-            }
-
-            throw refreshError;
-          })
-          .finally(() => {
-            refreshTokenPromise = null;
-          });
-      }
-
       // Sau khi refresh thành công thì gọi lại request cũ
-      return refreshTokenPromise.then(() =>
+      return refreshAccessToken().then(() =>
         authorizedAxiosInstance(originalRequest)
       );
     }
@@ -138,18 +159,6 @@ authorizedAxiosInstance.interceptors.response.use(
     return Promise.reject(errorMessage);
   }
 );
-
-const unwrapItem = (data: any) => {
-  if (
-    data &&
-    typeof data === 'object' &&
-    !Array.isArray(data) &&
-    'item' in data
-  ) {
-    return (data as { item: unknown }).item;
-  }
-  return data;
-};
 
 export const sendGet = async (path: string, params: any = {}) => {
   const res = await authorizedAxiosInstance.get(path, { params });

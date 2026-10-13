@@ -1,6 +1,10 @@
 import { AuthService } from '@/lib/apis/auth';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAppDispatch } from '@/redux/hooks';
+import { resetUser } from '@/redux/user/userSlice';
+import { disconnectNotificationSocket } from '@/lib/socket';
+import { notificationQueryKeys } from '@/hooks/use-notification';
 import { LoginUserRequest } from '@/config/interface';
 import { toastHelpers } from './use-toast';
 import { useRouter } from 'next/navigation';
@@ -8,6 +12,8 @@ import { useRouter } from 'next/navigation';
 export const useAuth = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
   const {
     mutateAsync: login,
     isPending: isLoginPending,
@@ -36,6 +42,10 @@ export const useAuth = () => {
       toastHelpers.success({
         description: t('toast.success.userLoggedOut'),
       });
+      // README D19: ngắt socket, bỏ cache thông báo, reset Redux để user khác login không thấy dữ liệu cũ
+      disconnectNotificationSocket();
+      queryClient.removeQueries({ queryKey: notificationQueryKeys.all });
+      dispatch(resetUser());
       router.push('/login');
     },
   });
