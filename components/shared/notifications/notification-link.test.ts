@@ -23,7 +23,6 @@ describe('getNotificationHref', () => {
     NotificationType.CARD_ASSIGNED,
     NotificationType.CARD_UPDATED,
     NotificationType.CARD_STATUS_CHANGED,
-    NotificationType.CARD_COMMENTED,
     NotificationType.COMMENT_MENTIONED,
     NotificationType.CARD_DUE_SOON,
     NotificationType.CARD_OVERDUE,

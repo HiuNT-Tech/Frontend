@@ -463,7 +463,6 @@ const vi = {
         CARD_ASSIGNED: 'Được giao thẻ',
         CARD_UPDATED: 'Thẻ được cập nhật',
         CARD_STATUS_CHANGED: 'Thẻ đổi trạng thái',
-        CARD_COMMENTED: 'Có bình luận mới',
         COMMENT_MENTIONED: 'Được nhắc đến trong bình luận',
         BOARD_INVITED: 'Được mời vào board',
         INVITATION_ACCEPTED: 'Lời mời được chấp nhận',
@@ -814,7 +813,6 @@ const vi = {
       CARD_UPDATED: '{{actor}} đã cập nhật {{cardCode}} ({{fields}})',
       CARD_STATUS_CHANGED:
         '{{actor}} chuyển {{cardCode}} từ {{fromColumn}} sang {{toColumn}}',
-      CARD_COMMENTED: '{{actor}} bình luận trên {{cardCode}}: "{{excerpt}}"',
       COMMENT_MENTIONED:
         '{{actor}} nhắc đến bạn trong {{cardCode}}: "{{excerpt}}"',
       BOARD_INVITED:

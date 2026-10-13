@@ -470,7 +470,6 @@ const en = {
         CARD_ASSIGNED: 'Card assigned to you',
         CARD_UPDATED: 'Card updated',
         CARD_STATUS_CHANGED: 'Card status changed',
-        CARD_COMMENTED: 'New comment',
         COMMENT_MENTIONED: 'Mentioned in a comment',
         BOARD_INVITED: 'Invited to a board',
         INVITATION_ACCEPTED: 'Invitation accepted',
@@ -815,7 +814,6 @@ const en = {
       CARD_UPDATED: '{{actor}} updated {{cardCode}} ({{fields}})',
       CARD_STATUS_CHANGED:
         '{{actor}} moved {{cardCode}} from {{fromColumn}} to {{toColumn}}',
-      CARD_COMMENTED: '{{actor}} commented on {{cardCode}}: "{{excerpt}}"',
       COMMENT_MENTIONED:
         '{{actor}} mentioned you in {{cardCode}}: "{{excerpt}}"',
       BOARD_INVITED:

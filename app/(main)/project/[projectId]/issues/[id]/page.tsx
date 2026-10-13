@@ -212,9 +212,15 @@ export default function IssueDetailPage() {
       ),
     [listUser.items]
   );
+  // userCode của chính mình lấy từ danh sách member (redux User không có userCode)
+  const selfUserCode =
+    listUser.items.find(m => m.userId === currentUser?.id)?.userCode ?? null;
   const mentionMembers = useMemo(
-    () => new Map(mentionCandidates.map(c => [c.userCode, c.displayName])),
-    [mentionCandidates]
+    () => ({
+      members: new Map(mentionCandidates.map(c => [c.userCode, c.displayName])),
+      selfUserCode,
+    }),
+    [mentionCandidates, selfUserCode]
   );
 
   /* ── Lookup helpers ── */

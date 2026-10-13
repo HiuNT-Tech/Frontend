@@ -482,9 +482,6 @@ export type NotificationPayloadMap = {
     fromColumn: string;
     toColumn: string;
   };
-  [NotificationType.CARD_COMMENTED]: CardNotificationPayload & {
-    commentExcerpt: string;
-  };
   [NotificationType.COMMENT_MENTIONED]: CardNotificationPayload & {
     commentExcerpt: string;
   };

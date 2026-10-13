@@ -19,7 +19,6 @@ export const getNotificationHref = (n: Notification): string | null => {
     case NotificationType.CARD_ASSIGNED:
     case NotificationType.CARD_UPDATED:
     case NotificationType.CARD_STATUS_CHANGED:
-    case NotificationType.CARD_COMMENTED:
     case NotificationType.COMMENT_MENTIONED:
     case NotificationType.CARD_DUE_SOON:
     case NotificationType.CARD_OVERDUE:
