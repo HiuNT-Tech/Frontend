@@ -457,6 +457,32 @@ const en = {
         save: 'Save',
       },
     },
+    notifications: {
+      title: 'Notification preferences',
+      description:
+        'Choose which notifications you receive in the app and by email. Changes are saved automatically.',
+      notAvailable: 'Not available',
+      channel: {
+        IN_APP: 'In-app',
+        EMAIL: 'Email',
+      },
+      type: {
+        CARD_ASSIGNED: 'Card assigned to you',
+        CARD_UPDATED: 'Card updated',
+        CARD_STATUS_CHANGED: 'Card status changed',
+        CARD_COMMENTED: 'New comment',
+        COMMENT_MENTIONED: 'Mentioned in a comment',
+        BOARD_INVITED: 'Invited to a board',
+        INVITATION_ACCEPTED: 'Invitation accepted',
+        MEMBER_ROLE_CHANGED: 'Board role changed',
+        CARD_DUE_SOON: 'Card due soon',
+        CARD_OVERDUE: 'Card overdue',
+      },
+      toast: {
+        saved: 'Notification preferences saved',
+        failed: 'Saving failed, previous settings restored.',
+      },
+    },
   },
   dashboard: {
     title: 'Dashboard',
@@ -534,6 +560,7 @@ const en = {
     tabs: {
       profile: 'Profile',
       password: 'Password',
+      notifications: 'Notifications',
     },
     profile: {
       heading: 'Personal information',
@@ -698,6 +725,9 @@ const en = {
       postError: 'Failed to post comment',
       updateSuccess: 'Comment updated',
       deleteSuccess: 'Comment deleted',
+      mention: {
+        noResult: 'No members found',
+      },
     },
     unassigned: 'Unassigned',
     none: '—',

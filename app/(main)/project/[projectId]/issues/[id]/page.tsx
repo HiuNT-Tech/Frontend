@@ -24,6 +24,11 @@ import { DescriptionCard } from './description-card';
 import { EditableTitle } from './edit-form-fields';
 import type { EditFormData } from './edit-form-fields';
 import { CommentList, StickyCommentBar } from './comment-section';
+import { MentionMembersContext } from '@/components/shared/mention/MentionText';
+import {
+  isMentionableUserCode,
+  type MentionCandidate,
+} from '@/components/shared/mention/mention.utils';
 import { AiCardActions } from '@/components/ai-assistant/ai-card-actions';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentUser } from '@/redux/user/userSlice';
@@ -188,6 +193,28 @@ export default function IssueDetailPage() {
         label: u.displayName || u.username || u.email || String(u.userId),
       })),
     [listUser.items]
+  );
+  // Member có userCode hợp lệ mới mention được (user cũ userCode null → bỏ). GUEST vẫn mention được (README 4.3).
+  const mentionCandidates = useMemo<MentionCandidate[]>(
+    () =>
+      listUser.items.flatMap(u =>
+        isMentionableUserCode(u.userCode)
+          ? [
+              {
+                userCode: u.userCode,
+                displayName:
+                  u.displayName || u.username || u.email || u.userCode,
+                email: u.email,
+                avatar: u.avatar,
+              },
+            ]
+          : []
+      ),
+    [listUser.items]
+  );
+  const mentionMembers = useMemo(
+    () => new Map(mentionCandidates.map(c => [c.userCode, c.displayName])),
+    [mentionCandidates]
   );
 
   /* ── Lookup helpers ── */
@@ -484,7 +511,13 @@ export default function IssueDetailPage() {
           onAssignToMyself={handleAssignToMyself}
         />
 
-        <CommentList cardId={cardId} currentUserId={currentUser?.id} />
+        <MentionMembersContext.Provider value={mentionMembers}>
+          <CommentList
+            cardId={cardId}
+            currentUserId={currentUser?.id}
+            mentionCandidates={mentionCandidates}
+          />
+        </MentionMembersContext.Provider>
       </div>
 
       {/* ── Sticky Comment Bar (only in read mode) ── */}
@@ -503,6 +536,7 @@ export default function IssueDetailPage() {
           VERSION_OPTIONS={VERSION_OPTIONS}
           handleFieldUpdate={handleFieldUpdate}
           canContribute={isContributor}
+          mentionCandidates={mentionCandidates}
         />
       )}
     </div>

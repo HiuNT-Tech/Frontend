@@ -3,6 +3,7 @@ import {
   sendGet,
   sendPatch,
   sendPost,
+  sendPut,
 } from '@/utils/authorizeAxios';
 import { API_ROOT } from '@/utils/constants';
 import type {
@@ -13,10 +14,13 @@ import type {
   Notification,
   NotificationListParams,
   NotificationListResponse,
+  NotificationPreferencesResponse,
   UnreadCountResponse,
+  UpdatePreferencesRequest,
 } from '@/config/interface';
 
 const NOTIFICATIONS_URL = `${API_ROOT}/v1/me/notifications`;
+const PREFERENCES_URL = `${API_ROOT}/v1/me/notification-preferences`;
 
 export const NotificationService = {
   /** Body giữ nguyên (đi nhánh paginated của ResponseInterceptor nhờ total). */
@@ -46,5 +50,17 @@ export const NotificationService = {
   /** Soft delete; { item: { deleted, unreadCount } } → DeleteNotificationResponse. */
   remove: async (id: EntityId): Promise<DeleteNotificationResponse> => {
     return await sendDelete(`${NOTIFICATIONS_URL}/${id}`);
+  },
+
+  /** { items, total } → giữ nguyên (ResponseInterceptor nhánh paginated). */
+  getPreferences: async (): Promise<NotificationPreferencesResponse> => {
+    return await sendGet(PREFERENCES_URL);
+  },
+
+  /** Body đúng UpdatePreferencesRequest (BE forbidNonWhitelisted). Trả về như GET. */
+  updatePreferences: async (
+    payload: UpdatePreferencesRequest
+  ): Promise<NotificationPreferencesResponse> => {
+    return await sendPut(PREFERENCES_URL, payload);
   },
 };

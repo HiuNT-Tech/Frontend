@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Bold,
@@ -18,6 +18,9 @@ import {
   MARKDOWN_PROSE_CLASSNAME,
   MARKDOWN_REMARK_PLUGINS,
 } from '@/constant/markdown';
+import { useMentionAutocomplete } from '@/hooks/use-mention-autocomplete';
+import { MentionSuggestions } from '@/components/shared/mention/MentionSuggestions';
+import type { MentionCandidate } from '@/components/shared/mention/mention.utils';
 
 export interface MarkdownEditorProps {
   value: string;
@@ -32,6 +35,8 @@ export interface MarkdownEditorProps {
   /** Show the built-in Edit/Preview toggle. Set to false when the parent already renders its own preview. */
   previewable?: boolean;
   rows?: number;
+  /** Member để gợi ý @userCode khi gõ @. undefined → không autocomplete (mô tả, add-issue giữ nguyên). */
+  mentionCandidates?: MentionCandidate[];
 }
 
 type FormatAction =
@@ -191,8 +196,16 @@ export function MarkdownEditor({
   previewable = true,
   rows = 6,
   headerActions,
+  mentionCandidates,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentionAutocomplete({
+    value,
+    onChange,
+    textareaRef,
+    candidates: mentionCandidates,
+  });
+  const suggestionsId = useId();
   const [isPreviewing, setIsPreviewing] = useState(false);
   const showPreview = previewable && isPreviewing;
 
@@ -210,7 +223,7 @@ export function MarkdownEditor({
   };
 
   return (
-    <div className={cn('space-y-1', classNameContainer)}>
+    <div className={cn('relative space-y-1', classNameContainer)}>
       {(label || previewable || headerActions) && (
         <div className="flex items-center justify-between">
           {label ? (
@@ -265,7 +278,17 @@ export function MarkdownEditor({
             <textarea
               ref={textareaRef}
               value={value}
-              onChange={e => onChange(e.target.value)}
+              onChange={e => {
+                onChange(e.target.value);
+                mention.syncFromCaret(e.target.value);
+              }}
+              onKeyDown={mention.handleKeyDown}
+              onKeyUp={() => mention.syncFromCaret()}
+              onClick={() => mention.syncFromCaret()}
+              onBlur={mention.close}
+              aria-autocomplete={mentionCandidates ? 'list' : undefined}
+              aria-expanded={mention.isOpen}
+              aria-controls={mention.isOpen ? suggestionsId : undefined}
               placeholder={placeholder}
               rows={rows}
               className="w-full min-h-[120px] px-3 py-2 border-0 text-sm font-mono text-theme-neutral-11 focus:outline-none resize-y"
@@ -273,6 +296,16 @@ export function MarkdownEditor({
           </>
         )}
       </div>
+      {mention.isOpen && (
+        <MentionSuggestions
+          id={suggestionsId}
+          items={mention.items}
+          activeIndex={mention.activeIndex}
+          placement={mention.placement}
+          onHover={mention.setActiveIndex}
+          onSelect={mention.select}
+        />
+      )}
     </div>
   );
 }

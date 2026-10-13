@@ -27,6 +27,8 @@ import {
   buildUploadErrorMessages,
 } from '@/components/shared/attachment-uploader';
 import { SystemCommentDiff } from '@/components/shared/system-comment-diff';
+import { MENTION_MARKDOWN_COMPONENTS } from '@/components/shared/mention/MentionText';
+import type { MentionCandidate } from '@/components/shared/mention/mention.utils';
 import type { Card, Comment, EntityId } from '@/config/interface';
 
 /* ─── Helpers ─── */
@@ -38,6 +40,8 @@ const markdownClassName = MARKDOWN_PROSE_CLASSNAME;
 export interface CommentListProps {
   cardId?: EntityId;
   currentUserId?: number;
+  /** Member board để gợi ý @userCode khi sửa comment */
+  mentionCandidates?: MentionCandidate[];
 }
 
 interface CommentEditUpload {
@@ -63,6 +67,7 @@ const CommentItem: React.FC<{
   editUpload: CommentEditUpload;
   removedAttachmentIds: EntityId[];
   onToggleRemoveExisting: (id: EntityId) => void;
+  mentionCandidates?: MentionCandidate[];
 }> = ({
   comment,
   isOwner,
@@ -77,6 +82,7 @@ const CommentItem: React.FC<{
   editUpload,
   removedAttachmentIds,
   onToggleRemoveExisting,
+  mentionCandidates,
 }) => {
   const { t } = useTranslation();
   const isSystem = comment.type === 'SYSTEM';
@@ -147,6 +153,7 @@ const CommentItem: React.FC<{
             onChange={setEditValue}
             placeholder={t('issueDetail.comments.placeholder')}
             rows={4}
+            mentionCandidates={mentionCandidates}
           />
 
           {/* Existing attachments (có thể bỏ đi khi lưu) */}
@@ -195,7 +202,10 @@ const CommentItem: React.FC<{
       ) : (
         <>
           <div className={markdownClassName}>
-            <ReactMarkdown remarkPlugins={MARKDOWN_REMARK_PLUGINS}>
+            <ReactMarkdown
+              remarkPlugins={MARKDOWN_REMARK_PLUGINS}
+              components={MENTION_MARKDOWN_COMPONENTS}
+            >
               {comment.content}
             </ReactMarkdown>
           </div>
@@ -249,6 +259,7 @@ const CommentItem: React.FC<{
 export const CommentList: React.FC<CommentListProps> = ({
   cardId,
   currentUserId,
+  mentionCandidates,
 }) => {
   const { t } = useTranslation();
   const {
@@ -361,6 +372,7 @@ export const CommentList: React.FC<CommentListProps> = ({
               }}
               removedAttachmentIds={removedAttachmentIds}
               onToggleRemoveExisting={toggleRemoveExisting}
+              mentionCandidates={mentionCandidates}
             />
           ))}
         </div>
@@ -390,6 +402,8 @@ export interface StickyCommentBarProps {
    * card yêu cầu BOARD_CONTRIBUTOR_ROLES).
    */
   canContribute?: boolean;
+  /** Member board để gợi ý @userCode khi gõ comment mới */
+  mentionCandidates?: MentionCandidate[];
 }
 
 export const StickyCommentBar: React.FC<StickyCommentBarProps> = ({
@@ -406,6 +420,7 @@ export const StickyCommentBar: React.FC<StickyCommentBarProps> = ({
   VERSION_OPTIONS,
   handleFieldUpdate,
   canContribute = false,
+  mentionCandidates,
 }) => {
   const { t } = useTranslation();
   const { createComment, isCreating } = useComments(cardId);
@@ -521,7 +536,10 @@ export const StickyCommentBar: React.FC<StickyCommentBarProps> = ({
                   className={`${markdownClassName} p-4 border border-theme-neutral-5 rounded-lg min-h-[100px] bg-theme-neutral-2/30 mb-[22px]`}
                 >
                   {commentValue ? (
-                    <ReactMarkdown remarkPlugins={MARKDOWN_REMARK_PLUGINS}>
+                    <ReactMarkdown
+                      remarkPlugins={MARKDOWN_REMARK_PLUGINS}
+                      components={MENTION_MARKDOWN_COMPONENTS}
+                    >
                       {commentValue}
                     </ReactMarkdown>
                   ) : (
@@ -546,6 +564,7 @@ export const StickyCommentBar: React.FC<StickyCommentBarProps> = ({
                     onChange={setCommentValue}
                     placeholder={t('issueDetail.comments.placeholder')}
                     previewable={false}
+                    mentionCandidates={mentionCandidates}
                   />
                 </div>
               )}

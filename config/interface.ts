@@ -1,6 +1,7 @@
 import type { ColorStatusKey } from '@/constant/data';
 import type {
   BoardInvitationStatus,
+  NotificationChannel,
   NotificationSessionReason,
   NotificationType,
 } from '@/config/enum';
@@ -593,4 +594,22 @@ export interface DeleteNotificationResponse {
 /** payload socket event notification.session (README 4.6) */
 export interface NotificationSessionEvent {
   reason: NotificationSessionReason;
+}
+
+// ─── Notification preferences (README 4.5 #6/#7) ───────────────
+export interface NotificationPreferenceItem {
+  type: NotificationType;
+  channel: NotificationChannel;
+  enabled: boolean;
+}
+
+/** GET/PUT trả đủ mọi cặp hợp lệ đã merge default: 19 item (không có (BOARD_INVITED, EMAIL)). Đi nhánh paginated nhờ total. */
+export interface NotificationPreferencesResponse {
+  items: NotificationPreferenceItem[];
+  total: number;
+}
+
+/** PUT body: 1..19 item, không trùng cặp. FE chỉ gửi các ô vừa đổi. */
+export interface UpdatePreferencesRequest {
+  items: NotificationPreferenceItem[];
 }

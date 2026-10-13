@@ -450,6 +450,32 @@ const vi = {
         save: 'Lưu',
       },
     },
+    notifications: {
+      title: 'Tuỳ chọn thông báo',
+      description:
+        'Chọn loại thông báo bạn muốn nhận trong ứng dụng và qua email. Thay đổi được lưu tự động.',
+      notAvailable: 'Không áp dụng',
+      channel: {
+        IN_APP: 'Trong ứng dụng',
+        EMAIL: 'Email',
+      },
+      type: {
+        CARD_ASSIGNED: 'Được giao thẻ',
+        CARD_UPDATED: 'Thẻ được cập nhật',
+        CARD_STATUS_CHANGED: 'Thẻ đổi trạng thái',
+        CARD_COMMENTED: 'Có bình luận mới',
+        COMMENT_MENTIONED: 'Được nhắc đến trong bình luận',
+        BOARD_INVITED: 'Được mời vào board',
+        INVITATION_ACCEPTED: 'Lời mời được chấp nhận',
+        MEMBER_ROLE_CHANGED: 'Vai trò trên board thay đổi',
+        CARD_DUE_SOON: 'Thẻ sắp đến hạn',
+        CARD_OVERDUE: 'Thẻ quá hạn',
+      },
+      toast: {
+        saved: 'Đã lưu tuỳ chọn thông báo',
+        failed: 'Lưu tuỳ chọn thất bại, đã khôi phục trạng thái cũ.',
+      },
+    },
   },
   dashboard: {
     title: 'Bảng điều khiển',
@@ -527,6 +553,7 @@ const vi = {
     tabs: {
       profile: 'Hồ sơ',
       password: 'Mật khẩu',
+      notifications: 'Thông báo',
     },
     profile: {
       heading: 'Thông tin cá nhân',
@@ -691,6 +718,9 @@ const vi = {
       postError: 'Đăng bình luận thất bại',
       updateSuccess: 'Đã cập nhật bình luận',
       deleteSuccess: 'Đã xoá bình luận',
+      mention: {
+        noResult: 'Không tìm thấy thành viên',
+      },
     },
     unassigned: 'Chưa giao',
     none: '—',
