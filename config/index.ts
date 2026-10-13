@@ -5,6 +5,11 @@ const config = {
   socketUrl: process.env.NEXT_PUBLIC_SOCKET_URL,
   /** Path Socket.IO; mặc định '/socket.io' (khớp SOCKET_PATH của BE). */
   socketPath: process.env.NEXT_PUBLIC_SOCKET_PATH,
+  /**
+   * Polling dự phòng cho unread-count (ms); 0 = tắt (mặc định). Dùng khi không mở được
+   * WebSocket (demo fallback README 4.8). Socket vẫn là nguồn nhanh, REST là nguồn đúng.
+   */
+  notificationPollMs: Number(process.env.NEXT_PUBLIC_NOTIFICATION_POLL_MS ?? 0),
 };
 
 export default config;

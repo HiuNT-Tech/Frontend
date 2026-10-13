@@ -10,6 +10,7 @@ import {
   type QueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
+import config from '@/config';
 import { NotificationService } from '@/lib/apis/notification';
 import { useAppSelector } from '@/redux/hooks';
 import { selectIsAuthenticated } from '@/redux/user/userSlice';
@@ -272,6 +273,9 @@ export const useUnreadCount = (options?: { enabled?: boolean }) => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 15 * 1000,
+    // NEXT_PUBLIC_NOTIFICATION_POLL_MS > 0 → polling dự phòng khi socket không dùng được
+    refetchInterval:
+      config.notificationPollMs > 0 ? config.notificationPollMs : false,
   });
 
   return {
