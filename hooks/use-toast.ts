@@ -17,7 +17,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
-  variant?: 'success' | 'error';
+  variant?: 'success' | 'error' | 'info';
 };
 
 const actionTypes = {
@@ -145,7 +145,7 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, 'id'>;
 
 // Helper functions to create typed toasts
-function createToast(type: 'success' | 'error') {
+function createToast(type: 'success' | 'error' | 'info') {
   return ({ title, description, ...props }: Omit<Toast, 'variant'>) => {
     return toast({
       title,
@@ -159,6 +159,7 @@ function createToast(type: 'success' | 'error') {
 const toastHelpers = {
   success: createToast('success'),
   error: createToast('error'),
+  info: createToast('info'),
 };
 
 function toast({ ...props }: Toast) {

@@ -760,6 +760,44 @@ const en = {
     createAccount: 'Create account',
     goDashboard: 'Go to Dashboard',
   },
+  notifications: {
+    title: 'Notifications',
+    bellAriaLabel: 'Open notifications',
+    tabs: { all: 'All', unread: 'Unread' },
+    markAllRead: 'Mark all as read',
+    markRead: 'Mark as read',
+    delete: 'Delete notification',
+    viewAll: 'View all',
+    empty: 'No notifications yet.',
+    emptyUnread: 'You are all caught up.',
+    loadError: 'Could not load notifications.',
+    loadMore: 'Load more',
+    unknownActor: 'Deleted user',
+    filter: { board: 'Board', allBoards: 'All boards' },
+    toast: {
+      new: '{{text}}',
+      newMany: 'You have {{count}} new notifications',
+      newMany_one: 'You have {{count}} new notification',
+      newMany_other: 'You have {{count}} new notifications',
+    },
+    text: {
+      CARD_ASSIGNED: '{{actor}} assigned {{cardCode}} to you',
+      CARD_UPDATED: '{{actor}} updated {{cardCode}} ({{fields}})',
+      CARD_STATUS_CHANGED:
+        '{{actor}} moved {{cardCode}} from {{fromColumn}} to {{toColumn}}',
+      CARD_COMMENTED: '{{actor}} commented on {{cardCode}}: "{{excerpt}}"',
+      COMMENT_MENTIONED:
+        '{{actor}} mentioned you in {{cardCode}}: "{{excerpt}}"',
+      BOARD_INVITED:
+        '{{actor}} invited you to board {{boardTitle}} as {{role}}',
+      INVITATION_ACCEPTED:
+        '{{actor}} accepted the invitation to board {{boardTitle}}',
+      MEMBER_ROLE_CHANGED:
+        '{{actor}} changed your role in {{boardTitle}} from {{oldRole}} to {{newRole}}',
+      CARD_DUE_SOON: '{{cardCode}} is due on {{dueDate}}',
+      CARD_OVERDUE: '{{cardCode}} is {{days}} day(s) overdue',
+    },
+  },
   notFound: {
     title: '404',
     message:
