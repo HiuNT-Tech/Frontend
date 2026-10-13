@@ -42,8 +42,14 @@ export interface AiUsage {
   iterations: number;
 }
 
+export type AiUiLanguage = 'vi' | 'en';
+
+/** Hành động phía client do AI yêu cầu (không lưu vào lịch sử). */
+export type AiUiAction = { action: 'set_language'; language: AiUiLanguage };
+
 export type AiStreamEvent =
   | { type: 'conversation'; id: EntityId; title: string; isNew: boolean }
+  | ({ type: 'ui_action' } & AiUiAction)
   | { type: 'token'; text: string }
   | { type: 'tool_start'; id: string; name: string; label: string }
   | {

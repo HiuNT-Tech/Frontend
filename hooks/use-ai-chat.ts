@@ -22,6 +22,7 @@ import type {
   AiProposalState,
   AiStoredMessage,
   AiStreamEvent,
+  AiUiAction,
 } from '@/types/ai-assistant';
 
 const ACTIVE_KEY_PREFIX = 'ai-chat:active:';
@@ -90,6 +91,8 @@ const writeActiveId = (boardId: EntityId, id: EntityId | null) => {
 
 export interface UseAiChatOptions {
   context?: AiChatContext;
+  /** AI yêu cầu một hành động phía client (vd đổi ngôn ngữ giao diện). */
+  onUiAction?: (action: AiUiAction) => void;
 }
 
 /**
@@ -112,6 +115,8 @@ export const useAiChat = (boardId?: EntityId, options?: UseAiChatOptions) => {
   const pendingActionsRef = useRef<AiAppliedAction[]>([]);
   const conversationIdRef = useRef<EntityId | null>(conversationId);
   const loadSeqRef = useRef(0);
+  const onUiActionRef = useRef(options?.onUiAction);
+  onUiActionRef.current = options?.onUiAction;
 
   useEffect(() => {
     conversationIdRef.current = conversationId;
@@ -205,6 +210,10 @@ export const useAiChat = (boardId?: EntityId, options?: UseAiChatOptions) => {
       }
       if (event.type === 'done') {
         invalidateConversations(); // sắp xếp lại theo updatedAt
+        return;
+      }
+      if (event.type === 'ui_action') {
+        onUiActionRef.current?.(event);
         return;
       }
 

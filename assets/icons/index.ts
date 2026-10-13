@@ -22,6 +22,8 @@ import MailOpen from './mail-open.svg';
 import MailPlus from './mail-plus.svg';
 import MessageSquare from './message-square.svg';
 import MoreHorizontal from './more-horizontal.svg';
+import PanelLeftClose from './panel-left-close.svg';
+import PanelLeftOpen from './panel-left-open.svg';
 import Paperclip from './paperclip.svg';
 import Pencil from './pencil.svg';
 import Phone from './phone.svg';
@@ -30,8 +32,10 @@ import RefreshCw from './refresh-cw.svg';
 import Save from './save.svg';
 import Search from './search.svg';
 import Send from './send.svg';
+import ShieldCheck from './shield-check.svg';
 import SendHorizontal from './send-horizontal.svg';
 import Smile from './smile.svg';
+import Trash2 from './trash-2.svg';
 import Sparkles from './sparkles.svg';
 import UserPlus from './user-plus.svg';
 import UserRoundPlus from './user-round-plus.svg';
@@ -61,6 +65,8 @@ const Icons = {
   MailPlus,
   MessageSquare,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Paperclip,
   Pencil,
   Phone,
@@ -69,8 +75,10 @@ const Icons = {
   Save,
   Search,
   Send,
+  ShieldCheck,
   SendHorizontal,
   Smile,
+  Trash2,
   Sparkles,
   UserPlus,
   UserRoundPlus,

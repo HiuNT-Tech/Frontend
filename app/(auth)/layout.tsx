@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Image from 'next/image';
 import '@/i18n';
+import { DocumentTitle } from '@/components/document-title';
 
 // Create a client instance
 const queryClient = new QueryClient();
@@ -14,6 +15,7 @@ export default function AuthLayout({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
+      <DocumentTitle />
       <div className="relative min-h-screen flex flex-col items-center justify-start">
         {/* Background Image */}
         <Image

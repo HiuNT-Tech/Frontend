@@ -23,6 +23,11 @@ interface ComposerProps {
 }
 
 const MAX_ROWS = 6;
+const LINE_HEIGHT = 20;
+/** padding dọc của textarea (py-1.5) — 1 dòng = 32px, bằng nút gửi. */
+const PADDING_Y = 12;
+const MIN_HEIGHT = LINE_HEIGHT + PADDING_Y;
+const MAX_HEIGHT = LINE_HEIGHT * MAX_ROWS + PADDING_Y;
 
 /** Ô nhập: Enter gửi, Shift+Enter xuống dòng, tự giãn tối đa 6 dòng. */
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
@@ -37,10 +42,17 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
     const resize = useCallback(() => {
       const el = innerRef.current;
       if (!el) return;
+      // Khi rỗng, placeholder dài có thể xuống dòng và làm scrollHeight phình
+      // lên -> luôn giữ 1 dòng (placeholder thừa bị cắt).
+      if (!el.value) {
+        el.style.height = `${MIN_HEIGHT}px`;
+        el.style.overflowY = 'hidden';
+        return;
+      }
       el.style.height = 'auto';
-      const lineHeight = 20;
-      const max = lineHeight * MAX_ROWS + 16;
-      el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+      const next = Math.min(el.scrollHeight, MAX_HEIGHT);
+      el.style.height = `${next}px`;
+      el.style.overflowY = el.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
     }, []);
 
     useEffect(() => {
@@ -63,7 +75,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
           className
         )}
       >
-        <div className="flex items-end gap-2 rounded-2xl border border-theme-neutral-5 bg-theme-neutral-2 px-3 py-2 focus-within:border-theme-main-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-theme-neutral-5 bg-theme-neutral-2 py-1.5 pl-3 pr-1.5 focus-within:border-theme-main-3">
           <textarea
             ref={innerRef}
             rows={1}
@@ -81,7 +93,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
                 submit();
               }
             }}
-            className="max-h-[136px] min-h-[20px] flex-1 resize-none bg-transparent text-sm leading-5 text-theme-neutral-11 placeholder:text-theme-neutral-6 focus:outline-none disabled:cursor-not-allowed"
+            className="max-h-[132px] min-h-[32px] flex-1 resize-none bg-transparent py-1.5 text-sm leading-5 text-theme-neutral-11 placeholder:text-theme-neutral-6 focus:outline-none disabled:cursor-not-allowed"
           />
           {isStreaming ? (
             <button

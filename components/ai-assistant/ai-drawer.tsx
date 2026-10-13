@@ -34,12 +34,12 @@ export function AiDrawer({ boardId, className }: AiDrawerProps) {
       aria-label={t('aiAssistant.title')}
       className={cn(
         'fixed right-0 top-16 z-40 flex h-[calc(100vh-4rem)] w-full flex-col border-l border-theme-neutral-5/60 bg-theme-neutral-1 shadow-[-8px_0_24px_rgba(0,0,0,0.08)]',
-        'md:w-[440px]',
+        'md:w-auto md:min-w-[440px] md:max-w-[calc(100vw-2rem)]',
         'animate-in slide-in-from-right duration-200',
         className
       )}
     >
-      <ChatThread boardId={boardId} variant="drawer" />
+      <ChatThread boardId={boardId} className="md:w-[700px] md:max-w-full" />
     </aside>
   );
 }

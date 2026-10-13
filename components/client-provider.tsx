@@ -18,6 +18,7 @@ import { Header } from './layout/header';
 import { ModalConfirmInstance } from './modal/static-method-confirm';
 import { LoadingBarProvider } from './providers/LoadingBarProvider';
 import { AiAssistantProvider } from './ai-assistant/ai-assistant-provider';
+import { DocumentTitle } from './document-title';
 
 export default function ClientProviders({
   children,
@@ -35,6 +36,7 @@ export default function ClientProviders({
           <LoadingBarProvider>
             <AiAssistantProvider>
               <div className="h-screen flex flex-col overflow-hidden">
+                <DocumentTitle />
                 <Header />
                 <div className="flex flex-1 overflow-hidden">
                   {showSidebar && <Sidebar />}
@@ -53,6 +55,7 @@ export default function ClientProviders({
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <LoadingBarProvider>
+          <DocumentTitle />
           {children}
           <ModalConfirmInstance />
         </LoadingBarProvider>

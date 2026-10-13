@@ -41,7 +41,6 @@ interface AiAssistantContextValue {
 
 const AiAssistantContext = createContext<AiAssistantContextValue | null>(null);
 
-const ASSISTANT_PAGE_PATTERN = /^\/project\/[^/]+\/assistant(\/|$)/;
 const CARD_PAGE_PATTERN = /^\/project\/[^/]+\/issues\/(\d+)(\/|$)/;
 
 /** Suy ngữ cảnh từ URL để system prompt biết người dùng đang nhìn gì. */
@@ -59,7 +58,7 @@ const contextFromPath = (pathname: string): AiChatContext | undefined => {
 
 /**
  * Giữ trạng thái drawer AI cho toàn bộ khu vực project. Drawer ẩn khi không
- * ở trong `/project/:id/*` hoặc đang ở trang full `/assistant`.
+ * ở trong `/project/:id/*`.
  */
 export function AiAssistantProvider({
   children,
@@ -84,7 +83,6 @@ export function AiAssistantProvider({
     }
   }, [params?.projectId]);
 
-  const isAssistantPage = ASSISTANT_PAGE_PATTERN.test(pathname);
   const derivedContext = useMemo(() => contextFromPath(pathname), [pathname]);
 
   // Đổi trang → bỏ ngữ cảnh ghi đè (ngữ cảnh mặc định luôn theo URL).
@@ -108,7 +106,7 @@ export function AiAssistantProvider({
 
   // Ctrl/⌘ + J: bật/tắt drawer khi đang trong project.
   useEffect(() => {
-    if (!boardId || isAssistantPage) return;
+    if (!boardId) return;
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'j') {
         event.preventDefault();
@@ -117,12 +115,12 @@ export function AiAssistantProvider({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [boardId, isAssistantPage, toggle]);
+  }, [boardId, toggle]);
 
   const value = useMemo<AiAssistantContextValue>(
     () => ({
       boardId,
-      isOpen: isOpen && !!boardId && !isAssistantPage,
+      isOpen: isOpen && !!boardId,
       open,
       close,
       toggle,
@@ -133,7 +131,6 @@ export function AiAssistantProvider({
     [
       boardId,
       isOpen,
-      isAssistantPage,
       open,
       close,
       toggle,
