@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Image from 'next/image';
@@ -14,16 +14,16 @@ import { useBoardRole } from '@/hooks/use-board-role';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentActiveBoard } from '@/redux/activeBoard/activeBoardSlice';
 import type { Card, EntityId } from '@/config/interface';
-import type { AiChatContext } from '@/types/ai-assistant';
+import type { AiChatContext, AiUiAction } from '@/types/ai-assistant';
+import { useIsMobile } from '@/components/ui/use-mobile';
 import { useOptionalAiAssistant } from './ai-assistant-provider';
+import { ChatHistory } from './chat-history';
 import { Composer } from './composer';
-import { ConversationList } from './conversation-list';
 import { MessageList } from './message-list';
 import { SuggestionChips } from './suggestion-chips';
 
 interface ChatThreadProps {
   boardId: EntityId;
-  variant: 'drawer' | 'page';
   context?: AiChatContext;
   className?: string;
 }
@@ -31,27 +31,46 @@ interface ChatThreadProps {
 const iconMain = { filter: 'var(--theme-filter-main)' } as const;
 
 /**
- * Khung chat dùng chung cho drawer và trang full `/assistant`. Trang full có
- * thêm cột danh sách hội thoại bên trái.
+ * Khung chat trong drawer AI (Ctrl/⌘ + J): cột lịch sử hội thoại bên trái
+ * (thu gọn được) + luồng chat bên phải.
  */
-export function ChatThread({
-  boardId,
-  variant,
-  context,
-  className,
-}: ChatThreadProps) {
-  const { t } = useTranslation();
+export function ChatThread({ boardId, context, className }: ChatThreadProps) {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const assistant = useOptionalAiAssistant();
   const activeBoard = useAppSelector(selectCurrentActiveBoard);
   const { isGuest, isReady } = useBoardRole(boardId);
   const [draft, setDraft] = useState('');
+  const isMobile = useIsMobile();
+  // Desktop mặc định mở lịch sử; mobile mặc định ẩn (lịch sử phủ toàn khung).
+  const [historyOpen, setHistoryOpen] = useState<boolean | null>(null);
+  const showHistory = historyOpen ?? !isMobile;
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const consumedPromptRef = useRef<object | null>(null);
 
   const effectiveContext = context ?? assistant?.context;
-  const chat = useAiChat(boardId, { context: effectiveContext });
+
+  // AI gọi tool set_ui_language -> đổi ngôn ngữ giống dropdown trên header
+  // (i18n + ?lang= trên URL để F5 vẫn giữ).
+  const handleUiAction = useCallback(
+    (action: AiUiAction) => {
+      if (action.action !== 'set_language') return;
+      if (i18n.language === action.language) return;
+      void i18n.changeLanguage(action.language);
+      const params = new URLSearchParams(searchParams?.toString() ?? '');
+      params.set('lang', action.language);
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [i18n, pathname, router, searchParams]
+  );
+
+  const chat = useAiChat(boardId, {
+    context: effectiveContext,
+    onUiAction: handleUiAction,
+  });
   const { sendMessage, isLoadingConversation } = chat;
 
   // Prompt từ nơi khác (nút ✨ trong card detail / add-issue).
@@ -81,7 +100,6 @@ export function ChatThread({
     : undefined;
 
   const canWrite = !(isReady && isGuest);
-  const isDrawer = variant === 'drawer';
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -91,13 +109,6 @@ export function ChatThread({
     [sendMessage]
   );
 
-  const handleSuggestion = useCallback(
-    (prompt: string) => {
-      void handleSend(prompt);
-    },
-    [handleSend]
-  );
-
   const handleConversationDeleted = useCallback(
     (id: EntityId) => {
       if (id === chat.conversationId) chat.reset();
@@ -105,9 +116,42 @@ export function ChatThread({
     [chat]
   );
 
+  const handleSelectConversation = useCallback(
+    (id: EntityId) => {
+      chat.selectConversation(id);
+      if (isMobile) setHistoryOpen(false);
+    },
+    [chat, isMobile]
+  );
+
+  const handleNewFromHistory = useCallback(() => {
+    chat.reset();
+    if (isMobile) setHistoryOpen(false);
+  }, [chat, isMobile]);
+
+  const handleSuggestion = useCallback(
+    (prompt: string) => {
+      void handleSend(prompt);
+    },
+    [handleSend]
+  );
+
   const header = (
-    <div className="flex items-center justify-between gap-2 border-b border-theme-neutral-5/60 px-4 py-3">
+    <div className="flex items-center justify-between gap-2 border-b border-theme-neutral-5/60 px-3 py-3 md:px-4">
       <div className="flex min-w-0 items-center gap-2">
+        {!showHistory && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0"
+            onClick={() => setHistoryOpen(true)}
+            title={t('aiAssistant.history.show')}
+            aria-label={t('aiAssistant.history.show')}
+          >
+            <Image src={Icons.PanelLeftOpen} alt="" width={18} height={18} />
+          </Button>
+        )}
         <Image
           src={Icons.Sparkles}
           alt=""
@@ -157,35 +201,17 @@ export function ChatThread({
           />
           {t('aiAssistant.newChat')}
         </Button>
-        {isDrawer && (
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                assistant?.close();
-                router.push(`/project/${boardId}/assistant`);
-              }}
-              title={t('aiAssistant.openFull')}
-              aria-label={t('aiAssistant.openFull')}
-            >
-              <Image src={Icons.ChevronLeft} alt="" width={16} height={16} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => assistant?.close()}
-              title={t('aiAssistant.close')}
-              aria-label={t('aiAssistant.close')}
-            >
-              <Image src={Icons.X} alt="" width={16} height={16} />
-            </Button>
-          </>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => assistant?.close()}
+          title={t('aiAssistant.close')}
+          aria-label={t('aiAssistant.close')}
+        >
+          <Image src={Icons.X} alt="" width={16} height={16} />
+        </Button>
       </div>
     </div>
   );
@@ -250,25 +276,24 @@ export function ChatThread({
     </div>
   );
 
-  if (isDrawer) {
-    return (
-      <div className={cn('flex h-full min-h-0 flex-col', className)}>
-        {thread}
-      </div>
-    );
-  }
-
   return (
-    <div className={cn('flex h-full min-h-0', className)}>
-      <ConversationList
-        boardId={boardId}
-        activeId={chat.conversationId}
-        onSelect={chat.selectConversation}
-        onNew={chat.reset}
-        onDeleted={handleConversationDeleted}
-        className="hidden w-64 flex-shrink-0 border-r border-theme-neutral-5/60 md:flex"
-      />
-      {thread}
+    <div className={cn('relative flex h-full min-h-0', className)}>
+      {showHistory && (
+        <ChatHistory
+          boardId={boardId}
+          activeId={chat.conversationId}
+          onSelect={handleSelectConversation}
+          onNew={handleNewFromHistory}
+          onDeleted={handleConversationDeleted}
+          onCollapse={() => setHistoryOpen(false)}
+          className={cn(
+            'border-r border-theme-neutral-5/60',
+            // Mobile: phủ toàn bộ khung chat. Desktop: cột cố định bên trái.
+            'absolute inset-0 z-10 md:static md:w-[260px] md:flex-shrink-0'
+          )}
+        />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col">{thread}</div>
     </div>
   );
 }
