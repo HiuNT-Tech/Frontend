@@ -14,7 +14,6 @@ import {
 import IssuesFilter from '@/components/shared/filters/IssuesFilter';
 import { PRIORITY_OPTIONS } from '@/constant/data';
 import { useCard } from '@/hooks/use-card';
-import { useColumn } from '@/hooks/use-column';
 import { usePagination } from '@/hooks/use-pagination';
 import { useUserBoard } from '@/hooks/use-user-board';
 import { useVersion } from '@/hooks/use-version';
@@ -22,13 +21,11 @@ import { useCurrentProject } from '@/hooks/use-current-project';
 import type { Card, CardListParams, EntityId, User } from '@/config/interface';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { buttonVariants } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
 import { Pane } from '@/components/layout/pane';
-import { IssueList } from './issue-list';
-import { IssueViewSwitcher, useIssuesListMode } from './issue-view-switcher';
+import { IssueViewSwitcher } from './issue-view-switcher';
 
 /**
- * Cột giữa của màn Issues: bộ lọc + danh sách (kiểu Mail) hoặc bảng đầy đủ.
+ * Cột giữa của màn Issues: bộ lọc + bảng đầy đủ.
  * Nằm trong layout nên giữ nguyên bộ lọc / trang hiện tại khi mở và đóng chi tiết issue.
  */
 export function IssuesListPane({ selectedId }: { selectedId?: string }) {
@@ -42,7 +39,6 @@ export function IssuesListPane({ selectedId }: { selectedId?: string }) {
     toEntityIdOrUndefined(searchParams.get('boardId'));
   const pagination = usePagination();
   const [filterParams, setFilterParams] = useState<CardListParams>({});
-  const [mode, setMode] = useIssuesListMode();
 
   useEffect(() => {
     if (!boardId) {
@@ -56,7 +52,6 @@ export function IssuesListPane({ selectedId }: { selectedId?: string }) {
   };
 
   const { cards, totalCount, isLoading } = useCard(boardId, apiParams);
-  const { columns } = useColumn(boardId);
   const { versions } = useVersion(boardId, { skip: 0, limit: 100 });
   const { listUser } = useUserBoard(boardId, { skip: 0, limit: 100 });
 
@@ -156,18 +151,11 @@ export function IssuesListPane({ selectedId }: { selectedId?: string }) {
     [openIssue]
   );
 
-  const handleSelectCard = useCallback(
-    (card: Card) => openIssue(card.id),
-    [openIssue]
-  );
-
-  const showPagination = !isLoading && totalCount > 0;
-
   return (
     <Pane
       title={t('shell.nav.issues')}
       subtitle={[code, title].filter(Boolean).join(' · ') || undefined}
-      center={<IssueViewSwitcher mode={mode} onModeChange={setMode} />}
+      center={<IssueViewSwitcher />}
       actions={
         boardId ? (
           <Link
@@ -191,42 +179,18 @@ export function IssuesListPane({ selectedId }: { selectedId?: string }) {
           }
         />
 
-        <div key={mode} className="animate-pop min-w-0">
-          {mode === 'table' ? (
-            <IssuesTable
-              data={issueRows}
-              loading={isLoading}
-              totalCount={totalCount}
-              page={pagination.page}
-              limit={pagination.limit}
-              onPageChange={pagination.setPage}
-              onPageSizeChange={pagination.setLimit}
-              onRowClick={handleRowClick}
-              selectedId={selectedId}
-            />
-          ) : (
-            <div className="flex flex-col gap-4">
-              <IssueList
-                cards={cards}
-                columns={columns}
-                selectedId={selectedId}
-                onSelect={handleSelectCard}
-                loading={isLoading}
-              />
-              {showPagination && (
-                <div className="rounded-card border border-line bg-card shadow-card">
-                  <Pagination
-                    currentPage={pagination.page}
-                    totalPages={Math.ceil(totalCount / pagination.limit)}
-                    totalItems={totalCount}
-                    itemsPerPage={pagination.limit}
-                    onPageChange={pagination.setPage}
-                    onItemsPerPageChange={pagination.setLimit}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+        <div className="animate-pop min-w-0">
+          <IssuesTable
+            data={issueRows}
+            loading={isLoading}
+            totalCount={totalCount}
+            page={pagination.page}
+            limit={pagination.limit}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setLimit}
+            onRowClick={handleRowClick}
+            selectedId={selectedId}
+          />
         </div>
       </div>
     </Pane>

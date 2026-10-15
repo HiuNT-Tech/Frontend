@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   House,
+  ChartGantt,
   KanbanSquare,
   LayoutGrid,
   ListTodo,
@@ -203,6 +204,12 @@ export function AppSidebar({ overlay }: { overlay?: boolean }) {
               active={isActivePath(pathname, `${base}/board`)}
               icon={<KanbanSquare />}
               label={t('shell.nav.board')}
+            />
+            <SidebarLink
+              href={`${base}/gantt`}
+              active={isActivePath(pathname, `${base}/gantt`)}
+              icon={<ChartGantt />}
+              label={t('shell.nav.gantt')}
             />
             <SidebarLink
               href={`${base}/add-issue`}

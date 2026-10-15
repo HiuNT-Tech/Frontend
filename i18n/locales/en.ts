@@ -9,6 +9,7 @@ const en = {
       home: 'Home',
       issues: 'Issues',
       board: 'Board',
+      gantt: 'Gantt',
       newIssue: 'New issue',
       assistant: 'AI Assistant',
       allProjects: 'All projects',
@@ -28,9 +29,9 @@ const en = {
     },
     views: {
       label: 'View',
-      list: 'List',
       table: 'Table',
       board: 'Board',
+      gantt: 'Gantt',
     },
     noSelection: {
       title: 'No issue selected',
@@ -122,6 +123,7 @@ const en = {
   pageTitle: {
     dashboard: 'Dashboard',
     board: 'Board',
+    gantt: 'Gantt',
     issues: 'Issues',
     issueDetail: 'Issue detail',
     addIssue: 'Add issue',
@@ -177,7 +179,30 @@ const en = {
       empty: 'Issues with both a start and a due date are drawn here.',
       truncated:
         'Showing the {{shown}} most recent of {{total}} scheduled issues.',
+      openGantt: 'Open Gantt',
     },
+  },
+  gantt: {
+    title: 'Gantt chart',
+    issueColumn: 'Issue',
+    today: 'Today',
+    scale: {
+      label: 'Time scale',
+      week: 'Week',
+      month: 'Month',
+      quarter: 'Quarter',
+    },
+    summary: '{{scheduled}} scheduled · {{unscheduled}} unscheduled',
+    truncated:
+      'Showing the first {{shown}} of {{total}} issues. Narrow the filters to see the rest.',
+    dragHint: 'Drag a bar to move it, drag its edges to change the dates.',
+    unscheduledGroup: 'Unscheduled',
+    noVersion: 'No version',
+    schedule: 'Set dates',
+    bar: '{{key}} {{title}} · {{start}} – {{end}}',
+    emptyTitle: 'No issues to show',
+    empty: 'Adjust the filters or add an issue with a start and due date.',
+    updateFailed: 'Could not update the dates, please try again.',
   },
   chat: {
     title: 'Project chat',

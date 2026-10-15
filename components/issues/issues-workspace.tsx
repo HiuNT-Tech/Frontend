@@ -10,10 +10,9 @@ import {
   IssueInspectorContext,
 } from './issue-inspector';
 import { IssuesListPane } from './issues-list-pane';
-import { useIssuesListMode } from './issue-view-switcher';
 
 /**
- * Màn Issues kiểu Mail: danh sách ở giữa │ chi tiết issue ở cột phải.
+ * Màn Issues: bảng ở giữa │ chi tiết issue ở cột phải khi đã chọn.
  * - ≥ 1280px: inspector là một cột cố định (hiện "chưa chọn" khi trống).
  * - < 1280px (iPad): inspector trượt ra phủ lên danh sách khi mở một issue.
  * URL vẫn là /project/:id/issues/:issueId nên link thông báo, AI… không đổi.
@@ -23,15 +22,13 @@ export function IssuesWorkspace({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams<{ projectId: string; id?: string }>();
   const isWide = useMediaQuery(BREAKPOINTS.wide);
-  const [mode] = useIssuesListMode();
   const searchParams = useSearchParams();
   const hasDetail = Boolean(params?.id);
   // Bấm vào mã ticket → issue chiếm trọn pane (trang riêng), không còn danh sách bên cạnh.
   const fullPage =
     hasDetail && searchParams.get(FULL_VIEW_PARAM) === FULL_VIEW_VALUE;
-  // Table: bảng rộng nên chiếm hết pane khi chưa chọn issue; cột chi tiết chỉ hiện khi đã chọn.
-  // List: luôn giữ cột phải (hiện "chưa chọn issue") như thiết kế kiểu Mail.
-  const showColumn = isWide && (hasDetail || mode !== 'table');
+  // Bảng rộng nên chiếm hết pane khi chưa chọn issue; cột chi tiết chỉ hiện khi đã chọn.
+  const showColumn = isWide && hasDetail;
 
   const close = useCallback(() => {
     router.push(`/project/${params.projectId}/issues`);

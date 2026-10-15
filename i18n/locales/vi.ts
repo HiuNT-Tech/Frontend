@@ -9,6 +9,7 @@ const vi = {
       home: 'Trang chủ',
       issues: 'Công việc',
       board: 'Bảng',
+      gantt: 'Gantt',
       newIssue: 'Thêm công việc',
       assistant: 'Trợ lý AI',
       allProjects: 'Tất cả dự án',
@@ -28,9 +29,9 @@ const vi = {
     },
     views: {
       label: 'Chế độ xem',
-      list: 'Danh sách',
       table: 'Bảng',
       board: 'Board',
+      gantt: 'Gantt',
     },
     noSelection: {
       title: 'Chưa chọn công việc',
@@ -117,6 +118,7 @@ const vi = {
   pageTitle: {
     dashboard: 'Bảng điều khiển',
     board: 'Bảng',
+    gantt: 'Gantt',
     issues: 'Công việc',
     issueDetail: 'Chi tiết công việc',
     addIssue: 'Thêm công việc',
@@ -172,7 +174,31 @@ const vi = {
       empty: 'Công việc có cả ngày bắt đầu và ngày đến hạn sẽ được vẽ ở đây.',
       truncated:
         'Hiển thị {{shown}}/{{total}} công việc gần nhất có lịch trình.',
+      openGantt: 'Mở Gantt',
     },
+  },
+  gantt: {
+    title: 'Biểu đồ Gantt',
+    issueColumn: 'Công việc',
+    today: 'Hôm nay',
+    scale: {
+      label: 'Thang thời gian',
+      week: 'Tuần',
+      month: 'Tháng',
+      quarter: 'Quý',
+    },
+    summary: '{{scheduled}} có lịch · {{unscheduled}} chưa lên lịch',
+    truncated:
+      'Đang hiển thị {{shown}}/{{total}} công việc đầu tiên. Thu hẹp bộ lọc để xem phần còn lại.',
+    dragHint: 'Kéo thanh để dời, kéo hai mép để đổi ngày.',
+    unscheduledGroup: 'Chưa lên lịch',
+    noVersion: 'Chưa có phiên bản',
+    schedule: 'Đặt ngày',
+    bar: '{{key}} {{title}} · {{start}} – {{end}}',
+    emptyTitle: 'Không có công việc nào',
+    empty:
+      'Thử đổi bộ lọc hoặc thêm công việc có ngày bắt đầu và ngày đến hạn.',
+    updateFailed: 'Không cập nhật được ngày, vui lòng thử lại.',
   },
   chat: {
     title: 'Chat dự án',
