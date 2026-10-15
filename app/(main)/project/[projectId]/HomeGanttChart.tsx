@@ -1,20 +1,36 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { ArrowRight } from 'lucide-react';
 
 import { Card, CardHeader } from '@/components/ui/surface';
 import { ColorDot, colorTagClass } from '@/components/ui/tag';
 import { EmptyState } from '@/components/ui/empty-state';
-import { UserAvatar } from '@/components/ui/user-avatar';
+import { GanttBar } from '@/components/gantt/gantt-bar';
+import {
+  barGeometry,
+  getCardSpan,
+  isWeekend,
+  sortBySchedule,
+  type GanttRange,
+} from '@/components/gantt/gantt-timeline';
+import { isOverdue } from '@/utils/due-date';
 import { cn } from '@/lib/utils';
 import type { Card as CardModel, Column } from '@/config/interface';
 
 const DAY_WIDTH = 22;
 const LABEL_WIDTH = 168;
 const HEADER_HEIGHT = 34;
-const MAX_TASKS = 20;
+const ROW_HEIGHT = 36;
+/** Cửa sổ cố định: một tuần trước tới ba tuần sau hôm nay. */
+const DAYS_BEFORE = 7;
+const DAYS_AFTER = 21;
+/** Widget chỉ là bản tóm tắt; tab Gantt mới là bản đầy đủ. */
+const MAX_TASKS = 8;
 
 export interface HomeGanttChartProps {
   /** Card đã có sẵn startDate/dueDate — lấy từ danh sách card gần đây của board */
@@ -24,47 +40,62 @@ export interface HomeGanttChartProps {
   columns?: Column[];
 }
 
+/**
+ * Timeline rút gọn ở trang Home: cửa sổ bốn tuần quanh hôm nay, tối đa tám
+ * issue đang chạy trong cửa sổ đó. Dùng chung thanh và công thức với tab Gantt;
+ * bấm thanh mở issue ngay trên tab Gantt.
+ */
 export function HomeGanttChart({
   cards,
   totalScheduledCount,
   columns = [],
 }: HomeGanttChartProps) {
   const { t } = useTranslation();
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const router = useRouter();
+  const params = useParams<{ projectId: string }>();
+  const ganttHref = `/project/${params.projectId}/gantt`;
 
-  const tasks = useMemo(() => cards.slice(0, MAX_TASKS), [cards]);
-
-  const range = useMemo(() => {
+  const range = useMemo<GanttRange>(() => {
     const today = dayjs().startOf('day');
+    return {
+      startDay: today.subtract(DAYS_BEFORE, 'day'),
+      totalDays: DAYS_BEFORE + DAYS_AFTER + 1,
+      todayIndex: DAYS_BEFORE,
+    };
+  }, []);
 
-    if (tasks.length === 0) {
-      return { startDay: today, totalDays: 14, todayIndex: 0 };
-    }
+  // Chỉ giữ issue chạm vào cửa sổ, ưu tiên issue bắt đầu sớm hơn.
+  const tasks = useMemo(() => {
+    const windowStart = range.startDay;
+    const windowEnd = range.startDay.add(range.totalDays - 1, 'day');
+    return sortBySchedule(cards)
+      .filter(card => {
+        const span = getCardSpan(card);
+        return (
+          span &&
+          !span.end.isBefore(windowStart) &&
+          !span.start.isAfter(windowEnd)
+        );
+      })
+      .slice(0, MAX_TASKS);
+  }, [cards, range]);
 
-    const times = tasks.flatMap(card => [
-      dayjs(card.startDate).startOf('day').valueOf(),
-      dayjs(card.dueDate).startOf('day').valueOf(),
-    ]);
-    const minTime = Math.min(...times, today.valueOf());
-    const maxTime = Math.max(...times, today.valueOf());
-    const startDay = dayjs(minTime);
-    // +2 ngày đệm cuối cho dễ nhìn thanh cuối cùng
-    const totalDays = dayjs(maxTime).diff(startDay, 'day') + 3;
-    const todayIndex = today.diff(startDay, 'day');
-
-    return { startDay, totalDays, todayIndex };
-  }, [tasks]);
-
-  const { startDay, totalDays, todayIndex } = range;
-  const labelEvery = totalDays > 24 ? 3 : totalDays > 14 ? 2 : 1;
-
-  const dayColumns = Array.from({ length: totalDays }, (_, i) => {
-    const date = startDay.add(i, 'day');
-    const showLabel = i !== todayIndex && i % labelEvery === 0;
-    return { index: i, date, showLabel };
-  });
+  const dayColumns = useMemo(
+    () =>
+      Array.from({ length: range.totalDays }, (_, index) => {
+        const date = range.startDay.add(index, 'day');
+        return {
+          index,
+          date,
+          showLabel: index !== range.todayIndex && index % 2 === 0,
+          weekend: isWeekend(date),
+        };
+      }),
+    [range]
+  );
 
   const legend = columns.filter(column => column.title);
+  const hiddenCount = Math.max(totalScheduledCount - tasks.length, 0);
 
   return (
     <Card
@@ -75,7 +106,7 @@ export function HomeGanttChart({
       <CardHeader
         title={t('projectHome.gantt.title')}
         description={
-          totalScheduledCount > tasks.length
+          hiddenCount > 0
             ? t('projectHome.gantt.truncated', {
                 shown: tasks.length,
                 total: totalScheduledCount,
@@ -83,19 +114,30 @@ export function HomeGanttChart({
             : undefined
         }
         action={
-          legend.length > 0 ? (
-            <ul className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
-              {legend.map(column => (
-                <li
-                  key={column.id}
-                  className="flex items-center gap-1.5 text-[12.5px] leading-none text-muted"
-                >
-                  <ColorDot color={column.statusColor} />
-                  <span className="max-w-[12ch] truncate">{column.title}</span>
-                </li>
-              ))}
-            </ul>
-          ) : undefined
+          <div className="flex items-center gap-4">
+            {legend.length > 0 && (
+              <ul className="hidden flex-wrap items-center gap-x-3.5 gap-y-1.5 md:flex">
+                {legend.map(column => (
+                  <li
+                    key={column.id}
+                    className="flex items-center gap-1.5 text-[12.5px] leading-none text-muted"
+                  >
+                    <ColorDot color={column.statusColor} />
+                    <span className="max-w-[12ch] truncate">
+                      {column.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link
+              href={ganttHref}
+              className="inline-flex shrink-0 items-center gap-1 text-[13.5px] font-semibold text-accent transition-colors duration-200 ease-soft hover:text-accent-hover"
+            >
+              {t('projectHome.gantt.openGantt')}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          </div>
         }
         className="pb-3"
       />
@@ -110,7 +152,7 @@ export function HomeGanttChart({
         <div className="overflow-x-auto overflow-y-hidden border-t border-line">
           <div
             className="relative"
-            style={{ minWidth: LABEL_WIDTH + totalDays * DAY_WIDTH }}
+            style={{ minWidth: LABEL_WIDTH + range.totalDays * DAY_WIDTH }}
           >
             {/* hàng đầu: nhãn ngày */}
             <div
@@ -126,25 +168,27 @@ export function HomeGanttChart({
                 </span>
               </div>
               <div className="flex flex-1">
-                {dayColumns.map(({ index, date, showLabel }) => (
+                {dayColumns.map(({ index, date, showLabel, weekend }) => (
                   <div
                     key={index}
+                    title={date.format('ddd DD/MM/YYYY')}
                     className={cn(
                       'relative flex h-full shrink-0 items-center justify-center',
-                      index === todayIndex && 'bg-accent/7'
+                      index === range.todayIndex && 'bg-accent/7'
                     )}
                     style={{ width: DAY_WIDTH }}
                   >
-                    {index === todayIndex ? (
-                      /* mốc hôm nay nằm trong header để không che thanh nào */
+                    {index === range.todayIndex ? (
                       <span className="absolute top-1/2 left-1/2 z-[4] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-[7px] py-1 text-[11px] leading-none font-semibold whitespace-nowrap text-on-accent">
                         {t('projectHome.gantt.today')}
                       </span>
                     ) : (
                       showLabel && (
                         <span
-                          title={date.format('DD/MM/YYYY')}
-                          className="text-[11px] leading-none font-medium whitespace-nowrap text-muted tabular-nums"
+                          className={cn(
+                            'text-[11px] leading-none font-medium whitespace-nowrap tabular-nums',
+                            weekend ? 'text-faint' : 'text-muted'
+                          )}
                         >
                           {date.format('D/M')}
                         </span>
@@ -157,44 +201,33 @@ export function HomeGanttChart({
 
             {/* các hàng */}
             {tasks.map((task, idx) => {
-              const isHovered = hoveredId === task.id;
-              const startOffset = dayjs(task.startDate)
-                .startOf('day')
-                .diff(startDay, 'day');
-              const endOffset =
-                dayjs(task.dueDate).startOf('day').diff(startDay, 'day') + 1;
-              const barLeft = startOffset * DAY_WIDTH;
-              const barWidth = Math.max(
-                (endOffset - startOffset) * DAY_WIDTH,
-                DAY_WIDTH
-              );
-              const colorClass = colorTagClass(task.column?.statusColor);
-              const assignee = task.assignee;
+              const span = getCardSpan(task)!;
+              const geometry = barGeometry(span, range, DAY_WIDTH);
+              const open = () => router.push(`${ganttHref}?issue=${task.id}`);
 
               return (
                 <div
                   key={task.id}
-                  onMouseEnter={() => setHoveredId(task.id)}
-                  onMouseLeave={() => setHoveredId(null)}
                   className={cn(
-                    'flex h-9 items-center transition-colors duration-200 ease-soft',
-                    idx < tasks.length - 1 && 'border-b border-line',
-                    isHovered ? 'bg-hover' : 'bg-card'
+                    'group/row flex items-center transition-colors duration-200 ease-soft hover:bg-hover',
+                    idx < tasks.length - 1 && 'border-b border-line'
                   )}
+                  style={{ height: ROW_HEIGHT }}
                 >
                   <div
-                    className={cn(
-                      'sticky left-0 z-[1] flex h-full shrink-0 items-center gap-1.5 overflow-hidden border-r border-line pr-3 pl-[18px] transition-colors duration-200 ease-soft',
-                      isHovered ? 'bg-fill' : 'bg-card'
-                    )}
+                    role="button"
+                    tabIndex={0}
+                    onClick={open}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        open();
+                      }
+                    }}
+                    className="sticky left-0 z-[2] flex h-full shrink-0 cursor-pointer items-center gap-1.5 overflow-hidden border-r border-line bg-card pr-3 pl-[18px] transition-colors duration-200 ease-soft group-hover/row:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
                     style={{ width: LABEL_WIDTH }}
                   >
-                    <span
-                      className={cn(
-                        'shrink-0 text-[12.5px] leading-none font-medium tabular-nums',
-                        isHovered ? 'text-ink' : 'text-muted'
-                      )}
-                    >
+                    <span className="shrink-0 text-[12.5px] leading-none font-medium text-muted tabular-nums group-hover/row:text-ink">
                       {task.cardCode ?? '—'}
                     </span>
                     <span className="truncate text-[12.5px] text-ink-2">
@@ -203,60 +236,42 @@ export function HomeGanttChart({
                   </div>
 
                   <div className="relative h-full flex-1">
-                    {/* cột hôm nay */}
                     <div
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-y-0 bg-accent/7"
-                      style={{ left: todayIndex * DAY_WIDTH, width: DAY_WIDTH }}
+                      style={{
+                        left: range.todayIndex * DAY_WIDTH,
+                        width: DAY_WIDTH,
+                      }}
                     />
-
-                    {/* thanh: nền nhạt + chữ cùng tông màu trạng thái; đậm khi rê chuột */}
-                    <div
-                      title={`${task.cardCode ?? ''} ${task.title ?? ''}`.trim()}
-                      className={cn(
-                        'absolute top-1/2 flex h-[22px] -translate-y-1/2 items-center overflow-hidden rounded-full px-[9px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--tag)_28%,transparent)] transition-colors duration-200 ease-soft',
-                        colorClass,
-                        isHovered ? 'bg-(--tag) text-card' : 'tag-color'
-                      )}
-                      style={{ left: barLeft + 2, width: barWidth - 4 }}
-                    >
-                      {barWidth > 50 && (
-                        <span className="truncate text-xs leading-none font-semibold">
-                          {task.title}
-                        </span>
-                      )}
-                    </div>
-
-                    {assignee && (
-                      <span
-                        title={assignee.displayName}
-                        className="absolute top-1/2 z-[1] flex -translate-y-1/2 rounded-full ring-2 ring-card"
-                        style={{ left: barLeft + barWidth - 4 }}
-                      >
-                        <UserAvatar
-                          name={assignee.displayName}
-                          src={assignee.avatar}
-                          size={20}
-                        />
-                      </span>
-                    )}
+                    <GanttBar
+                      left={geometry.left}
+                      width={geometry.width}
+                      label={task.title ?? ''}
+                      title={`${task.cardCode ?? ''} ${task.title ?? ''} · ${span.start.format('DD/MM')} – ${span.end.format('DD/MM/YYYY')}`}
+                      colorClass={colorTagClass(task.issueType?.statusColor)}
+                      statusColor={task.column?.statusColor}
+                      overdue={isOverdue(task.dueDate)}
+                      onOpen={open}
+                    />
                   </div>
                 </div>
               );
             })}
 
             {/* đường hôm nay */}
-            {todayIndex >= 0 && todayIndex < totalDays && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-0 z-[3] w-[1.5px] bg-accent"
-                style={{
-                  top: HEADER_HEIGHT,
-                  left:
-                    LABEL_WIDTH + todayIndex * DAY_WIDTH + DAY_WIDTH / 2 - 0.75,
-                }}
-              />
-            )}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 z-[1] w-[1.5px] bg-accent"
+              style={{
+                top: HEADER_HEIGHT,
+                left:
+                  LABEL_WIDTH +
+                  range.todayIndex * DAY_WIDTH +
+                  DAY_WIDTH / 2 -
+                  0.75,
+              }}
+            />
           </div>
         </div>
       )}

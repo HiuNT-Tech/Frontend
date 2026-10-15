@@ -19,6 +19,7 @@ const PAGE_KEY: Array<[RegExp, string]> = [
   [/^\/project\/[^/]+\/issues\/[^/]+/, 'issueDetail'],
   [/^\/project\/[^/]+\/issues/, 'issues'],
   [/^\/project\/[^/]+\/board/, 'board'],
+  [/^\/project\/[^/]+\/gantt/, 'gantt'],
   [/^\/project\/[^/]+\/settings/, 'projectSettings'],
   [/^\/project\/[^/]+/, 'board'],
 ];
