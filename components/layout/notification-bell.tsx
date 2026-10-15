@@ -51,12 +51,10 @@ export function NotificationBell({ active }: { active?: boolean }) {
       ? `${t('notifications.bellAriaLabel')} (${countLabel})`
       : t('notifications.bellAriaLabel');
 
+  // Desktop: Popover (trigger="click") tự bật/tắt qua onOpenChange; nếu tự toggle
+  // thêm ở đây thì hai lần đảo trạng thái triệt tiêu nhau và popover không mở.
   const handleClick = () => {
-    if (isMobile) {
-      router.push('/notifications');
-      return;
-    }
-    setOpen(v => !v);
+    if (isMobile) router.push('/notifications');
   };
 
   const trigger = (
