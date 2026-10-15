@@ -1,13 +1,18 @@
-let apiRoot: string = '';
-if (process.env.BUILD_MODE === 'dev') {
-  apiRoot = 'http://localhost:8017/api';
-} else if (process.env.BUILD_MODE === 'production') {
-  apiRoot = 'https://trello-api-0gbu.onrender.com';
-} else {
-  // Default to localhost for development when BUILD_MODE is not set
-  apiRoot = 'http://localhost:8017/api';
-}
-export const API_ROOT = apiRoot;
+import config from '@/config';
+
+/** API khi chạy local không có env (mock hoặc BE local, prefix `api`). */
+const DEFAULT_API_ROOT = 'http://localhost:8017/api';
+
+/**
+ * Gốc URL của API, kèm prefix (`/api`). Lấy từ `NEXT_PUBLIC_API_URL`:
+ * - local: `http://localhost:8017/api`
+ * - Vercel: `/api` (đường dẫn tương đối) và `BACKEND_URL` để Next rewrite sang BE,
+ *   nhờ vậy cookie đăng nhập cùng origin với trang (xem next.config.ts).
+ */
+export const API_ROOT = (config.apiUrl?.trim() || DEFAULT_API_ROOT).replace(
+  /\/+$/,
+  ''
+);
 
 export const APP_BAR_HEIGHT = '58px';
 export const BOARD_BAR_HEIGHT = '60px';
