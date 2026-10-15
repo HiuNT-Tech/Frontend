@@ -195,14 +195,12 @@ const en = {
     summary: '{{scheduled}} scheduled · {{unscheduled}} unscheduled',
     truncated:
       'Showing the first {{shown}} of {{total}} issues. Narrow the filters to see the rest.',
-    dragHint: 'Drag a bar to move it, drag its edges to change the dates.',
     unscheduledGroup: 'Unscheduled',
     noVersion: 'No version',
     schedule: 'Set dates',
     bar: '{{key}} {{title}} · {{start}} – {{end}}',
     emptyTitle: 'No issues to show',
     empty: 'Adjust the filters or add an issue with a start and due date.',
-    updateFailed: 'Could not update the dates, please try again.',
   },
   chat: {
     title: 'Project chat',

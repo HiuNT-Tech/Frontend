@@ -247,7 +247,6 @@ export function HomeGanttChart({
                     <GanttBar
                       left={geometry.left}
                       width={geometry.width}
-                      dayWidth={DAY_WIDTH}
                       label={task.title ?? ''}
                       title={`${task.cardCode ?? ''} ${task.title ?? ''} · ${span.start.format('DD/MM')} – ${span.end.format('DD/MM/YYYY')}`}
                       colorClass={colorTagClass(task.issueType?.statusColor)}

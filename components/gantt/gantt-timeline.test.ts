@@ -3,13 +3,11 @@ import dayjs from 'dayjs';
 
 import type { Card, Version } from '@/config/interface';
 import {
-  applyDrag,
   barGeometry,
   buildRange,
   buildTicks,
   getCardSpan,
   groupByVersion,
-  pxToDays,
   sortBySchedule,
   splitScheduled,
   toApiDate,
@@ -110,29 +108,6 @@ describe('buildTicks', () => {
     expect(minors).toHaveLength(range.totalDays);
     expect(majors.reduce((sum, m) => sum + m.span, 0)).toBe(range.totalDays);
     expect(majors[0].index).toBe(0);
-  });
-});
-
-describe('applyDrag', () => {
-  const span = getCardSpan(card(1, '2026-06-10', '2026-06-12'))!;
-
-  it('moves both ends together', () => {
-    const next = applyDrag(span, 'move', 3);
-    expect(toApiDate(next.start)).toBe('2026-06-13');
-    expect(toApiDate(next.end)).toBe('2026-06-15');
-  });
-
-  it('keeps at least a one-day bar when resizing past the other edge', () => {
-    const start = applyDrag(span, 'start', 10);
-    expect(toApiDate(start.start)).toBe('2026-06-12');
-    const end = applyDrag(span, 'end', -10);
-    expect(toApiDate(end.end)).toBe('2026-06-10');
-  });
-
-  it('rounds pixels to whole days', () => {
-    expect(pxToDays(10, 22)).toBe(0);
-    expect(pxToDays(12, 22)).toBe(1);
-    expect(pxToDays(-35, 22)).toBe(-2);
   });
 });
 

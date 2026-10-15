@@ -24,7 +24,6 @@ import {
   getVersionSpan,
   isWeekend,
   weekdayIndex,
-  type DragMode,
   type GanttGroup,
   type GanttRange,
   type GanttScale,
@@ -46,14 +45,10 @@ export interface GanttChartProps {
   range: GanttRange;
   scale: GanttScale;
   selectedId?: EntityId;
-  /** Người dùng được kéo đổi ngày */
-  canEdit: boolean;
-  updatingIds: ReadonlySet<EntityId>;
   loading?: boolean;
   /** Vùng cuộn, để toolbar cuộn tới "hôm nay" */
   scrollRef: RefObject<HTMLDivElement | null>;
   onOpen: (card: Card) => void;
-  onDateChange: (card: Card, mode: DragMode, deltaDays: number) => void;
   className?: string;
 }
 
@@ -69,12 +64,9 @@ export function GanttChart({
   range,
   scale,
   selectedId,
-  canEdit,
-  updatingIds,
   loading,
   scrollRef,
   onOpen,
-  onDateChange,
   className,
 }: GanttChartProps) {
   const { t } = useTranslation();
@@ -163,7 +155,6 @@ export function GanttChart({
             <GanttBar
               left={geometry.left}
               width={geometry.width}
-              dayWidth={dayWidth}
               label={card.title ?? ''}
               title={t('gantt.bar', {
                 key: card.cardCode ?? '',
@@ -175,12 +166,7 @@ export function GanttChart({
               statusColor={card.column?.statusColor}
               selected={selected}
               overdue={isOverdue(card.dueDate)}
-              draggable={canEdit}
-              updating={updatingIds.has(card.id)}
               onOpen={open}
-              onDragEnd={(mode, deltaDays) =>
-                onDateChange(card, mode, deltaDays)
-              }
             />
           ) : (
             <button

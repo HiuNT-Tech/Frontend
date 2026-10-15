@@ -15,7 +15,6 @@ import {
   useRouter,
   useSearchParams,
 } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { CalendarCheck, Plus } from 'lucide-react';
 
@@ -27,33 +26,19 @@ import { IssueViewSwitcher } from '@/components/issues/issue-view-switcher';
 import { IssueInspectorContext } from '@/components/issues/issue-inspector';
 import { useCard } from '@/hooks/use-card';
 import { useVersion } from '@/hooks/use-version';
-import { getRoleFlags } from '@/hooks/use-board-role';
-import { useUserBoard } from '@/hooks/use-user-board';
-import { useAppSelector } from '@/redux/hooks';
-import { selectCurrentUser } from '@/redux/user/userSlice';
 import { useCurrentProject } from '@/hooks/use-current-project';
 import { BREAKPOINTS, useMediaQuery } from '@/hooks/use-media-query';
-import { toastHelpers } from '@/hooks/use-toast';
-import { CardService } from '@/lib/apis/card';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { cn } from '@/lib/utils';
-import type {
-  Card,
-  CardListParams,
-  CardListResponse,
-  EntityId,
-} from '@/config/interface';
+import type { Card, CardListParams, EntityId } from '@/config/interface';
 import { GanttChart, LABEL_WIDTH } from './gantt-chart';
 import {
   DAY_WIDTH,
-  applyDrag,
   buildRange,
   getCardSpan,
   groupByVersion,
   sortBySchedule,
   splitScheduled,
-  toApiDate,
-  type DragMode,
   type GanttScale,
 } from './gantt-timeline';
 
@@ -101,7 +86,6 @@ export function GanttWorkspace({ renderInspector }: GanttWorkspaceProps) {
   const boardId = toEntityIdOrUndefined(params?.projectId);
   const { code, title } = useCurrentProject();
   const isWide = useMediaQuery(BREAKPOINTS.wide);
-  const queryClient = useQueryClient();
 
   const [filterParams, setFilterParams] = useState<CardListParams>({});
   // Server không biết localStorage: render 'month' trước rồi mới đọc lựa chọn đã lưu.
@@ -124,11 +108,6 @@ export function GanttWorkspace({ renderInspector }: GanttWorkspaceProps) {
   );
   const { cards, totalCount, isLoading } = useCard(boardId, queryParams);
   const { versions } = useVersion(boardId, { skip: 0, limit: 100 });
-  // Quyền lấy từ danh sách thành viên (như issue detail) vì activeBoard chỉ được nạp ở trang Board.
-  const currentUser = useAppSelector(selectCurrentUser);
-  const { listUser } = useUserBoard(boardId, { skip: 0, limit: 100 });
-  const myMember = listUser.items.find(m => m.userId === currentUser?.id);
-  const { isContributor } = getRoleFlags(myMember?.role ?? null);
 
   const sortedCards = useMemo(() => sortBySchedule(cards), [cards]);
   const { scheduled, unscheduled } = useMemo(
@@ -186,53 +165,6 @@ export function GanttWorkspace({ renderInspector }: GanttWorkspaceProps) {
   const inspector = useMemo(
     () => ({ close, overlay: !isWide, fullPage: false }),
     [close, isWide]
-  );
-
-  /* ─── Kéo đổi ngày: cập nhật cache trước, lỗi thì trả lại ─── */
-  const [updatingIds, setUpdatingIds] = useState<ReadonlySet<EntityId>>(
-    () => new Set()
-  );
-
-  const handleDateChange = useCallback(
-    async (card: Card, mode: DragMode, deltaDays: number) => {
-      const span = getCardSpan(card);
-      if (!span || !boardId) return;
-      const next = applyDrag(span, mode, deltaDays);
-      const payload = {
-        startDate: toApiDate(next.start),
-        dueDate: toApiDate(next.end),
-      };
-      // Cùng key với useCard để thanh nhảy ngay sang vị trí mới.
-      const queryKey = ['cards', boardId, queryParams];
-      const snapshot = queryClient.getQueryData<CardListResponse>(queryKey);
-      queryClient.setQueryData<CardListResponse>(queryKey, current =>
-        current
-          ? {
-              ...current,
-              items: current.items.map(item =>
-                item.id === card.id ? { ...item, ...payload } : item
-              ),
-            }
-          : current
-      );
-      setUpdatingIds(prev => new Set(prev).add(card.id));
-      try {
-        await CardService.update(card.id, payload);
-        queryClient.invalidateQueries({ queryKey: ['cards'] });
-        queryClient.invalidateQueries({ queryKey: ['card-detail', card.id] });
-        queryClient.invalidateQueries({ queryKey: ['boards'] });
-      } catch {
-        if (snapshot) queryClient.setQueryData(queryKey, snapshot);
-        toastHelpers.error({ title: t('gantt.updateFailed') });
-      } finally {
-        setUpdatingIds(prev => {
-          const nextSet = new Set(prev);
-          nextSet.delete(card.id);
-          return nextSet;
-        });
-      }
-    },
-    [boardId, queryClient, queryParams, t]
   );
 
   /* ─── Cuộn tới hôm nay ─── */
@@ -308,11 +240,6 @@ export function GanttWorkspace({ renderInspector }: GanttWorkspaceProps) {
                     })}
                   </span>
                 )}
-                {isContributor && (
-                  <span className="hidden text-[12.5px] text-faint lg:inline">
-                    {t('gantt.dragHint')}
-                  </span>
-                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -333,12 +260,9 @@ export function GanttWorkspace({ renderInspector }: GanttWorkspaceProps) {
               range={range}
               scale={scale}
               selectedId={selectedId}
-              canEdit={isContributor}
-              updatingIds={updatingIds}
               loading={isLoading}
               scrollRef={scrollRef}
               onOpen={open}
-              onDateChange={handleDateChange}
               className="animate-pop mx-4 mt-3 mb-4 rounded-card border border-line bg-card shadow-card md:mx-5"
             />
           )}

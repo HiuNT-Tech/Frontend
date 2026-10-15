@@ -206,39 +206,6 @@ export const buildTicks = (range: GanttRange, scale: GanttScale) => {
   return { majors, minors };
 };
 
-/** Đổi quãng kéo (px) sang số ngày, làm tròn về ngày gần nhất. */
-export const pxToDays = (px: number, dayWidth: number) =>
-  Math.round(px / dayWidth);
-
-export type DragMode = 'move' | 'start' | 'end';
-
-/**
- * Khoảng mới sau khi kéo cả thanh hoặc một mép; mép không vượt qua mép kia
- * (thanh ngắn nhất là một ngày).
- */
-export const applyDrag = (
-  span: DateSpan,
-  mode: DragMode,
-  deltaDays: number
-): DateSpan => {
-  if (deltaDays === 0) return span;
-  if (mode === 'move') {
-    return {
-      start: span.start.add(deltaDays, 'day'),
-      end: span.end.add(deltaDays, 'day'),
-    };
-  }
-  if (mode === 'start') {
-    const start = span.start.add(deltaDays, 'day');
-    return { start: start.isAfter(span.end) ? span.end : start, end: span.end };
-  }
-  const end = span.end.add(deltaDays, 'day');
-  return {
-    start: span.start,
-    end: end.isBefore(span.start) ? span.start : end,
-  };
-};
-
 export interface GanttGroup<T> {
   key: string;
   version: Version | null;

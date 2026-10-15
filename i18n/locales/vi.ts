@@ -190,7 +190,6 @@ const vi = {
     summary: '{{scheduled}} có lịch · {{unscheduled}} chưa lên lịch',
     truncated:
       'Đang hiển thị {{shown}}/{{total}} công việc đầu tiên. Thu hẹp bộ lọc để xem phần còn lại.',
-    dragHint: 'Kéo thanh để dời, kéo hai mép để đổi ngày.',
     unscheduledGroup: 'Chưa lên lịch',
     noVersion: 'Chưa có phiên bản',
     schedule: 'Đặt ngày',
@@ -198,7 +197,6 @@ const vi = {
     emptyTitle: 'Không có công việc nào',
     empty:
       'Thử đổi bộ lọc hoặc thêm công việc có ngày bắt đầu và ngày đến hạn.',
-    updateFailed: 'Không cập nhật được ngày, vui lòng thử lại.',
   },
   chat: {
     title: 'Chat dự án',
