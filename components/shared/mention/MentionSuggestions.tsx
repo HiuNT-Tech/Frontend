@@ -33,12 +33,12 @@ export const MentionSuggestions: React.FC<MentionSuggestionsProps> = ({
       role="listbox"
       onMouseDown={e => e.preventDefault()}
       className={cn(
-        'absolute left-0 z-30 w-full max-w-sm overflow-hidden rounded-lg border border-theme-neutral-5 bg-theme-neutral-1 py-1 text-sm shadow-lg',
-        placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+        'animate-pop absolute left-0 z-30 max-h-64 w-full max-w-sm overflow-y-auto rounded-[14px] border border-line bg-card p-1.5 text-sm shadow-lift',
+        placement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
       )}
     >
       {items.length === 0 ? (
-        <li className="px-3 py-2 text-theme-neutral-7">
+        <li className="px-3 py-2 text-muted">
           {t('issueDetail.comments.mention.noResult')}
         </li>
       ) : (
@@ -50,17 +50,20 @@ export const MentionSuggestions: React.FC<MentionSuggestionsProps> = ({
             onMouseEnter={() => onHover(index)}
             onClick={() => onSelect(item)}
             className={cn(
-              'flex cursor-pointer items-center gap-2 px-3 py-2',
-              index === activeIndex
-                ? 'bg-theme-main-1'
-                : 'hover:bg-theme-neutral-2'
+              'flex min-h-9 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 py-1.5 transition-colors duration-150 ease-soft',
+              index === activeIndex ? 'bg-accent-soft' : 'hover:bg-hover'
             )}
           >
             <UserAvatar name={item.displayName} src={item.avatar} size={24} />
-            <span className="truncate font-medium text-theme-neutral-11">
+            <span
+              className={cn(
+                'truncate font-medium',
+                index === activeIndex ? 'text-accent-text' : 'text-ink'
+              )}
+            >
               {item.displayName}
             </span>
-            <span className="ml-auto shrink-0 font-mono text-xs text-theme-neutral-7">
+            <span className="ml-auto shrink-0 text-xs tabular-nums text-muted">
               @{item.userCode}
             </span>
           </li>

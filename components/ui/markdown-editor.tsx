@@ -13,6 +13,7 @@ import {
   Code2,
   Link2,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   MARKDOWN_PROSE_CLASSNAME,
@@ -37,6 +38,15 @@ export interface MarkdownEditorProps {
   rows?: number;
   /** Member để gợi ý @userCode khi gõ @. undefined → không autocomplete (mô tả, add-issue giữ nguyên). */
   mentionCandidates?: MentionCandidate[];
+  /**
+   * Không viền ngoài: dùng khi editor nằm sẵn trong một thẻ (card) — thanh công cụ
+   * và ô nhập chỉ còn cách nhau bằng đường kẻ mảnh.
+   */
+  flush?: boolean;
+  /** Gọi khi người dùng nhấn Ctrl/Cmd+Enter (gửi nhanh). */
+  onSubmit?: () => void;
+  autoFocus?: boolean;
+  id?: string;
 }
 
 type FormatAction =
@@ -53,17 +63,17 @@ type FormatAction =
 const TOOLBAR_BUTTONS: {
   action: FormatAction;
   icon: React.ComponentType<{ className?: string }>;
-  title: string;
+  titleKey: string;
 }[] = [
-  { action: 'bold', icon: Bold, title: 'Bold' },
-  { action: 'italic', icon: Italic, title: 'Italic' },
-  { action: 'strikethrough', icon: Strikethrough, title: 'Strikethrough' },
-  { action: 'unorderedList', icon: List, title: 'Bulleted list' },
-  { action: 'orderedList', icon: ListOrdered, title: 'Numbered list' },
-  { action: 'table', icon: Table2, title: 'Table' },
-  { action: 'quote', icon: Quote, title: 'Quote' },
-  { action: 'code', icon: Code2, title: 'Code' },
-  { action: 'link', icon: Link2, title: 'Link' },
+  { action: 'bold', icon: Bold, titleKey: 'bold' },
+  { action: 'italic', icon: Italic, titleKey: 'italic' },
+  { action: 'strikethrough', icon: Strikethrough, titleKey: 'strikethrough' },
+  { action: 'unorderedList', icon: List, titleKey: 'bulletedList' },
+  { action: 'orderedList', icon: ListOrdered, titleKey: 'numberedList' },
+  { action: 'table', icon: Table2, titleKey: 'table' },
+  { action: 'quote', icon: Quote, titleKey: 'quote' },
+  { action: 'code', icon: Code2, titleKey: 'code' },
+  { action: 'link', icon: Link2, titleKey: 'link' },
 ];
 
 /** Áp dụng prefix cho từng dòng trong đoạn được chọn (dùng cho list/quote). */
@@ -167,20 +177,28 @@ function MarkdownToolbar({
 }: {
   onFormat: (action: FormatAction) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1 border-b border-theme-neutral-5 bg-theme-neutral-2/40">
-      {TOOLBAR_BUTTONS.map(({ action, icon: Icon, title }) => (
-        <button
-          key={action}
-          type="button"
-          title={title}
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => onFormat(action)}
-          className="p-1.5 rounded text-theme-neutral-8 hover:bg-theme-neutral-4 hover:text-theme-neutral-11 cursor-pointer"
-        >
-          <Icon className="w-4 h-4" />
-        </button>
-      ))}
+    <div
+      role="toolbar"
+      className="flex items-center gap-0.5 overflow-x-auto border-b border-line bg-fill/60 px-1.5 py-1"
+    >
+      {TOOLBAR_BUTTONS.map(({ action, icon: Icon, titleKey }) => {
+        const label = t(`issueDetail.markdown.toolbar.${titleKey}`);
+        return (
+          <button
+            key={action}
+            type="button"
+            title={label}
+            aria-label={label}
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => onFormat(action)}
+            className="press inline-grid size-8 flex-none place-items-center rounded-[8px] text-muted transition-colors duration-200 ease-soft hover:bg-hover hover:text-ink"
+          >
+            <Icon className="size-4" />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -197,7 +215,12 @@ export function MarkdownEditor({
   rows = 6,
   headerActions,
   mentionCandidates,
+  flush = false,
+  onSubmit,
+  autoFocus,
+  id,
 }: MarkdownEditorProps) {
+  const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mention = useMentionAutocomplete({
     value,
@@ -206,6 +229,8 @@ export function MarkdownEditor({
     candidates: mentionCandidates,
   });
   const suggestionsId = useId();
+  const generatedId = useId();
+  const textareaId = id ?? generatedId;
   const [isPreviewing, setIsPreviewing] = useState(false);
   const showPreview = previewable && isPreviewing;
 
@@ -223,26 +248,35 @@ export function MarkdownEditor({
   };
 
   return (
-    <div className={cn('relative space-y-1', classNameContainer)}>
+    <div className={cn('relative space-y-1.5', classNameContainer)}>
       {(label || previewable || headerActions) && (
-        <div className="flex items-center justify-between">
+        <div
+          className={cn(
+            'flex min-h-6 items-center justify-between gap-2',
+            flush && 'px-3 pt-2'
+          )}
+        >
           {label ? (
-            <label className="text-sm font-medium text-theme-neutral-11">
+            <label
+              htmlFor={textareaId}
+              className="text-[13px] font-semibold text-ink-2"
+            >
               {label}
-              {required && <span className="text-red-500 ml-1">*</span>}
+              {required && <span className="ml-1 text-danger">*</span>}
             </label>
           ) : (
             <span />
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {headerActions}
             {previewable && (
               <button
                 type="button"
                 onClick={() => setIsPreviewing(p => !p)}
-                className="text-xs text-theme-main hover:underline cursor-pointer"
+                aria-pressed={isPreviewing}
+                className="press rounded-[8px] px-2 py-1 text-[12.5px] font-semibold text-accent transition-colors duration-200 ease-soft hover:bg-accent-soft"
               >
-                {isPreviewing ? 'Edit' : 'Preview'}
+                {isPreviewing ? t('common.edit') : t('common.preview')}
               </button>
             )}
           </div>
@@ -250,8 +284,10 @@ export function MarkdownEditor({
       )}
       <div
         className={cn(
-          'relative max-w-full border border-theme-neutral-5 rounded-lg overflow-hidden',
-          { 'mt-1': !!label },
+          'relative max-w-full overflow-hidden bg-card transition-[border-color,box-shadow] duration-200 ease-soft',
+          flush
+            ? ''
+            : 'rounded-[10px] border border-line focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]',
           className
         )}
       >
@@ -259,7 +295,7 @@ export function MarkdownEditor({
           <div
             className={cn(
               MARKDOWN_PROSE_CLASSNAME,
-              'min-h-[120px] px-3 py-2 bg-theme-neutral-2/30'
+              'min-h-[120px] bg-fill/40 px-3.5 py-3'
             )}
           >
             {value ? (
@@ -267,8 +303,8 @@ export function MarkdownEditor({
                 {value}
               </ReactMarkdown>
             ) : (
-              <span className="text-theme-neutral-7 italic">
-                Nothing to preview
+              <span className="text-muted">
+                {t('issueDetail.markdown.nothingToPreview')}
               </span>
             )}
           </div>
@@ -276,13 +312,27 @@ export function MarkdownEditor({
           <>
             <MarkdownToolbar onFormat={handleFormat} />
             <textarea
+              id={textareaId}
               ref={textareaRef}
               value={value}
+              autoFocus={autoFocus}
               onChange={e => {
                 onChange(e.target.value);
                 mention.syncFromCaret(e.target.value);
               }}
-              onKeyDown={mention.handleKeyDown}
+              onKeyDown={e => {
+                if (
+                  onSubmit &&
+                  e.key === 'Enter' &&
+                  (e.ctrlKey || e.metaKey) &&
+                  !mention.isOpen
+                ) {
+                  e.preventDefault();
+                  onSubmit();
+                  return;
+                }
+                mention.handleKeyDown(e);
+              }}
               onKeyUp={() => mention.syncFromCaret()}
               onClick={() => mention.syncFromCaret()}
               onBlur={mention.close}
@@ -291,7 +341,7 @@ export function MarkdownEditor({
               aria-controls={mention.isOpen ? suggestionsId : undefined}
               placeholder={placeholder}
               rows={rows}
-              className="w-full min-h-[120px] px-3 py-2 border-0 text-sm font-mono text-theme-neutral-11 focus:outline-none resize-y"
+              className="block w-full min-h-[96px] resize-y border-0 bg-transparent px-3.5 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-faint focus:outline-none focus-visible:outline-none"
             />
           </>
         )}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { Check, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { StateMessage } from './state-message';
@@ -36,6 +37,7 @@ const getNodeText = (node: React.ReactNode): string => {
   return '';
 };
 
+/** Danh sách chọn nhiều: ô tìm kiếm + các hàng bật/tắt, hàng đã chọn tô accent nhạt với dấu tick. */
 export const MultiOptionsList: React.FC<MultiOptionsListProps> = ({
   label,
   options,
@@ -79,64 +81,58 @@ export const MultiOptionsList: React.FC<MultiOptionsListProps> = ({
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Header: label + count + unselect */}
-      <div className="mb-1.5 flex items-center gap-2">
-        {label && (
-          <span className="text-sm font-medium text-theme-neutral-11">
-            {label}
-          </span>
-        )}
-        {selectedCount > 0 && (
-          <>
-            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
-              {selectedCount}
+      {(label || selectedCount > 0) && (
+        <div className="mb-1.5 flex min-h-5 items-center gap-2">
+          {label && (
+            <span className="text-[13px] font-semibold text-ink-2">
+              {label}
             </span>
-            <button
-              type="button"
-              onClick={handleUnselectAll}
-              className="cursor-pointer text-sm font-medium text-theme-main transition-colors hover:text-theme-hover"
-            >
-              {resolvedUnselectLabel}
-            </button>
-          </>
-        )}
-      </div>
+          )}
+          {selectedCount > 0 && (
+            <>
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold leading-none text-accent-text tabular-nums">
+                {selectedCount}
+              </span>
+              <button
+                type="button"
+                onClick={handleUnselectAll}
+                className="cursor-pointer text-[13px] font-semibold text-accent transition-colors hover:text-accent-hover"
+              >
+                {resolvedUnselectLabel}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Search input */}
       {showSearch && (
-        <div className="relative mb-1">
-          <svg
-            className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-theme-neutral-7"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-            />
-          </svg>
+        <div className="relative mb-1.5">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted"
+          />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={resolvedPlaceholder}
-            className="w-full rounded border border-theme-neutral-5 bg-theme-neutral-2 py-1.5 pl-7 pr-2 text-sm text-theme-neutral-11 outline-none placeholder:text-theme-neutral-6 focus:border-theme-main"
+            className="h-9 w-full rounded-[10px] border border-line bg-card pl-8 pr-2.5 text-sm text-ink outline-none transition-[border-color,box-shadow] duration-200 ease-soft placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)]"
           />
         </div>
       )}
 
       {/* Options list */}
       <div
-        className="overflow-y-auto rounded border border-theme-neutral-5 bg-white"
+        role="listbox"
+        aria-multiselectable="true"
+        className="overflow-y-auto rounded-[10px] border border-line bg-card"
         style={{ height: listHeight }}
       >
         {filteredOptions.length === 0 ? (
           <StateMessage
             i18nKey="common.noOptions"
-            className="px-3 py-2 text-center text-theme-neutral-6"
+            className="px-3 py-2 text-center text-faint"
           />
         ) : (
           filteredOptions.map(opt => {
@@ -144,16 +140,22 @@ export const MultiOptionsList: React.FC<MultiOptionsListProps> = ({
             return (
               <div
                 key={opt.value}
+                role="option"
+                aria-selected={isSelected}
+                aria-disabled={opt.disabled || undefined}
                 onClick={() => !opt.disabled && handleToggle(opt.value)}
                 className={cn(
-                  'cursor-pointer select-none px-3 py-1.5 text-sm transition-colors',
+                  'flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm transition-colors',
                   isSelected
-                    ? 'bg-theme-main-2 font-medium'
-                    : 'text-theme-neutral-11 hover:bg-theme-neutral-3',
+                    ? 'bg-accent-soft font-medium text-accent-text'
+                    : 'text-ink hover:bg-hover',
                   opt.disabled && 'cursor-not-allowed opacity-50'
                 )}
               >
-                {opt.label}
+                <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+                {isSelected && (
+                  <Check aria-hidden="true" className="size-3.5 flex-none" />
+                )}
               </div>
             );
           })

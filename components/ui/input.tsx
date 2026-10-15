@@ -60,9 +60,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={cn('space-y-1', classNameContainer)}>
         {label && (
-          <label className="text-sm font-medium text-theme-neutral-11">
+          <label className="text-[13px] font-semibold text-ink-2">
             {label}
-            {showAsterisk && <span className="text-red-500 ml-1">*</span>}
+            {showAsterisk && <span className="ml-1 text-danger">*</span>}
           </label>
         )}
         <div className={cn('relative', { 'mt-1': !!label })}>
@@ -73,17 +73,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 alt="icon"
                 width={20}
                 height={20}
-                className="w-5 h-5"
+                className="icon-muted h-[18px] w-[18px]"
               />
             </div>
           )}
           <input
             type={type}
             className={cn(
-              'flex h-10 w-full rounded-md border border-theme-neutral-5 bg-theme-neutral-2 py-2 text-sm placeholder:text-theme-neutral-6 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+              'flex h-10 w-full rounded-[10px] border border-line bg-card py-2 text-[15px] text-ink transition-[border-color,box-shadow] duration-200 ease-soft placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-fill disabled:opacity-60',
               prefixIcon ? 'pl-10 pr-3' : 'px-3',
               suffixIcon ? 'pr-10' : '',
-              error && 'border-red-500 focus:ring-red-500 error-class',
+              error &&
+                'border-danger focus:border-danger focus:shadow-[0_0_0_3px_var(--danger-soft)] error-class',
               className
             )}
             ref={ref}
@@ -105,7 +106,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {customNode && customNode}
         </div>
         {error && !notShowErrorMessage && (
-          <p className={cn('text-sm text-red-500', classNameError)}>{error}</p>
+          <p className={cn('text-[13px] text-danger', classNameError)}>
+            {error}
+          </p>
         )}
       </div>
     );

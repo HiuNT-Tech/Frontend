@@ -1,15 +1,21 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import {
+  ISSUE_KEY_LINK_CLASS,
+  issueFullPageHref,
+} from '@/components/issues/issue-inspector';
 
 import { CustomTable, type TableColumn } from '@/components/ui/custome-table';
-import {
-  getIssueTypeBadgeClassName,
-  renderPriorityValue,
-} from '@/constant/data';
+import { ColorTag } from '@/components/ui/tag';
+import { UserAvatar } from '@/components/ui/user-avatar';
+import { PriorityLabel } from '@/components/issues/priority-flag';
 import type { EntityId } from '@/config/interface';
-import { isOverdue, OVERDUE_TEXT_CLASS } from '@/utils/due-date';
+import { isOverdue } from '@/utils/due-date';
+import { cn } from '@/lib/utils';
 
 export interface IssueBadgeValue {
   label: string;
@@ -28,6 +34,7 @@ export interface IssueRow {
   key: string;
   subject: string;
   assignee: string;
+  assigneeAvatar?: string | null;
   status: IssueBadgeValue | null;
   priority: IssuePriorityValue | null;
   milestone: string;
@@ -41,6 +48,8 @@ export interface IssueRow {
   registerBy: string;
 }
 
+const dash = <span className="text-faint">—</span>;
+
 export interface IssuesTableProps {
   data: IssueRow[];
   loading?: boolean;
@@ -50,6 +59,8 @@ export interface IssuesTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (limit: number) => void;
   onRowClick?: (row: IssueRow) => void;
+  /** Issue đang mở trong inspector — tô nền accent nhạt */
+  selectedId?: string | number;
 }
 
 export const IssuesTable: React.FC<IssuesTableProps> = ({
@@ -61,25 +72,26 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
   onPageChange,
   onPageSizeChange,
   onRowClick,
+  selectedId,
 }) => {
   const { t } = useTranslation();
+  const params = useParams<{ projectId?: string }>();
+  const projectId = params?.projectId;
 
   const renderBadge = useCallback((value?: IssueBadgeValue | null) => {
-    if (!value?.label) return <span className="text-theme-neutral-7">—</span>;
-
-    return (
-      <span
-        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getIssueTypeBadgeClassName(value.statusColor)}`}
-      >
-        {value.label}
-      </span>
-    );
+    if (!value?.label) return dash;
+    return <ColorTag color={value.statusColor}>{value.label}</ColorTag>;
   }, []);
 
   const renderPriority = useCallback((value?: IssuePriorityValue | null) => {
-    if (!value?.label) return <span className="text-theme-neutral-7">—</span>;
-
-    return renderPriorityValue(value.value, value.label);
+    if (!value?.label) return dash;
+    return (
+      <PriorityLabel
+        priority={value.value}
+        label={value.label}
+        className="text-[13.5px]"
+      />
+    );
   }, []);
 
   const columns = useMemo<TableColumn<IssueRow>[]>(
@@ -95,19 +107,51 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
         key: 'key',
         title: t('issues.table.key'),
         dataIndex: 'key',
-        minWidth: 120,
+        minWidth: 110,
+        // Bấm vào mã → mở trang riêng (stopPropagation để không mở inspector của dòng)
+        render: (value, record) =>
+          projectId ? (
+            <Link
+              href={issueFullPageHref(projectId, record.id)}
+              onClick={event => event.stopPropagation()}
+              className={cn(
+                'text-[12.5px] font-medium tabular-nums',
+                ISSUE_KEY_LINK_CLASS
+              )}
+            >
+              {value}
+            </Link>
+          ) : (
+            <span className="text-[12.5px] font-medium text-muted tabular-nums">
+              {value}
+            </span>
+          ),
       },
       {
         key: 'subject',
         title: t('issues.table.subject'),
         dataIndex: 'subject',
         minWidth: 260,
+        render: value => (
+          <span className="block max-w-[420px] truncate font-medium text-ink">
+            {value}
+          </span>
+        ),
       },
       {
         key: 'assignee',
         title: t('issues.table.assignee'),
         dataIndex: 'assignee',
         minWidth: 160,
+        render: (value, record) =>
+          value && value !== '—' ? (
+            <span className="inline-flex items-center gap-2 text-ink-2">
+              <UserAvatar name={value} src={record.assigneeAvatar} size={22} />
+              {value}
+            </span>
+          ) : (
+            dash
+          ),
       },
       {
         key: 'status',
@@ -148,7 +192,12 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
         minWidth: 140,
         render: (value, record) => (
           <span
-            className={isOverdue(record.dueDateRaw) ? OVERDUE_TEXT_CLASS : ''}
+            className={cn(
+              'tabular-nums',
+              isOverdue(record.dueDateRaw)
+                ? 'font-semibold text-danger'
+                : 'text-ink-2'
+            )}
           >
             {value}
           </span>
@@ -173,14 +222,18 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
         minWidth: 160,
       },
     ],
-    [renderBadge, renderPriority, t]
+    [projectId, renderBadge, renderPriority, t]
   );
 
   const handleRow = useCallback(
     (record: IssueRow) => ({
       onClick: onRowClick ? () => onRowClick(record) : undefined,
+      className:
+        selectedId != null && String(record.id) === String(selectedId)
+          ? 'bg-accent-soft hover:bg-accent-soft'
+          : undefined,
     }),
-    [onRowClick]
+    [onRowClick, selectedId]
   );
 
   return (

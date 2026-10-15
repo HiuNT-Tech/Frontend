@@ -1,16 +1,32 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { KanbanSquare, ListTodo, Plus, Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
 
-import Images from '@/assets';
-import { Button } from '@/components/ui/button';
-import { getIssueTypeBadgeClassName, getStatusColorHex } from '@/constant/data';
+import { Pane, PaneContent } from '@/components/layout/pane';
+import { buttonVariants } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Group } from '@/components/ui/surface';
+import { useOptionalAiAssistant } from '@/components/ai-assistant/ai-assistant-provider';
+import {
+  ProgressHero,
+  ProgressHeroSkeleton,
+} from '@/components/project-home/progress-hero';
+import {
+  StatusStatsCard,
+  StatusStatsSkeleton,
+} from '@/components/project-home/status-stats';
+import {
+  ActivityRow,
+  CompactIssueRow,
+  MemberRow,
+  QuickLinkRow,
+} from '@/components/project-home/rows';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { BoardService } from '@/lib/apis/board';
 import { useCard } from '@/hooks/use-card';
@@ -22,15 +38,6 @@ import { HomeGanttChart } from './HomeGanttChart';
 
 const RECENT_LIMIT = 100;
 
-const getInitials = (name: string): string => {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(part => part[0]?.toUpperCase() ?? '')
-    .join('');
-};
-
 const formatAge = (value?: string | number | null): string => {
   if (!value) return '';
   const hours = dayjs().diff(dayjs(value), 'hour');
@@ -39,48 +46,12 @@ const formatAge = (value?: string | number | null): string => {
   return `${Math.floor(hours / 24)}d`;
 };
 
-function StatBlock({
-  label,
-  value,
-  pct,
-  colorHex,
-}: {
-  label: string;
-  value: number;
-  pct: number;
-  colorHex: string;
-}) {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-[10px] border border-theme-neutral-4 bg-theme-neutral-1 px-4 py-3.5">
-      <div className="flex items-center justify-between">
-        <span className="truncate text-[11px] font-bold tracking-[0.08em] text-theme-neutral-7 uppercase">
-          {label}
-        </span>
-        <span className="text-[10.5px] font-bold" style={{ color: colorHex }}>
-          {pct}%
-        </span>
-      </div>
-      <span
-        className="text-[28px] leading-none font-extrabold tracking-[-0.03em]"
-        style={{ color: colorHex }}
-      >
-        {value}
-      </span>
-      <div className="h-[3px] overflow-hidden rounded-full bg-theme-neutral-4">
-        <div
-          className="h-full rounded-full transition-[width] duration-300"
-          style={{ width: `${pct}%`, background: colorHex }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function ProjectHomePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useParams<{ projectId: string }>();
   const boardId = toEntityIdOrUndefined(params?.projectId);
+  const assistant = useOptionalAiAssistant();
 
   useEffect(() => {
     if (!boardId) {
@@ -115,7 +86,7 @@ export default function ProjectHomePage() {
 
   // Sprint = version đang chạy (today nằm trong [startDate, endDate]); nếu
   // không có, lấy version sắp tới gần nhất. Không có version nào phù hợp thì
-  // ẩn hẳn khối sprint.
+  // hero chuyển sang tiến độ toàn dự án.
   const activeVersion = useMemo(() => {
     const now = dayjs();
     const withDates = versions.filter(v => v.startDate && v.endDate);
@@ -134,6 +105,9 @@ export default function ProjectHomePage() {
       );
     return upcoming[0];
   }, [versions]);
+
+  const isVersionRunning =
+    !!activeVersion && !dayjs(activeVersion.startDate).isAfter(dayjs());
 
   const { totalCount: sprintTotal } = useCard(
     activeVersion ? boardId : undefined,
@@ -169,6 +143,21 @@ export default function ProjectHomePage() {
     [listUser.items]
   );
 
+  const stats = useMemo(
+    () =>
+      sortedColumns.map(col => {
+        const value = col._count?.cards ?? 0;
+        return {
+          id: col.id,
+          label: col.title,
+          value,
+          statusColor: col.statusColor,
+          pct: totalCardCount ? Math.round((value / totalCardCount) * 100) : 0,
+        };
+      }),
+    [sortedColumns, totalCardCount]
+  );
+
   const getAssignee = (card: Card) => {
     if (card.assignee) return card.assignee;
     if (card.assigneeUserId) return memberMap.get(card.assigneeUserId);
@@ -178,310 +167,245 @@ export default function ProjectHomePage() {
   if (!boardId) return null;
 
   const isLoading = isBoardLoading || isColumnsLoading;
-  const sprintPct =
-    activeVersion && sprintTotal > 0
-      ? Math.round((sprintDone / sprintTotal) * 100)
-      : 0;
+  const base = `/project/${boardId}`;
+
+  // Hero: milestone đang chạy/sắp tới nếu có, không thì tiến độ toàn dự án
+  // (công việc ở cột cuối = đã đóng).
+  const closedCount = lastColumn?._count?.cards ?? 0;
+  const heroDone = activeVersion ? sprintDone : closedCount;
+  const heroTotal = activeVersion ? sprintTotal : totalCardCount;
+  const heroPct = heroTotal > 0 ? Math.round((heroDone / heroTotal) * 100) : 0;
   const sprintDaysLeft = activeVersion?.endDate
     ? Math.max(0, dayjs(activeVersion.endDate).diff(dayjs(), 'day'))
     : null;
+  const closedOfTotal = t('projectHome.sprint.closedOfTotal', {
+    done: heroDone,
+    total: heroTotal,
+  });
+
+  const quickLinks = [
+    {
+      key: 'board',
+      label: t('shell.nav.board'),
+      href: `${base}/board`,
+      icon: <KanbanSquare />,
+    },
+    {
+      key: 'issues',
+      label: t('shell.nav.issues'),
+      href: `${base}/issues`,
+      icon: <ListTodo />,
+    },
+    ...(assistant?.boardId
+      ? [
+          {
+            key: 'assistant',
+            label: t('shell.nav.assistant'),
+            onClick: assistant.toggle,
+            icon: <Sparkles />,
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <div className="h-full overflow-y-auto bg-theme-neutral-2/40">
-      {/* Project header */}
-      <div className="border-b border-theme-neutral-4 bg-theme-neutral-1 px-7 py-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-theme-main text-[10px] font-extrabold text-white">
-              {board?.boardCode?.slice(0, 4) ?? '—'}
-            </div>
-            <div>
-              <h1 className="text-lg leading-tight font-extrabold tracking-[-0.02em] text-theme-neutral-11">
-                {isLoading ? t('common.loading') : (board?.title ?? '—')}
-              </h1>
-              {board?.description && (
-                <p className="mt-1 text-[12.5px] text-theme-neutral-7">
-                  {board.description}
-                </p>
-              )}
-            </div>
-          </div>
+    <Pane
+      title={board?.title ?? t('shell.nav.home')}
+      subtitle={board?.boardCode}
+      actions={
+        <Link
+          href={`${base}/add-issue`}
+          className={buttonVariants({ size: 'sm' })}
+        >
+          <Plus aria-hidden="true" />
+          {t('shell.nav.newIssue')}
+        </Link>
+      }
+    >
+      <PaneContent width="full">
+        {board?.description && (
+          <p className="mb-5 max-w-[64ch] text-sm leading-[1.45] text-pretty text-muted">
+            {board.description}
+          </p>
+        )}
 
-          <Button
-            onClick={() => router.push(`/project/${boardId}/add-issue`)}
-            className="h-[34px] shrink-0 gap-1.5 bg-theme-neutral-11 px-3.5 text-[13px] font-semibold text-white hover:opacity-85"
-          >
-            <Image src={Images.IconAdd} alt="" width={11} height={11} />
-            {t('projectHome.newIssue')}
-          </Button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px]">
-        {/* Left: main content */}
-        <div className="flex flex-col gap-6 border-theme-neutral-3 px-7 py-5.5 lg:border-r">
-          {/* Stat row */}
-          {sortedColumns.length > 0 && (
-            <div className="flex flex-wrap gap-2.5">
-              {sortedColumns.map(col => {
-                const count = col._count?.cards ?? 0;
-                const pct = totalCardCount
-                  ? Math.round((count / totalCardCount) * 100)
-                  : 0;
-                return (
-                  <StatBlock
-                    key={col.id}
-                    label={col.title}
-                    value={count}
-                    pct={pct}
-                    colorHex={getStatusColorHex(col.statusColor)}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {/* Sprint card */}
-          {activeVersion && (
-            <div className="rounded-xl border border-theme-neutral-4 bg-theme-neutral-1 px-5 py-4.5">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <div className="text-[15px] font-bold tracking-[-0.01em] text-theme-neutral-11">
-                    {activeVersion.name}
-                    <span className="ml-2 rounded-[4px] bg-theme-main-1 px-1.5 py-0.5 text-[11px] font-semibold text-theme-main-6">
-                      {t('projectHome.sprint.active')}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-theme-neutral-7">
-                    {sprintDaysLeft !== null &&
-                      t('projectHome.sprint.daysLeft', {
-                        count: sprintDaysLeft,
-                      }) + ' · '}
-                    {t('projectHome.sprint.closedOfTotal', {
-                      done: sprintDone,
-                      total: sprintTotal,
-                    })}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[26px] leading-none font-extrabold tracking-[-0.03em] text-theme-main-6">
-                    {sprintPct}%
-                  </div>
-                  <div className="text-[11px] text-theme-neutral-7">
-                    {t('projectHome.sprint.complete')}
-                  </div>
-                </div>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-theme-neutral-4">
-                <div
-                  className="h-full rounded-full bg-theme-main transition-[width] duration-500"
-                  style={{ width: `${sprintPct}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Gantt */}
-          <HomeGanttChart
-            cards={scheduledCards}
-            totalScheduledCount={
-              // Không chắc BE có nhiều hơn RECENT_LIMIT card lịch trình hay
-              // không, nên chỉ so sánh trong tập đã tải để quyết định có hiện
-              // ghi chú "đã rút gọn" hay không.
-              scheduledCards.length
-            }
-          />
-
-          {/* Recent issues */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[10.5px] font-bold tracking-[0.1em] text-theme-neutral-7 uppercase">
-                {t('projectHome.recentIssues')}
-              </span>
-              <button
-                type="button"
-                onClick={() => router.push(`/project/${boardId}/issues`)}
-                className="cursor-pointer text-xs font-semibold text-theme-main-6 hover:underline"
-              >
-                {t('projectHome.viewAll')}
-              </button>
-            </div>
-
-            {recentIssues.length === 0 ? (
-              <p className="text-sm text-theme-neutral-6 italic">
-                {t('projectHome.noIssues')}
-              </p>
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+          {/* Cột chính */}
+          <div className="flex min-w-0 flex-col gap-3.5">
+            {isLoading ? (
+              <>
+                <ProgressHeroSkeleton />
+                <StatusStatsSkeleton />
+              </>
             ) : (
-              <div>
-                {recentIssues.map(issue => {
-                  const assignee = getAssignee(issue);
-                  return (
-                    <div
-                      key={issue.id}
-                      className="flex items-center gap-3 border-b border-theme-neutral-3 py-2.5 last:border-b-0"
-                    >
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{
-                          background: getStatusColorHex(
-                            issue.column?.statusColor
-                          ),
-                        }}
-                      />
-                      <Link
-                        href={`/project/${boardId}/issues/${issue.id}`}
-                        className="w-14 shrink-0 text-[11px] text-theme-neutral-7 hover:text-theme-main-6 hover:underline"
-                      >
-                        {issue.cardCode}
-                      </Link>
-                      <span className="flex-1 truncate text-[13px] font-medium text-theme-neutral-11">
-                        {issue.title}
-                      </span>
-                      {issue.issueType && (
-                        <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${getIssueTypeBadgeClassName(issue.issueType.statusColor).replace('min-w-[100px] justify-center text-center', '')}`}
-                        >
-                          {issue.issueType.name}
-                        </span>
-                      )}
-                      {assignee && (
-                        <div
-                          title={assignee.displayName}
-                          className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-theme-main-2 text-[8.5px] font-bold text-theme-main-7"
-                        >
-                          {getInitials(assignee.displayName ?? '?')}
-                        </div>
-                      )}
-                      <span className="w-7 shrink-0 text-right text-[11px] text-theme-neutral-6">
-                        {formatAge(issue.updatedAt)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+              <>
+                {activeVersion ? (
+                  <ProgressHero
+                    kicker={
+                      isVersionRunning
+                        ? t('projectHome.hero.milestone')
+                        : t('projectHome.hero.upcomingMilestone')
+                    }
+                    active={isVersionRunning}
+                    title={activeVersion.name}
+                    description={[
+                      sprintDaysLeft !== null
+                        ? t('projectHome.sprint.daysLeft', {
+                            count: sprintDaysLeft,
+                          })
+                        : null,
+                      closedOfTotal,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    pct={heroPct}
+                  />
+                ) : (
+                  <ProgressHero
+                    kicker={t('projectHome.hero.overall')}
+                    active={totalCardCount > 0}
+                    title={closedOfTotal}
+                    description={
+                      lastColumn
+                        ? t('projectHome.hero.overallHint', {
+                            column: lastColumn.title,
+                          })
+                        : undefined
+                    }
+                    pct={heroPct}
+                  />
+                )}
 
-        {/* Right: sidebar */}
-        <div className="flex flex-col gap-5.5 px-5 py-5.5">
-          {/* Second column bucket (analogous to "In Progress") */}
-          {secondColumn && (
-            <div>
-              <div className="mb-2.5 text-[10.5px] font-bold tracking-[0.1em] text-theme-neutral-7 uppercase">
-                {secondColumn.title}
-              </div>
-              {inProgressCards.length === 0 ? (
-                <p className="text-[12.5px] text-theme-neutral-6 italic">
-                  {t('projectHome.noIssues')}
-                </p>
+                {stats.length > 0 && <StatusStatsCard stats={stats} />}
+              </>
+            )}
+
+            <HomeGanttChart
+              cards={scheduledCards}
+              totalScheduledCount={
+                // Không chắc BE có nhiều hơn RECENT_LIMIT card lịch trình hay
+                // không, nên chỉ so sánh trong tập đã tải để quyết định có hiện
+                // ghi chú "đã rút gọn" hay không.
+                scheduledCards.length
+              }
+              columns={sortedColumns}
+            />
+
+            <Group
+              className="animate-rise [animation-delay:120ms]"
+              title={t('projectHome.recentIssues')}
+              action={
+                <Link
+                  href={`${base}/issues`}
+                  className="shrink-0 text-[13.5px] font-semibold text-accent transition-colors duration-200 ease-soft hover:text-accent-hover"
+                >
+                  {t('projectHome.viewAll')}
+                </Link>
+              }
+            >
+              {recentIssues.length === 0 ? (
+                <EmptyState
+                  title={t('projectHome.noIssues')}
+                  description={t('projectHome.noIssuesHint')}
+                />
               ) : (
-                inProgressCards.map(issue => {
-                  const assignee = getAssignee(issue);
-                  return (
-                    <div
+                recentIssues.map((issue, index) => (
+                  <ActivityRow
+                    key={issue.id}
+                    issue={issue}
+                    href={`${base}/issues/${issue.id}`}
+                    assignee={getAssignee(issue)}
+                    age={formatAge(issue.updatedAt)}
+                    index={index}
+                  />
+                ))
+              )}
+            </Group>
+          </div>
+
+          {/* Cột phụ: dưới xl xếp thành lưới 2 cột (md–lg), rồi 1 cột */}
+          <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-1">
+            {secondColumn && (
+              <Group
+                className="animate-rise [animation-delay:80ms]"
+                title={secondColumn.title}
+              >
+                {inProgressCards.length === 0 ? (
+                  <EmptyState
+                    className="py-6"
+                    title={t('projectHome.inProgressEmpty')}
+                    description={t('projectHome.inProgressEmptyHint', {
+                      column: secondColumn.title,
+                    })}
+                  />
+                ) : (
+                  inProgressCards.map((issue, index) => (
+                    <CompactIssueRow
                       key={issue.id}
-                      className="flex items-center gap-2 border-b border-theme-neutral-3 py-1.5 last:border-b-0"
-                    >
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{
-                          background: getStatusColorHex(
-                            secondColumn.statusColor
-                          ),
-                        }}
-                      />
-                      <span className="flex-1 truncate text-[12.5px] font-medium text-theme-neutral-11">
-                        {issue.title}
-                      </span>
-                      {assignee && (
-                        <div
-                          title={assignee.displayName}
-                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-theme-main-2 text-[7.5px] font-bold text-theme-main-7"
-                        >
-                          {getInitials(assignee.displayName ?? '?')}
-                        </div>
-                      )}
-                    </div>
+                      issue={issue}
+                      href={`${base}/issues/${issue.id}`}
+                      statusColor={secondColumn.statusColor}
+                      assignee={getAssignee(issue)}
+                      index={index}
+                    />
+                  ))
+                )}
+              </Group>
+            )}
+
+            <Group
+              className="animate-rise [animation-delay:120ms]"
+              title={t('projectHome.team')}
+            >
+              {listUser.items.length === 0 ? (
+                <EmptyState
+                  className="py-6"
+                  title={t('projectHome.teamEmpty')}
+                />
+              ) : (
+                listUser.items.map((member, index) => {
+                  const assigned = recentCards.filter(
+                    c =>
+                      (c.assigneeUserId === member.userId ||
+                        c.assignee?.id === member.userId) &&
+                      c.column?.id !== lastColumn?.id
+                  );
+                  const inProg = secondColumn
+                    ? assigned.filter(c => c.column?.id === secondColumn.id)
+                        .length
+                    : 0;
+                  return (
+                    <MemberRow
+                      key={member.userId}
+                      member={member}
+                      open={assigned.length}
+                      inProgress={inProg}
+                      inProgressColor={secondColumn?.statusColor}
+                      index={index}
+                    />
                   );
                 })
               )}
-            </div>
-          )}
+            </Group>
 
-          {/* Team */}
-          <div>
-            <div className="mb-2.5 text-[10.5px] font-bold tracking-[0.1em] text-theme-neutral-7 uppercase">
-              {t('projectHome.team')}
-            </div>
-            {listUser.items.map(member => {
-              const assigned = recentCards.filter(
-                c =>
-                  (c.assigneeUserId === member.userId ||
-                    c.assignee?.id === member.userId) &&
-                  c.column?.id !== lastColumn?.id
-              );
-              const inProg = secondColumn
-                ? assigned.filter(c => c.column?.id === secondColumn.id).length
-                : 0;
-              return (
-                <div
-                  key={member.userId}
-                  className="flex items-center gap-2.5 border-b border-theme-neutral-3 py-2 last:border-b-0"
-                >
-                  <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-theme-main-2 text-[11px] font-bold text-theme-main-7">
-                    {getInitials(member.displayName)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] leading-none font-semibold text-theme-neutral-11">
-                      {member.displayName}
-                    </div>
-                    <div className="mt-0.5 text-[11.5px] text-theme-neutral-7">
-                      {t('projectHome.openInProgress', {
-                        open: assigned.length,
-                        inProgress: inProg,
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Quick access */}
-          <div>
-            <div className="mb-2.5 text-[10.5px] font-bold tracking-[0.1em] text-theme-neutral-7 uppercase">
-              {t('projectHome.quickAccess')}
-            </div>
-            <div className="flex flex-col gap-1">
-              {[
-                {
-                  label: t('sidebar.board'),
-                  href: `/project/${boardId}/board`,
-                  icon: Images.IconBoard,
-                },
-                {
-                  label: t('sidebar.issue'),
-                  href: `/project/${boardId}/issues`,
-                  icon: Images.IconList,
-                },
-              ].map(link => (
-                <button
-                  key={link.href}
-                  type="button"
-                  onClick={() => router.push(link.href)}
-                  className="flex h-[34px] cursor-pointer items-center gap-2.5 rounded-lg border border-theme-neutral-4 px-3 text-left text-[13px] text-theme-neutral-9 transition-colors hover:border-theme-neutral-6 hover:bg-theme-neutral-2"
-                >
-                  <Image src={link.icon} alt="" width={14} height={14} />
-                  {link.label}
-                  <span className="ml-auto opacity-40">→</span>
-                </button>
+            <Group
+              className="animate-rise [animation-delay:160ms]"
+              title={t('projectHome.quickAccess')}
+            >
+              {quickLinks.map((link, index) => (
+                <QuickLinkRow
+                  key={link.key}
+                  index={index}
+                  icon={link.icon}
+                  label={link.label}
+                  href={link.href}
+                  onClick={link.onClick}
+                />
               ))}
-            </div>
+            </Group>
           </div>
         </div>
-      </div>
-    </div>
+      </PaneContent>
+    </Pane>
   );
 }

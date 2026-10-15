@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { DatePicker as AntdDatePicker } from 'antd';
 import dayjs from 'dayjs';
-import Images from '@/assets';
-import { OVERDUE_BADGE_CLASS } from '@/utils/due-date';
+import { useTranslation } from 'react-i18next';
+import { CalendarDays } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DueDatePickerProps {
   value?: string | null;
@@ -16,13 +16,20 @@ interface DueDatePickerProps {
 const formatDueDate = (dateStr: string): string =>
   dayjs(dateStr).format('DD/MM');
 
+/** Hạn chót trên thẻ: viên nhỏ (đỏ nhạt khi quá hạn); bấm mở lịch antd phủ trong suốt phía trên. */
 function DueDatePicker({
   value,
   overdue,
   disabled,
   onChange,
 }: DueDatePickerProps) {
+  const { t } = useTranslation();
   const dayjsValue = value ? dayjs(value) : null;
+  const title = value
+    ? overdue
+      ? t('board.card.overdue')
+      : t('board.card.due')
+    : t('board.card.setDue');
 
   return (
     <div
@@ -31,21 +38,17 @@ function DueDatePicker({
       onClick={e => e.stopPropagation()}
     >
       <span
-        className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${
+        className={cn(
+          'inline-flex h-6 items-center gap-1 rounded-full text-[12.5px] font-medium tabular-nums transition-colors',
           value
             ? overdue
-              ? OVERDUE_BADGE_CLASS
-              : 'bg-theme-neutral-3 text-theme-neutral-8'
-            : 'text-theme-neutral-6 opacity-60 hover:opacity-100'
-        }`}
-        title={value ? (overdue ? 'Đã quá hạn' : 'Hạn chót') : 'Đặt hạn chót'}
+              ? 'bg-danger-soft px-2 text-danger'
+              : 'bg-fill px-2 text-ink-2'
+            : 'text-faint hover:text-ink-2'
+        )}
+        title={title}
       >
-        <Image
-          src={Images.IconCalendar}
-          alt="calendar"
-          width={14}
-          height={14}
-        />
+        <CalendarDays aria-hidden="true" className="size-[13px]" />
         {value && formatDueDate(value)}
       </span>
 
@@ -57,6 +60,8 @@ function DueDatePicker({
         allowClear={false}
         suffixIcon={null}
         format="YYYY/MM/DD"
+        placeholder={title}
+        aria-label={title}
         getPopupContainer={() => document.body}
         className="!absolute !inset-0 !h-full !w-full !min-w-0 !cursor-pointer !border-0 !bg-transparent !p-0 !opacity-0"
       />

@@ -24,6 +24,7 @@ const MembersFilter = ({
     {
       id: 'role',
       type: 'select',
+      label: t('settings.members.table.role'),
       options: [
         {
           value: MemberRole.ADMINISTRATOR,

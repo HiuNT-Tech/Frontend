@@ -2,20 +2,19 @@
 
 import React, { useMemo } from 'react';
 import dayjs from 'dayjs';
+import { RotateCw, Ban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import Images from '@/assets';
 import { CustomTable, type TableColumn } from '@/components/ui/custome-table';
+import { Tag } from '@/components/ui/tag';
 import { BoardInvitationStatus } from '@/config/enum';
-import {
-  renderInvitationStatusBadge,
-  renderMemberRoleBadge,
-} from '@/constant/data';
+import { getInvitationStatusLabelKey } from '@/constant/data';
 import type {
   BoardInvitation,
   EntityId,
   InvitationListResponse,
 } from '@/config/interface';
+import { actionsColumn, RoleTag } from './settings-table-parts';
 
 interface InvitationsTableProps {
   data: InvitationListResponse;
@@ -35,6 +34,15 @@ interface InvitationsTableProps {
 const formatDateTime = (value?: string | null) => {
   if (!value) return '';
   return dayjs(value).format('YYYY/MM/DD HH:mm');
+};
+
+/** Tông màu tag theo trạng thái lời mời: chờ = amber, đã nhận = accent, còn lại trung tính. */
+const statusTone = (
+  status: BoardInvitationStatus | string | null | undefined
+): 'warn' | 'accent' | 'neutral' => {
+  if (status === BoardInvitationStatus.PENDING) return 'warn';
+  if (status === BoardInvitationStatus.ACCEPTED) return 'accent';
+  return 'neutral';
 };
 
 export const InvitationsTable: React.FC<InvitationsTableProps> = ({
@@ -65,25 +73,25 @@ export const InvitationsTable: React.FC<InvitationsTableProps> = ({
         title: t('settings.invitations.table.email'),
         dataIndex: 'email',
         minWidth: 220,
-        render: value => (
-          <span className="font-medium text-theme-neutral-11">{value}</span>
-        ),
+        render: value => <span className="font-medium text-ink">{value}</span>,
       },
       {
         key: 'role',
         title: t('settings.invitations.table.role'),
         dataIndex: 'role',
-        align: 'center',
-        minWidth: 140,
-        render: value => renderMemberRoleBadge(value, t),
+        minWidth: 130,
+        render: value => <RoleTag role={value} t={t} />,
       },
       {
         key: 'status',
         title: t('settings.invitations.table.status'),
         dataIndex: 'status',
-        align: 'center',
-        minWidth: 140,
-        render: value => renderInvitationStatusBadge(value, t),
+        minWidth: 120,
+        render: value => (
+          <Tag tone={statusTone(value)} dot>
+            {t(getInvitationStatusLabelKey(value))}
+          </Tag>
+        ),
       },
       {
         key: 'invitedBy',
@@ -91,13 +99,13 @@ export const InvitationsTable: React.FC<InvitationsTableProps> = ({
         dataIndex: 'invitedByUserId',
         minWidth: 180,
         render: (_value, record) => (
-          <div className="flex flex-col">
-            <span className="font-medium text-theme-neutral-10">
+          <div className="min-w-0">
+            <div className="truncate font-medium text-ink">
               {record.invitedBy?.displayName || t('common.unknown')}
-            </span>
-            <span className="text-xs text-theme-neutral-7">
+            </div>
+            <div className="truncate text-[12.5px] text-muted">
               {record.invitedBy?.email || t('common.unknown')}
-            </span>
+            </div>
           </div>
         ),
       },
@@ -105,24 +113,47 @@ export const InvitationsTable: React.FC<InvitationsTableProps> = ({
         key: 'expiresAt',
         title: t('settings.invitations.table.expiresAt'),
         dataIndex: 'expiresAt',
-        align: 'center',
-        minWidth: 160,
+        minWidth: 150,
         render: value => (
-          <span className="text-theme-neutral-8">{formatDateTime(value)}</span>
+          <span className="text-muted tabular-nums">
+            {formatDateTime(value)}
+          </span>
         ),
       },
       {
         key: 'createdAt',
         title: t('settings.invitations.table.createdAt'),
         dataIndex: 'createdAt',
-        align: 'center',
-        minWidth: 160,
+        minWidth: 150,
         render: value => (
-          <span className="text-theme-neutral-8">{formatDateTime(value)}</span>
+          <span className="text-muted tabular-nums">
+            {formatDateTime(value)}
+          </span>
         ),
       },
+      actionsColumn<BoardInvitation>(t, record => [
+        {
+          key: 'resend',
+          label: t('settings.invitations.table.resend'),
+          icon: <RotateCw />,
+          onClick: () => onResend(record),
+          disabled: isResendPending,
+          hidden:
+            record.status !== BoardInvitationStatus.PENDING &&
+            record.status !== BoardInvitationStatus.EXPIRED,
+        },
+        {
+          key: 'revoke',
+          label: t('settings.invitations.table.revoke'),
+          icon: <Ban />,
+          tone: 'danger',
+          onClick: () => onRevoke(record),
+          disabled: isActionPending,
+          hidden: record.status !== BoardInvitationStatus.PENDING,
+        },
+      ]),
     ],
-    [t]
+    [t, onResend, onRevoke, isResendPending, isActionPending]
   );
 
   return (
@@ -136,24 +167,6 @@ export const InvitationsTable: React.FC<InvitationsTableProps> = ({
       loadingText={t('common.loading')}
       errorText={t('settings.invitations.table.error')}
       onRetry={refetch}
-      actions={[
-        {
-          icon: Images.IconResend,
-          title: t('settings.invitations.table.resend'),
-          onClick: record => onResend(record),
-          disabled: isResendPending,
-          hidden: record =>
-            record.status !== BoardInvitationStatus.PENDING &&
-            record.status !== BoardInvitationStatus.EXPIRED,
-        },
-        {
-          icon: Images.IconTrash,
-          title: t('settings.invitations.table.revoke'),
-          onClick: record => onRevoke(record),
-          disabled: isActionPending,
-          hidden: record => record.status !== BoardInvitationStatus.PENDING,
-        },
-      ]}
       pagination={{
         current: page,
         total: data.total,

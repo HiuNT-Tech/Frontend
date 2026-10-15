@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Popover } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Check, Plus, Search, UserRoundMinus } from 'lucide-react';
 import { BoardService } from '@/lib/apis/board';
 import { StateMessage } from '@/components/ui/state-message';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { cn } from '@/lib/utils';
 import type {
   EntityId,
   UserBoardMember,
@@ -22,6 +24,10 @@ interface AssigneePickerProps {
   onPick: (member: UserBoardMember | null) => void;
 }
 
+const ROW_CLASS =
+  'flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2 text-left text-sm text-ink transition-colors hover:bg-hover';
+
+/** Gán nhanh người phụ trách ngay trên thẻ: monogram → popover tìm thành viên. */
 function AssigneePicker({
   boardId,
   assigneeUserId,
@@ -57,27 +63,29 @@ function AssigneePicker({
   };
 
   const content = (
-    <div className="w-60" data-no-dnd onClick={e => e.stopPropagation()}>
-      <input
-        autoFocus
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder={t('column.assigneePicker.searchPlaceholder')}
-        className="mb-2 w-full rounded-md border border-theme-neutral-4 px-2.5 py-1.5 text-sm outline-none focus:border-theme-main"
-      />
-      <ul className="-mx-1 max-h-60 overflow-y-auto">
+    <div className="w-64" data-no-dnd onClick={e => e.stopPropagation()}>
+      <label className="mb-1.5 flex h-9 items-center gap-2 rounded-[10px] bg-fill px-2.5 text-muted">
+        <Search aria-hidden="true" className="size-[14px] flex-none" />
+        <input
+          autoFocus
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder={t('column.assigneePicker.searchPlaceholder')}
+          aria-label={t('column.assigneePicker.searchPlaceholder')}
+          className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none focus-visible:outline-none"
+        />
+      </label>
+      <ul className="max-h-60 overflow-y-auto">
         <li>
           <button
             type="button"
             onClick={() => handlePick(null)}
-            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-theme-neutral-3 ${
-              assigneeUserId == null ? 'bg-theme-neutral-3' : ''
-            }`}
+            className={cn(ROW_CLASS, assigneeUserId == null && 'bg-fill')}
           >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-theme-neutral-6 text-theme-neutral-7">
-              –
+            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-muted">
+              <UserRoundMinus aria-hidden="true" className="size-3" />
             </span>
-            <span className="text-theme-neutral-9">
+            <span className="flex-1 text-ink-2">
               {t('column.assigneePicker.unassign')}
             </span>
           </button>
@@ -107,12 +115,18 @@ function AssigneePicker({
               <button
                 type="button"
                 onClick={() => handlePick(member)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-theme-neutral-3 ${
-                  selected ? 'bg-theme-neutral-3' : ''
-                }`}
+                aria-pressed={selected}
+                className={cn(
+                  ROW_CLASS,
+                  selected &&
+                    'bg-accent-soft text-accent-text hover:bg-accent-soft'
+                )}
               >
-                <UserAvatar name={name} src={member.avatar} />
-                <span className="truncate text-theme-neutral-11">{name}</span>
+                <UserAvatar name={name} src={member.avatar} size={24} />
+                <span className="min-w-0 flex-1 truncate">{name}</span>
+                {selected && (
+                  <Check aria-hidden="true" className="size-4 flex-none" />
+                )}
               </button>
             </li>
           );
@@ -127,25 +141,32 @@ function AssigneePicker({
       onOpenChange={value => !disabled && setOpen(value)}
       trigger="click"
       placement="bottomLeft"
+      arrow={false}
       getPopupContainer={() => document.body}
       content={content}
     >
       <button
         type="button"
         data-no-dnd
+        disabled={disabled}
         onClick={e => e.stopPropagation()}
         title={
           assigneeName
             ? t('column.assigneePicker.assignedTo', { name: assigneeName })
             : t('column.assigneePicker.assign')
         }
-        className="shrink-0 rounded-full outline-none focus:ring-2 focus:ring-theme-main"
+        aria-label={
+          assigneeName
+            ? t('column.assigneePicker.assignedTo', { name: assigneeName })
+            : t('column.assigneePicker.assign')
+        }
+        className="press -m-1 grid size-8 shrink-0 place-items-center rounded-full outline-none transition-colors hover:bg-hover focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-60"
       >
         {assigneeUserId != null ? (
-          <UserAvatar name={assigneeName} src={assigneeAvatar} />
+          <UserAvatar name={assigneeName} src={assigneeAvatar} size={24} />
         ) : (
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-theme-neutral-6 text-theme-neutral-7 hover:border-theme-main hover:text-theme-main">
-            +
+          <span className="grid size-6 place-items-center rounded-full border border-dashed border-line-strong text-faint transition-colors hover:border-accent hover:text-accent">
+            <Plus aria-hidden="true" className="size-3" />
           </span>
         )}
       </button>

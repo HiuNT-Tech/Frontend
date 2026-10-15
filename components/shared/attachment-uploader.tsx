@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useRef } from 'react';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { Paperclip, FileText, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Attachment, EntityId } from '@/config/interface';
 
 /* ─── Shared upload config (dùng chung cho comment & ticket) ─── */
@@ -56,6 +56,45 @@ export const buildUploadErrorMessages = (
   maxFilesExceeded: t('attachments.maxFilesExceeded'),
 });
 
+/* ─── Chip tệp (dùng cho tệp mới lẫn tệp đã có) ─── */
+
+const FileChip: React.FC<{
+  name: string;
+  meta?: string;
+  previewUrl?: string | null;
+  isImage?: boolean;
+  onRemove: () => void;
+  removeLabel: string;
+}> = ({ name, meta, previewUrl, isImage, onRemove, removeLabel }) => (
+  <div className="relative flex max-w-[240px] items-center gap-2.5 rounded-[12px] border border-line bg-card py-1.5 pl-1.5 pr-9 shadow-hair">
+    {isImage && previewUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={previewUrl}
+        alt={name}
+        className="size-9 shrink-0 rounded-[8px] object-cover"
+      />
+    ) : (
+      <span className="inline-grid size-9 shrink-0 place-items-center rounded-[8px] bg-fill text-muted">
+        <FileText aria-hidden="true" className="size-4" />
+      </span>
+    )}
+    <div className="min-w-0">
+      <p className="truncate text-[12.5px] font-medium text-ink">{name}</p>
+      {meta && <p className="text-[11.5px] tabular-nums text-muted">{meta}</p>}
+    </div>
+    <button
+      type="button"
+      onClick={onRemove}
+      className="press absolute right-1 top-1/2 inline-grid size-7 -translate-y-1/2 place-items-center rounded-[8px] text-muted transition-colors duration-200 ease-soft hover:bg-danger-soft hover:text-danger"
+      aria-label={removeLabel}
+      title={removeLabel}
+    >
+      <X aria-hidden="true" className="size-3.5" />
+    </button>
+  </div>
+);
+
 /* ─── Component ─── */
 
 export interface AttachmentUploaderProps {
@@ -71,6 +110,12 @@ export interface AttachmentUploaderProps {
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
   className?: string;
+  /** Nút chọn tệp chỉ có icon (dùng trong thanh soạn bình luận chật) */
+  compact?: boolean;
+  /** Ẩn nút chọn tệp (khi nút đặt ở chỗ khác, chỉ cần danh sách) */
+  showButton?: boolean;
+  /** Ẩn danh sách tệp đã chọn (khi danh sách đặt ở chỗ khác) */
+  showList?: boolean;
 }
 
 export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
@@ -84,9 +129,13 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   onFileChange,
   onRemove,
   className = '',
+  compact = false,
+  showButton = true,
+  showList = true,
 }) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const isDisabled = disabled || isProcessing || files.length >= maxFiles;
 
   return (
     <div className={className}>
@@ -100,78 +149,37 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
         onChange={onFileChange}
       />
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="border-theme-neutral-5 text-theme-neutral-9 gap-1.5"
-        onClick={() => inputRef.current?.click()}
-        disabled={disabled || isProcessing || files.length >= maxFiles}
-      >
-        <Image
-          src={Icons.Paperclip}
-          alt=""
-          width={14}
-          height={14}
-          className="w-3.5 h-3.5"
-        />
-        {t('attachments.attach')}
-      </Button>
+      {showButton && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn(compact && 'w-8 px-0')}
+          onClick={() => inputRef.current?.click()}
+          disabled={isDisabled}
+          aria-label={compact ? t('attachments.attach') : undefined}
+          title={compact ? t('attachments.attach') : undefined}
+        >
+          <Paperclip aria-hidden="true" />
+          {!compact && t('attachments.attach')}
+        </Button>
+      )}
 
-      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
 
-      {files.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {files.map((file, index) => {
-            const preview = previews[index];
-            return (
-              <div
-                key={`${file.name}-${index}`}
-                className="relative flex items-center gap-2 border border-theme-neutral-5 rounded-md p-1.5 pr-7 bg-theme-neutral-2/40 max-w-[220px]"
-              >
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={preview}
-                    alt={file.name}
-                    className="w-9 h-9 rounded object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded bg-theme-neutral-4/60 flex items-center justify-center shrink-0">
-                    <Image
-                      src={Icons.Paperclip}
-                      alt=""
-                      width={16}
-                      height={16}
-                      className="w-4 h-4"
-                    />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-theme-neutral-11 truncate">
-                    {file.name}
-                  </p>
-                  <p className="text-[10px] text-theme-neutral-7">
-                    {formatFileSize(file.size)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemove(index)}
-                  className="absolute top-1 right-1 text-theme-neutral-6 hover:text-red-500 cursor-pointer"
-                  aria-label={t('common.delete')}
-                >
-                  <Image
-                    src={Icons.X}
-                    alt=""
-                    width={12}
-                    height={12}
-                    className="w-3 h-3"
-                  />
-                </button>
-              </div>
-            );
-          })}
+      {showList && files.length > 0 && (
+        <div className={cn('flex flex-wrap gap-2', showButton && 'mt-3')}>
+          {files.map((file, index) => (
+            <FileChip
+              key={`${file.name}-${index}`}
+              name={file.name}
+              meta={formatFileSize(file.size)}
+              previewUrl={previews[index]}
+              isImage={!!previews[index]}
+              onRemove={() => onRemove(index)}
+              removeLabel={t('common.delete')}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -198,49 +206,65 @@ export const ExistingAttachmentsList: React.FC<
   if (kept.length === 0) return null;
 
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`}>
+    <div className={cn('flex flex-wrap gap-2', className)}>
       {kept.map(att => (
-        <div
+        <FileChip
           key={att.id}
-          className="relative flex items-center gap-2 border border-theme-neutral-5 rounded-md p-1.5 pr-7 bg-theme-neutral-2/40 max-w-[220px]"
-        >
-          {att.mimeType?.startsWith('image/') ? (
-            // eslint-disable-next-line @next/next/no-img-element
+          name={att.fileName}
+          meta={att.fileSize ? formatFileSize(att.fileSize) : undefined}
+          previewUrl={att.fileUrl}
+          isImage={!!att.mimeType?.startsWith('image/')}
+          onRemove={() => onToggleRemove(att.id)}
+          removeLabel={t('common.delete')}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ─── Attachments đã lưu, chỉ xem (comment, mô tả) ─── */
+
+export const AttachmentLinks: React.FC<{
+  attachments: Attachment[];
+  className?: string;
+}> = ({ attachments, className }) => {
+  if (attachments.length === 0) return null;
+  return (
+    <div className={cn('flex flex-wrap gap-2', className)}>
+      {attachments.map(att => {
+        const isImage = att.mimeType?.startsWith('image/');
+        return isImage ? (
+          <a
+            key={att.id}
+            href={att.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="press block overflow-hidden rounded-[10px] border border-line transition-opacity duration-200 ease-soft hover:opacity-90"
+            title={att.fileName}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={att.fileUrl}
               alt={att.fileName}
-              className="w-9 h-9 rounded object-cover shrink-0"
+              className="size-20 object-cover"
             />
-          ) : (
-            <div className="w-9 h-9 rounded bg-theme-neutral-4/60 flex items-center justify-center shrink-0">
-              <Image
-                src={Icons.Paperclip}
-                alt=""
-                width={16}
-                height={16}
-                className="w-4 h-4"
-              />
-            </div>
-          )}
-          <p className="text-xs font-medium text-theme-neutral-11 truncate min-w-0">
-            {att.fileName}
-          </p>
-          <button
-            type="button"
-            onClick={() => onToggleRemove(att.id)}
-            className="absolute top-1 right-1 text-theme-neutral-6 hover:text-red-500 cursor-pointer"
-            aria-label={t('common.delete')}
+          </a>
+        ) : (
+          <a
+            key={att.id}
+            href={att.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="press flex max-w-[240px] items-center gap-2 rounded-[10px] border border-line bg-card px-2.5 py-1.5 text-[12.5px] font-medium text-ink shadow-hair transition-colors duration-200 ease-soft hover:border-line-strong hover:bg-fill"
           >
-            <Image
-              src={Icons.X}
-              alt=""
-              width={12}
-              height={12}
-              className="w-3 h-3"
+            <Paperclip
+              aria-hidden="true"
+              className="size-3.5 shrink-0 text-muted"
             />
-          </button>
-        </div>
-      ))}
+            <span className="truncate">{att.fileName}</span>
+          </a>
+        );
+      })}
     </div>
   );
 };

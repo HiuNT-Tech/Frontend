@@ -1,10 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,6 +16,16 @@ interface ModalProps {
   closeOnOverlayClick?: boolean;
 }
 
+const SIZE_CLASSES = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
+  xxl: 'max-w-6xl',
+  '3xl': 'max-w-7xl',
+} as const;
+
+/** Sheet kiểu Apple: nền mờ tối, một bề mặt trắng bo 22px, nổi lên có độ nảy. */
 export function Modal({
   isOpen,
   onClose,
@@ -25,6 +35,8 @@ export function Modal({
   isNoPadding = false,
   closeOnOverlayClick = true,
 }: ModalProps) {
+  const titleId = useId();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -37,43 +49,51 @@ export function Modal({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Esc đóng (trừ khi đang chặn đóng bằng overlay, vd. đang gửi)
+  useEffect(() => {
+    if (!isOpen || !closeOnOverlayClick) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, closeOnOverlayClick, onClose]);
 
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    xxl: 'max-w-6xl',
-    '3xl': 'max-w-7xl',
-  };
+  if (!isOpen) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-dvh items-center justify-center p-4 md:p-6">
         <div
-          className="fixed inset-0 bg-black opacity-50"
+          className="animate-fade-in fixed inset-0 bg-backdrop"
           onClick={closeOnOverlayClick ? onClose : undefined}
         />
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className={cn(
+            'animate-sheet-in relative w-full overflow-hidden rounded-sheet border border-line bg-card text-ink shadow-lift',
+            SIZE_CLASSES[size]
+          )}
         >
-          <div className="flex items-center justify-between p-[16px] border-b">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          <div className="flex items-center justify-between gap-3 border-b border-line py-3.5 pr-3 pl-[22px]">
+            <h3
+              id={titleId}
+              className="min-w-0 truncate text-lg font-bold tracking-[-0.01em] text-ink"
             >
-              <Image
-                src={Icons.X}
-                alt=""
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
+              {title}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="press grid size-8 flex-none cursor-pointer place-items-center rounded-[9px] text-muted transition-colors hover:bg-hover hover:text-ink"
+            >
+              <X className="size-4" aria-hidden="true" />
             </button>
           </div>
-          <div className={`${isNoPadding ? 'p-0' : 'p-6'}`}>{children}</div>
+          <div className={isNoPadding ? 'p-0' : 'p-[22px]'}>{children}</div>
         </div>
       </div>
     </div>

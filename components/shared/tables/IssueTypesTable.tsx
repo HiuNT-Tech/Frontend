@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Images from '@/assets';
+
 import type { EntityId, IssueType } from '@/config/interface';
 import { CustomTable, type TableColumn } from '@/components/ui/custome-table';
+import { ColorTag } from '@/components/ui/tag';
 import staticMethodConfirm from '@/components/modal/static-method-confirm';
-import { renderIssueTypeBadge } from '@/constant/data';
+import { actionsColumn } from './settings-table-parts';
 
 export interface IssueTypesTableProps {
   boardId: EntityId;
@@ -23,7 +25,6 @@ export interface IssueTypesTableProps {
 }
 
 export const IssueTypesTable: React.FC<IssueTypesTableProps> = ({
-  boardId,
   data,
   loading,
   totalCount,
@@ -36,28 +37,7 @@ export const IssueTypesTable: React.FC<IssueTypesTableProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const columns = useMemo<TableColumn<IssueType>[]>(
-    () => [
-      {
-        key: 'type',
-        title: t('settings.issueTypes.table.type'),
-        dataIndex: 'name',
-        align: 'center',
-        render: (_value, record) =>
-          renderIssueTypeBadge(record?.statusColor, record?.name),
-        minWidth: 300,
-      },
-      {
-        key: 'issues',
-        title: t('settings.issueTypes.table.issues'),
-        align: 'center',
-        render: (_value, record) => record.issueCount ?? 0,
-      },
-    ],
-    [t]
-  );
-
-  const handleDelete = async (record: IssueType) => {
+  const handleDelete = (record: IssueType) => {
     staticMethodConfirm.open({
       content: t('settings.issueTypes.deleteModal.content', {
         name: record?.name ?? '—',
@@ -67,6 +47,45 @@ export const IssueTypesTable: React.FC<IssueTypesTableProps> = ({
       },
     });
   };
+
+  const columns = useMemo<TableColumn<IssueType>[]>(() => {
+    const base: TableColumn<IssueType>[] = [
+      {
+        key: 'type',
+        title: t('settings.issueTypes.table.type'),
+        dataIndex: 'name',
+        minWidth: 240,
+        render: (_value, record) => (
+          <ColorTag color={record?.statusColor}>{record?.name}</ColorTag>
+        ),
+      },
+      {
+        key: 'issues',
+        title: t('settings.issueTypes.table.issues'),
+        align: 'right',
+        minWidth: 100,
+        render: (_value, record) => (
+          <span className="text-ink-2 tabular-nums">
+            {record.issueCount ?? 0}
+          </span>
+        ),
+      },
+    ];
+    if (!canManage) return base;
+    return [
+      ...base,
+      actionsColumn<IssueType>(t, record => [
+        {
+          key: 'delete',
+          label: t('settings.issueTypes.table.delete'),
+          icon: <Trash2 />,
+          tone: 'danger',
+          onClick: () => handleDelete(record),
+        },
+      ]),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, canManage, onDelete]);
 
   return (
     <CustomTable
@@ -82,17 +101,6 @@ export const IssueTypesTable: React.FC<IssueTypesTableProps> = ({
         onChange: onPageChange,
         onShowSizeChange: onPageSizeChange,
       }}
-      actions={
-        canManage
-          ? [
-              {
-                icon: Images.IconTrash,
-                title: t('settings.issueTypes.table.delete'),
-                onClick: record => handleDelete(record),
-              },
-            ]
-          : []
-      }
     />
   );
 };

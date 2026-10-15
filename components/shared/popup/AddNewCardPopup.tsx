@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useParams } from 'next/navigation';
 import { Modal } from '@/components/ui/modal';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -9,16 +10,23 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Select } from '@/components/ui/select';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Textarea } from '@/components/ui/textarea';
+import { ColorTag } from '@/components/ui/tag';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { useVersion } from '@/hooks/use-version';
 import { useColumn } from '@/hooks/use-column';
 import { useIssueType } from '@/hooks/use-issue-type';
+import { useUserBoard } from '@/hooks/use-user-board';
 import { PRIORITY } from '@/config/enum';
+import type { EntityId } from '@/config/interface';
+import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { isOverdue, OVERDUE_INPUT_CLASS } from '@/utils/due-date';
 
 interface AddNewCardPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: (cardData: CardFormData) => void;
+  /** Cột đang thêm thẻ: điền sẵn trạng thái */
+  columnId?: EntityId;
 }
 
 export interface CardFormData {
@@ -35,48 +43,47 @@ export interface CardFormData {
   actualHours?: string;
 }
 
+const LIST_PARAMS = { skip: 0, limit: 100 };
+
+const emptyForm = (columnId?: EntityId): CardFormData => ({
+  title: '',
+  description: '',
+  status: columnId != null ? String(columnId) : undefined,
+  assignee: undefined,
+  priority: undefined,
+  issueType: undefined,
+  version: undefined,
+  startDate: undefined,
+  dueDate: undefined,
+  estimatedHours: undefined,
+  actualHours: undefined,
+});
+
+/** Sheet "Thêm thẻ" trên board: tiêu đề + mô tả, rồi các trường phụ xếp hai cột. */
 const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  columnId,
 }) => {
   const { t } = useTranslation();
+  const params = useParams<{ projectId?: string }>();
+  const boardId = toEntityIdOrUndefined(params?.projectId);
 
-  const { versions } = useVersion();
-  const { columns } = useColumn();
-  const { issueTypes } = useIssueType();
+  const { versions } = useVersion(boardId, LIST_PARAMS);
+  const { columns } = useColumn(boardId);
+  const { issueTypes } = useIssueType(boardId, LIST_PARAMS);
+  const { listUser } = useUserBoard(boardId, LIST_PARAMS);
 
-  const [formData, setFormData] = React.useState<CardFormData>({
-    title: '',
-    description: '',
-    status: undefined,
-    assignee: undefined,
-    priority: undefined,
-    issueType: undefined,
-    version: undefined,
-    startDate: undefined,
-    dueDate: undefined,
-    estimatedHours: undefined,
-    actualHours: undefined,
-  });
+  const [formData, setFormData] = React.useState<CardFormData>(() =>
+    emptyForm(columnId)
+  );
 
   React.useEffect(() => {
     if (!isOpen) {
-      setFormData({
-        title: '',
-        description: '',
-        status: undefined,
-        assignee: undefined,
-        priority: undefined,
-        issueType: undefined,
-        version: undefined,
-        startDate: undefined,
-        dueDate: undefined,
-        estimatedHours: undefined,
-        actualHours: undefined,
-      });
+      setFormData(emptyForm(columnId));
     }
-  }, [isOpen]);
+  }, [isOpen, columnId]);
 
   const handleConfirm = () => {
     if (formData.title.trim() && onConfirm) {
@@ -93,7 +100,7 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
   // Options from hooks and enums
   const statusOptions = columns.map(column => ({
     value: String(column.id),
-    label: column.title,
+    label: <ColorTag color={column.statusColor}>{column.title}</ColorTag>,
   }));
 
   const priorityOptions = [
@@ -109,14 +116,21 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
 
   const issueTypeOptions = issueTypes.map(issueType => ({
     value: String(issueType.id),
-    label: issueType.name,
+    label: <ColorTag color={issueType.statusColor}>{issueType.name}</ColorTag>,
   }));
 
-  const assigneeOptions = [
-    { value: 'user1', label: 'John Doe' },
-    { value: 'user2', label: 'Jane Smith' },
-    { value: 'user3', label: 'Bob Johnson' },
-  ];
+  const assigneeOptions = listUser.items.map(user => {
+    const name = user.displayName || user.username || user.email;
+    return {
+      value: String(user.userId),
+      label: (
+        <span className="flex min-w-0 items-center gap-2">
+          <UserAvatar name={name} src={user.avatar} size={20} />
+          <span className="truncate">{name}</span>
+        </span>
+      ),
+    };
+  });
 
   return (
     <Modal
@@ -125,17 +139,22 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
       title={t('column.addNewCard.popup.title')}
       size="lg"
     >
-      <div className="flex flex-col gap-4">
-        {/* Title Field */}
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={event => {
+          event.preventDefault();
+          handleConfirm();
+        }}
+      >
         <Input
           label={t('column.addNewCard.popup.titleLabel')}
           placeholder={t('column.addNewCard.popup.titlePlaceholder')}
           value={formData.title}
           onChange={e => updateField('title', e.target.value)}
+          autoFocus
           required
         />
 
-        {/* Description Field */}
         <Textarea
           label={t('column.addNewCard.popup.descriptionLabel')}
           placeholder={t('column.addNewCard.popup.descriptionPlaceholder')}
@@ -144,66 +163,58 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
           className="min-h-[100px]"
         />
 
-        {/* Two Column Layout for Status and Assignee */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Status */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Select
             label={t('column.addNewCard.popup.statusLabel')}
             placeholder={t('column.addNewCard.popup.statusPlaceholder')}
             value={formData.status}
+            disabled={columnId != null}
             onValueChange={(value: string) => updateField('status', value)}
             options={statusOptions}
           />
-
-          {/* Assignee */}
           <Select
             label={t('column.addNewCard.popup.assigneeLabel')}
             placeholder={t('column.addNewCard.popup.assigneePlaceholder')}
             value={formData.assignee}
             onValueChange={(value: string) => updateField('assignee', value)}
             options={assigneeOptions}
+            showSearch
+            allowClear
+          />
+          <Select
+            label={t('column.addNewCard.popup.priorityLabel')}
+            placeholder={t('column.addNewCard.popup.priorityPlaceholder')}
+            value={formData.priority}
+            onValueChange={(value: string) => updateField('priority', value)}
+            options={priorityOptions}
+            allowClear
+          />
+          <Select
+            label={t('addIssue.label.issueType')}
+            placeholder={t('addIssue.placeholder.issueType')}
+            value={formData.issueType}
+            onValueChange={(value: string) => updateField('issueType', value)}
+            options={issueTypeOptions}
+            showSearch
+            allowClear
+          />
+          <Select
+            label={t('addIssue.label.version')}
+            placeholder={t('addIssue.placeholder.version')}
+            value={formData.version}
+            onValueChange={(value: string) => updateField('version', value)}
+            options={versionOptions}
+            showSearch
+            allowClear
           />
         </div>
 
-        {/* Priority */}
-        <Select
-          label={t('column.addNewCard.popup.priorityLabel')}
-          placeholder={t('column.addNewCard.popup.priorityPlaceholder')}
-          value={formData.priority}
-          onValueChange={(value: string) => updateField('priority', value)}
-          options={priorityOptions}
-        />
-
-        {/* Issue Type */}
-        <Select
-          label={t('addIssue.label.issueType')}
-          placeholder={t('addIssue.placeholder.issueType')}
-          value={formData.issueType}
-          onValueChange={(value: string) => updateField('issueType', value)}
-          options={issueTypeOptions}
-          showSearch={true}
-        />
-
-        {/* Version */}
-        <Select
-          label={t('addIssue.label.version')}
-          placeholder={t('addIssue.placeholder.version')}
-          value={formData.version}
-          onValueChange={(value: string) => updateField('version', value)}
-          options={versionOptions}
-          showSearch={true}
-        />
-
-        {/* Two Column Layout for Dates */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Start Date */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <DatePicker
             label={t('column.addNewCard.popup.startDateLabel')}
             value={formData.startDate || ''}
             onChange={e => updateField('startDate', e.target.value)}
           />
-
-          {/* Due Date */}
           <DatePicker
             label={t('column.addNewCard.popup.dueDateLabel')}
             value={formData.dueDate || ''}
@@ -212,17 +223,13 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
           />
         </div>
 
-        {/* Two Column Layout for Hours */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Estimated Hours */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <TimePicker
             label={t('column.addNewCard.popup.estimatedHoursLabel')}
             placeholder={t('column.addNewCard.popup.estimatedHoursPlaceholder')}
             value={formData.estimatedHours}
             onChange={e => updateField('estimatedHours', e.target.value)}
           />
-
-          {/* Actual Hours */}
           <TimePicker
             label={t('column.addNewCard.popup.actualHoursLabel')}
             placeholder={t('column.addNewCard.popup.actualHoursPlaceholder')}
@@ -231,28 +238,15 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
           />
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-theme-neutral-4">
-          <Button variant="secondary" onClick={onClose} className="px-8">
+        <div className="-mx-[22px] -mb-[22px] flex flex-wrap justify-end gap-2 border-t border-line bg-bg px-[22px] py-3.5">
+          <Button type="button" variant="outline" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => console.log('Preview:', formData)}
-            className="px-8"
-          >
-            {t('column.addNewCard.popup.preview')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirm}
-            disabled={!formData.title.trim()}
-            className="px-8"
-          >
-            {t('common.add')}
+          <Button type="submit" disabled={!formData.title.trim()}>
+            {t('column.addNewCard.popup.submit')}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 };

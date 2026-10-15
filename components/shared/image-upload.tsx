@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
@@ -37,6 +38,11 @@ export interface ImageUploadProps {
   className?: string;
 }
 
+/**
+ * Ảnh đại diện có nút máy ảnh ở góc (accent, viền trắng) để đổi ảnh — luôn
+ * hiện, không phụ thuộc hover nên dùng được trên iPad. Cả ảnh lẫn nút đều mở
+ * hộp chọn file.
+ */
 export const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
   onUpload,
@@ -93,38 +99,53 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   }, [pickedFile]);
 
   const displaySrc = previews[0] || value || undefined;
+  const isDisabled = disabled || isUploading;
+  const openPicker = () => inputRef.current?.click();
+  const badgeSize = Math.max(24, Math.round(size * 0.38));
 
   return (
-    <div className={className}>
+    <div className={cn('inline-flex flex-col items-start', className)}>
       <div
-        className={cn(
-          'group relative inline-flex items-center justify-center overflow-hidden bg-theme-neutral-3 text-theme-neutral-8',
-          shape === 'circle' ? 'rounded-full' : 'rounded-md'
-        )}
+        className="relative inline-block"
         style={{ width: size, height: size }}
       >
-        {displaySrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={displaySrc}
-            alt={alt}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          fallback
-        )}
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={isDisabled}
+          aria-label={t('common.change')}
+          className={cn(
+            'press relative flex h-full w-full items-center justify-center overflow-hidden bg-fill text-ink-2 shadow-[inset_0_0_0_1px_var(--line)] transition-opacity disabled:cursor-not-allowed',
+            shape === 'circle' ? 'rounded-full' : 'rounded-[12px]'
+          )}
+        >
+          {displaySrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={displaySrc}
+              alt={alt}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            fallback
+          )}
+          {isUploading && (
+            <span className="absolute inset-0 grid place-items-center bg-backdrop">
+              <span className="size-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            </span>
+          )}
+        </button>
 
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled || isUploading}
-          className="absolute inset-0 flex items-center justify-center bg-black/0 text-[11px] font-medium text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white disabled:cursor-not-allowed cursor-pointer"
+          onClick={openPicker}
+          disabled={isDisabled}
+          aria-label={t('common.change')}
+          title={t('common.change')}
+          style={{ width: badgeSize, height: badgeSize }}
+          className="press absolute -right-0.5 -bottom-0.5 grid place-items-center rounded-full border-[3px] border-card bg-accent text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60 [&_svg]:size-[46%]"
         >
-          {isUploading ? (
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-          ) : (
-            t('common.change')
-          )}
+          <Camera />
         </button>
 
         <input
@@ -133,11 +154,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           accept={IMAGE_UPLOAD_ACCEPT}
           className="hidden"
           onChange={handleFileChange}
-          disabled={disabled || isUploading}
+          disabled={isDisabled}
         />
       </div>
 
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 text-[13px] text-danger">{error}</p>}
     </div>
   );
 };

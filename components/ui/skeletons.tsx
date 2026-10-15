@@ -10,7 +10,7 @@ interface SkeletonBlockProps {
 }
 
 const SkeletonBlock: React.FC<SkeletonBlockProps> = ({ className }) => (
-  <div className={cn('animate-pulse rounded bg-theme-neutral-4', className)} />
+  <div className={cn('skel', className)} />
 );
 
 /* ── Page Skeleton ──────────────────────────────────────────────── */

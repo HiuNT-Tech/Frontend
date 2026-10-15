@@ -99,7 +99,7 @@ export const SystemCommentDiff: React.FC<SystemCommentDiffProps> = ({
 
   return (
     <div
-      className={`system-comment-diff text-sm ${className ?? ''}`}
+      className={`system-comment-diff text-sm text-ink-2 ${className ?? ''}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

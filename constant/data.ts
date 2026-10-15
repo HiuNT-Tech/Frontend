@@ -1,4 +1,7 @@
 import React from 'react';
+// Khởi tạo i18n TRƯỚC khi module này chạy: PRIORITY_OPTIONS gọi t() ngay lúc nạp,
+// nếu i18n chưa init thì nhãn ưu tiên thành undefined (hiện "—").
+import '@/i18n';
 import { t, type TFunction } from 'i18next';
 
 import { BoardInvitationStatus, PRIORITY, StatusColor } from '@/config/enum';
@@ -13,19 +16,19 @@ type MemberRoleStatusConfig = {
 export const MEMBER_ROLE_STATUS_DATA = {
   MEMBER: {
     labelKey: 'settings.members.roleOptions.member',
-    badgeClassName: 'bg-gray-100 text-gray-700',
+    badgeClassName: 'bg-fill text-ink-2',
   },
   ADMIN: {
     labelKey: 'settings.members.roleOptions.administrator',
-    badgeClassName: 'bg-red-100 text-red-600',
+    badgeClassName: 'bg-accent-soft text-accent-text',
   },
   PM: {
     labelKey: 'settings.members.roleOptions.projectManager',
-    badgeClassName: 'bg-blue-100 text-blue-600',
+    badgeClassName: 'bg-fill text-ink',
   },
   GUEST: {
     labelKey: 'settings.members.roleOptions.guest',
-    badgeClassName: 'bg-yellow-100 text-yellow-700',
+    badgeClassName: 'bg-warn-soft text-warn',
   },
 } satisfies Record<BoardMemberRole, MemberRoleStatusConfig>;
 
@@ -64,26 +67,23 @@ type InvitationStatusConfig = {
 export const INVITATION_STATUS_DATA = {
   [BoardInvitationStatus.PENDING]: {
     labelKey: 'settings.invitations.status.pending',
-    badgeClassName: 'border-theme-main-2 bg-theme-main-1 text-theme-main-6',
+    badgeClassName: 'border-transparent bg-warn-soft text-warn',
   },
   [BoardInvitationStatus.ACCEPTED]: {
     labelKey: 'settings.invitations.status.accepted',
-    badgeClassName: 'border-theme-main-3 bg-theme-main-1 text-theme-main-7',
+    badgeClassName: 'border-transparent bg-accent-soft text-accent-text',
   },
   [BoardInvitationStatus.DECLINED]: {
     labelKey: 'settings.invitations.status.declined',
-    badgeClassName:
-      'border-theme-neutral-5 bg-theme-neutral-3 text-theme-neutral-8',
+    badgeClassName: 'border-transparent bg-fill text-muted',
   },
   [BoardInvitationStatus.REVOKED]: {
     labelKey: 'settings.invitations.status.revoked',
-    badgeClassName:
-      'border-theme-neutral-5 bg-theme-neutral-3 text-theme-neutral-8',
+    badgeClassName: 'border-transparent bg-fill text-muted',
   },
   [BoardInvitationStatus.EXPIRED]: {
     labelKey: 'settings.invitations.status.expired',
-    badgeClassName:
-      'border-theme-neutral-5 bg-theme-neutral-2 text-theme-neutral-7',
+    badgeClassName: 'border-transparent bg-fill text-faint',
   },
 } satisfies Record<BoardInvitationStatus, InvitationStatusConfig>;
 
@@ -116,8 +116,7 @@ export const renderInvitationStatusBadge = (
     {
       className: cn(
         'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold',
-        config?.badgeClassName ??
-          'border-theme-neutral-5 bg-theme-neutral-2 text-theme-neutral-8'
+        config?.badgeClassName ?? 'border-transparent bg-fill text-muted'
       ),
     },
     t(config?.labelKey ?? 'settings.invitations.status.unknown')
@@ -132,52 +131,52 @@ export const COLOR_STATUS_OPTIONS = [
   {
     key: 'red',
     hex: '#E52E00',
-    className: 'bg-[#E52E00] text-[#ffffff] border-[#E52E00]',
+    className: 'tag-color tag-c-red',
   },
   {
     key: 'orange',
     hex: '#E68A40',
-    className: 'bg-[#E68A40] text-[#ffffff] border-[#E68A40]',
+    className: 'tag-color tag-c-orange',
   },
   {
     key: 'pink',
     hex: '#DB7F9B',
-    className: 'bg-[#DB7F9B] text-[#ffffff] border-[#DB7F9B]',
+    className: 'tag-color tag-c-pink',
   },
   {
     key: 'indigo',
     hex: '#868DB8',
-    className: 'bg-[#868DB8] text-[#ffffff] border-[#868DB8]',
+    className: 'tag-color tag-c-indigo',
   },
   {
     key: 'blue',
     hex: '#3B9DB7',
-    className: 'bg-[#3B9DB7] text-[#ffffff] border-[#3B9DB7]',
+    className: 'tag-color tag-c-blue',
   },
   {
     key: 'teal',
     hex: '#45AC94',
-    className: 'bg-[#45AC94] text-[#ffffff] border-[#45AC94]',
+    className: 'tag-color tag-c-teal',
   },
   {
     key: 'green',
     hex: '#90A631',
-    className: 'bg-[#90A631] text-[#ffffff] border-[#90A631]',
+    className: 'tag-color tag-c-green',
   },
   {
     key: 'yellow',
     hex: '#D8921B',
-    className: 'bg-[#D8921B] text-[#ffffff] border-[#D8921B]',
+    className: 'tag-color tag-c-yellow',
   },
   {
     key: 'bright-red',
     hex: '#F2245F',
-    className: 'bg-[#F2245F] text-[#ffffff] border-[#F2245F]',
+    className: 'tag-color tag-c-bright-red',
   },
   {
     key: 'black',
     hex: '#333333',
-    className: 'bg-[#333333] text-[#ffffff] border-[#333333]',
+    className: 'tag-color tag-c-black',
   },
 ] as const;
 
@@ -245,15 +244,12 @@ export const getIssueTypeBadgeClassName = (
 ): string => {
   // Support legacy db records
   const legacyMap: Record<string, string> = {
-    GRAY: 'bg-theme-neutral-5 text-theme-neutral-10 border-theme-neutral-5', // actual gray
-    PURPLE: 'bg-[#9b59b6] text-white border-[#9b59b6]',
+    GRAY: 'tag-color tag-c-gray',
+    PURPLE: 'tag-color tag-c-purple',
   };
 
   if (statusColor && legacyMap[statusColor]) {
-    return cn(
-      legacyMap[statusColor],
-      'min-w-[100px] justify-center text-center'
-    );
+    return cn(legacyMap[statusColor], 'justify-center text-center');
   }
 
   const key =
@@ -262,9 +258,8 @@ export const getIssueTypeBadgeClassName = (
         'blue')
       : 'blue';
   const option = COLOR_STATUS_OPTIONS.find(o => o.key === key);
-  const baseClassName =
-    option?.className ?? 'bg-[#3B9DB7] text-[#ffffff] border-[#3B9DB7]';
-  return cn(baseClassName, 'min-w-[100px] justify-center text-center');
+  const baseClassName = option?.className ?? 'tag-color tag-c-blue';
+  return cn(baseClassName, 'justify-center text-center');
 };
 
 export const renderStatusBadge = (
@@ -306,9 +301,9 @@ export const PRIORITY_OPTIONS = [
 ];
 
 const PRIORITY_CLASS_NAMES: Record<number, string> = {
-  [PRIORITY.LOW]: 'text-blue-600',
-  [PRIORITY.NORMAL]: 'text-yellow-600',
-  [PRIORITY.HIGH]: 'text-red-600',
+  [PRIORITY.LOW]: 'text-muted',
+  [PRIORITY.NORMAL]: 'text-warn',
+  [PRIORITY.HIGH]: 'text-danger',
 };
 
 /** Trả về className màu chữ theo mức độ ưu tiên (1/2/3 từ API) */

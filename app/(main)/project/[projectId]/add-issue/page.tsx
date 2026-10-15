@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
+import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { AiSuggestDescriptionButton } from '@/components/ai-assistant/ai-suggest-description-button';
-import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { TimePicker } from '@/components/ui/time-picker';
-import { DatePicker } from '@/components/ui/date-picker';
+import { IconButton } from '@/components/ui/icon-button';
+import { Group } from '@/components/ui/surface';
+import { Pane, PaneContent } from '@/components/layout/pane';
 import { PRIORITY } from '@/config/enum';
 import { useVersion } from '@/hooks/use-version';
 import { useColumn } from '@/hooks/use-column';
@@ -17,6 +17,8 @@ import { useIssueType } from '@/hooks/use-issue-type';
 import { useCardDetail } from '@/hooks/use-card-detail';
 import { useUserBoard } from '@/hooks/use-user-board';
 import { useFileUpload } from '@/hooks/use-file-upload';
+import { useCurrentProject } from '@/hooks/use-current-project';
+import { BREAKPOINTS, useMediaQuery } from '@/hooks/use-media-query';
 import {
   AttachmentUploader,
   ExistingAttachmentsList,
@@ -30,7 +32,13 @@ import { CardService } from '@/lib/apis/card';
 import { toastHelpers } from '@/hooks/use-toast';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentUser } from '@/redux/user/userSlice';
+import { cn } from '@/lib/utils';
 import { PreviewIssue } from './preview-issue';
+import {
+  EditableMetadata,
+  EditableTitle,
+  type EditFormData,
+} from '../issues/[id]/edit-form-fields';
 import type {
   Card,
   CreateNewCardRequest,
@@ -45,7 +53,6 @@ import {
 } from '@/lib/entity-id';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { isOverdue, OVERDUE_INPUT_CLASS } from '@/utils/due-date';
 
 type AddIssueFormData = {
   title: string;
@@ -75,6 +82,21 @@ const EMPTY_FORM: AddIssueFormData = {
   version: '',
 };
 
+/** Tên trường của form này ↔ tên trường trong `EditableMetadata` (dùng chung với inspector). */
+const EDIT_FIELD_MAP: Record<keyof EditFormData, keyof AddIssueFormData> = {
+  title: 'title',
+  description: 'description',
+  columnId: 'status',
+  priority: 'priority',
+  issueTypeId: 'issueType',
+  assigneeUserId: 'assignee',
+  versionId: 'version',
+  startDate: 'startDate',
+  dueDate: 'dueDate',
+  estimatedHours: 'estimatedHours',
+  actualHours: 'actualHours',
+};
+
 export default function AddIssuePage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -82,6 +104,8 @@ export default function AddIssuePage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const currentUser = useAppSelector(selectCurrentUser);
+  const { code: projectCode, title: projectTitle } = useCurrentProject();
+  const isWide = useMediaQuery(BREAKPOINTS.wide);
 
   const boardId =
     toEntityIdOrUndefined(params?.projectId as string) ??
@@ -89,24 +113,23 @@ export default function AddIssuePage() {
     toEntityIdOrUndefined(searchParams.get('boardId'));
   const editId = toEntityIdOrUndefined(searchParams.get('editId'));
   const isEditMode = !!editId;
-
-  // useEffect(() => {
-  //   if (!boardId && !isEditMode) {
-  //     router.replace('/dashboard');
-  //   }
-  // }, [boardId, isEditMode, router]);
+  // Trạng thái đặt sẵn từ URL (vd. nút "+" trên một cột của board).
+  const presetStatus =
+    searchParams.get('columnId') ?? searchParams.get('status') ?? '';
 
   const { versions } = useVersion(boardId);
   const { columns } = useColumn(boardId);
   const { issueTypes } = useIssueType(boardId);
   const { listUser } = useUserBoard(boardId, { skip: 0, limit: 100 });
-  const { card: editCard, isLoading: isLoadingCard } = useCardDetail(
-    isEditMode ? editId : undefined
-  );
+  const { card: editCard } = useCardDetail(isEditMode ? editId : undefined);
 
-  const [formData, setFormData] = useState<AddIssueFormData>(EMPTY_FORM);
+  const [formData, setFormData] = useState<AddIssueFormData>(() => ({
+    ...EMPTY_FORM,
+    status: presetStatus,
+  }));
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const {
     files: attachmentFiles,
@@ -157,6 +180,16 @@ export default function AddIssuePage() {
     }
   }, [isEditMode, editCard, isFormInitialized]);
 
+  // Tạo mới mà chưa chọn trạng thái → mặc định cột đầu tiên của board.
+  useEffect(() => {
+    if (isEditMode || columns.length === 0) return;
+    setFormData(prev => {
+      if (prev.status && columns.some(c => String(c.id) === prev.status))
+        return prev;
+      return { ...prev, status: String(columns[0].id) };
+    });
+  }, [columns, isEditMode]);
+
   const STATUS_OPTIONS = columns.map(column => ({
     value: String(column.id),
     label: column.title,
@@ -196,11 +229,7 @@ export default function AddIssuePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    mutateAsync: createNewCard,
-    isPending: isCreateCardPending,
-    error: createNewCardError,
-  } = useMutation({
+  const { mutateAsync: createNewCard } = useMutation({
     mutationFn: async (card: CreateNewCardRequest) => {
       return await BoardService.createNewCard(card);
     },
@@ -228,11 +257,18 @@ export default function AddIssuePage() {
     },
   });
 
+  const titleMissing = !formData.title.trim();
+  const statusMissing = !formData.status;
+
   const handleSubmit = async (
     e?: React.FormEvent | React.MouseEvent<HTMLButtonElement>
   ) => {
     e?.preventDefault();
-    if (!formData.title || !formData.status) return;
+    if (!formData.title || !formData.status) {
+      setSubmitAttempted(true);
+      setIsPreviewing(false);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -292,7 +328,11 @@ export default function AddIssuePage() {
         await createNewCard(payload);
       }
     } catch {
-      toastHelpers.error({ title: t('toast.error.userLoginFailed') });
+      toastHelpers.error({
+        title: isEditMode
+          ? t('issueDetail.updateError')
+          : t('addIssue.createError'),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -396,6 +436,7 @@ export default function AddIssuePage() {
     [
       boardId,
       editCard?.createdAt,
+      editCard?.position,
       editCard?.updatedAt,
       editId,
       formData.actualHours,
@@ -414,92 +455,150 @@ export default function AddIssuePage() {
     ]
   );
 
-  if (isPreviewing && !isEditMode) {
-    return (
-      <PreviewIssue
-        card={previewCard}
-        versions={versions}
-        issueTypeInfo={previewIssueTypeInfo}
-        statusInfo={previewStatusInfo}
-        priorityLabel={previewPriorityLabel}
-        resolveUser={resolveUser}
-        isSubmitting={isSubmitting}
-        onBack={() => setIsPreviewing(false)}
-        onAdd={() => handleSubmit()}
-      />
-    );
-  }
+  /* ── Adapter: EditableMetadata dùng tên trường của inspector ── */
+  const metadataFormData = useMemo<EditFormData>(
+    () => ({
+      title: formData.title,
+      description: formData.description,
+      columnId: formData.status,
+      priority: formData.priority,
+      issueTypeId: formData.issueType,
+      assigneeUserId: formData.assignee,
+      versionId: formData.version,
+      startDate: formData.startDate,
+      dueDate: formData.dueDate,
+      estimatedHours: formData.estimatedHours,
+      actualHours: formData.actualHours,
+    }),
+    [formData]
+  );
+  const handleMetadataChange = (field: keyof EditFormData, value: string) =>
+    handleChange(EDIT_FIELD_MAP[field], value);
+
+  const titleError =
+    submitAttempted && titleMissing ? t('addIssue.titleRequired') : undefined;
+  const statusError =
+    submitAttempted && statusMissing ? t('addIssue.statusRequired') : undefined;
+
+  const showPreview = isPreviewing && !isEditMode;
+  // Dưới 1280px bản xem trước thay thế form (bật/tắt); từ 1280px hai cột cạnh nhau.
+  const formHidden = showPreview && !isWide;
+
+  const handleBack = () => router.back();
+
+  const submitLabel = isSubmitting
+    ? t('common.loading')
+    : isEditMode
+      ? t('issueDetail.saveChanges')
+      : t('addIssue.create');
+
+  const preview = (
+    <PreviewIssue
+      card={previewCard}
+      versions={versions}
+      issueTypeInfo={previewIssueTypeInfo}
+      statusInfo={previewStatusInfo}
+      priorityLabel={previewPriorityLabel}
+      resolveUser={resolveUser}
+      isSubmitting={isSubmitting}
+      onBack={() => setIsPreviewing(false)}
+      onAdd={() => handleSubmit()}
+      showActions={!isWide}
+    />
+  );
 
   return (
-    <div className="min-h-screen w-full bg-theme-neutral-3/40">
-      <div className="max-w-9xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-theme-neutral-12">
-              {isEditMode ? t('issueDetail.edit') : t('addIssue.title')}
-            </h1>
-            <p className="mt-1 text-sm text-theme-neutral-9">
-              {isEditMode
-                ? t('addIssue.section.generalHint')
-                : (t('addIssue.description') ?? '')}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+    <Pane
+      leading={
+        <IconButton aria-label={t('issueDetail.back')} onClick={handleBack}>
+          <ChevronLeft />
+        </IconButton>
+      }
+      title={isEditMode ? t('addIssue.editTitle') : t('shell.nav.newIssue')}
+      subtitle={
+        [projectCode, projectTitle].filter(Boolean).join(' · ') || undefined
+      }
+      actions={
+        <>
+          {!isEditMode && (
             <Button
               type="button"
-              variant="outline"
-              onClick={() => {
-                if (isEditMode) router.back();
-                else setIsPreviewing(true);
-              }}
-              className="border-theme-neutral-5"
+              variant="ghost"
+              size="sm"
+              aria-pressed={isPreviewing}
+              onClick={() => setIsPreviewing(p => !p)}
             >
-              {isEditMode ? t('issueDetail.cancel') : t('common.preview')}
+              {isPreviewing ? (
+                <EyeOff aria-hidden="true" />
+              ) : (
+                <Eye aria-hidden="true" />
+              )}
+              <span className="hidden md:inline">
+                {isPreviewing
+                  ? t('addIssue.hidePreview')
+                  : t('addIssue.showPreview')}
+              </span>
             </Button>
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-theme-main hover:bg-theme-hover text-theme-neutral-1"
-            >
-              {isSubmitting
-                ? t('common.loading')
-                : isEditMode
-                  ? t('issueDetail.save')
-                  : t('common.add')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="rounded-xl border border-theme-neutral-5/60 bg-theme-neutral-1 shadow-sm">
-          {/* Form */}
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleBack}
+            className="hidden sm:inline-flex"
+          >
+            {isEditMode ? t('issueDetail.cancel') : t('addIssue.discard')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {submitLabel}
+          </Button>
+        </>
+      }
+    >
+      <PaneContent width={showPreview && isWide ? 'default' : 'narrow'}>
+        <div
+          className={cn(
+            'grid gap-8',
+            showPreview &&
+              isWide &&
+              'xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start'
+          )}
+        >
           <form
             onSubmit={handleSubmit}
-            className="space-y-8 px-6 py-6 md:px-8 md:py-8"
+            className={cn('min-w-0 space-y-6', formHidden && 'hidden')}
           >
-            {/* General information */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-theme-neutral-9">
-                  {t('addIssue.section.general') ?? 'General information'}
-                </p>
-                <p className="text-xs text-theme-neutral-8">
-                  {t('addIssue.section.generalHint') ??
-                    'Basic details to identify this issue.'}
-                </p>
-              </div>
-
-              <Input
-                label={t('addIssue.label.title')}
-                required
+            {/* Tiêu đề: phần tử nổi bật duy nhất của màn */}
+            <div>
+              <EditableTitle
                 value={formData.title}
-                onChange={e => handleChange('title', e.target.value)}
-                placeholder={t('addIssue.placeholder.title')}
+                onChange={v => handleChange('title', v)}
+                autoFocus={!isEditMode}
+                className={cn(
+                  'md:text-[26px]',
+                  titleError && 'border-danger focus:border-danger'
+                )}
               />
+              {titleError && (
+                <p className="mt-2 px-0.5 text-[13px] text-danger">
+                  {titleError}
+                </p>
+              )}
+            </div>
 
+            {/* Description */}
+            <Group
+              title={t('addIssue.label.description')}
+              cardClassName="transition-[border-color,box-shadow] duration-200 ease-soft focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]"
+            >
               <MarkdownEditor
-                label={t('addIssue.label.description')}
+                flush
+                rows={8}
                 value={formData.description}
                 onChange={value => handleChange('description', value)}
                 placeholder={t('addIssue.placeholder.description')}
@@ -507,145 +606,58 @@ export default function AddIssuePage() {
                   <AiSuggestDescriptionButton title={formData.title} />
                 }
               />
+            </Group>
 
-              {/* Attachments */}
-              <div>
-                <p className="mb-1.5 text-sm font-medium text-theme-neutral-11">
-                  {t('attachments.label')}
-                </p>
-                {isEditMode && (
-                  <ExistingAttachmentsList
-                    className="mb-3"
-                    attachments={editCard?.attachments ?? []}
-                    removedIds={removedAttachmentIds}
-                    onToggleRemove={toggleRemoveExistingAttachment}
-                  />
-                )}
-                <AttachmentUploader
-                  files={attachmentFiles}
-                  previews={attachmentPreviews}
-                  error={attachmentError}
-                  isProcessing={isAttachmentProcessing}
-                  onFileChange={handleAttachmentChange}
-                  onRemove={removeAttachment}
+            {/* Details: nhãn trái / picker phải */}
+            <Group title={t('issueDetail.sections.details')}>
+              <EditableMetadata
+                formData={metadataFormData}
+                onChange={handleMetadataChange}
+                statusOptions={STATUS_OPTIONS}
+                priorityOptions={PRIORITY_OPTIONS}
+                issueTypeOptions={ISSUE_TYPE_OPTIONS}
+                userOptions={USER_OPTIONS}
+                versionOptions={VERSION_OPTIONS}
+                onAssignToMyself={
+                  currentUser?.id ? handleAssignToMyself : undefined
+                }
+                errors={statusError ? { columnId: statusError } : undefined}
+              />
+            </Group>
+
+            {/* Attachments */}
+            <Group title={t('attachments.label')} cardClassName="px-4 py-3.5">
+              {isEditMode && (
+                <ExistingAttachmentsList
+                  className="mb-3"
+                  attachments={editCard?.attachments ?? []}
+                  removedIds={removedAttachmentIds}
+                  onToggleRemove={toggleRemoveExistingAttachment}
                 />
-              </div>
-            </div>
+              )}
+              <AttachmentUploader
+                files={attachmentFiles}
+                previews={attachmentPreviews}
+                error={attachmentError}
+                isProcessing={isAttachmentProcessing}
+                onFileChange={handleAttachmentChange}
+                onRemove={removeAttachment}
+              />
+            </Group>
 
-            <div className="h-px w-full bg-theme-neutral-4" />
-
-            {/* Meta information */}
-            <div className="space-y-6">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-theme-neutral-9">
-                  {t('addIssue.section.meta') ?? 'Issue metadata'}
-                </p>
-                <p className="text-xs text-theme-neutral-8">
-                  {t('addIssue.section.metaHint') ??
-                    'Status, assignee and time tracking.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Left column */}
-                <div className="space-y-4">
-                  <Select
-                    label="Status"
-                    options={STATUS_OPTIONS}
-                    value={formData.status}
-                    onValueChange={value => handleChange('status', value)}
-                    placeholder="Select status"
-                  />
-
-                  <Select
-                    label={t('addIssue.label.priority')}
-                    options={PRIORITY_OPTIONS}
-                    value={formData.priority}
-                    onValueChange={value => handleChange('priority', value)}
-                    placeholder={t('addIssue.placeholder.priority')}
-                  />
-
-                  <Select
-                    label={t('addIssue.label.issueType')}
-                    options={ISSUE_TYPE_OPTIONS}
-                    value={formData.issueType}
-                    onValueChange={value => handleChange('issueType', value)}
-                    placeholder={t('addIssue.placeholder.issueType')}
-                    showSearch={true}
-                  />
-
-                  <div>
-                    <Select
-                      label={t('addIssue.label.assignee')}
-                      showSearch={true}
-                      options={USER_OPTIONS}
-                      value={formData.assignee}
-                      onValueChange={value => handleChange('assignee', value)}
-                      placeholder={t('addIssue.placeholder.assignee')}
-                    />
-                    <button
-                      type="button"
-                      className="mt-2 text-sm text-theme-main hover:underline cursor-pointer"
-                      onClick={handleAssignToMyself}
-                      disabled={!currentUser?.id}
-                    >
-                      {t('addIssue.myself')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right column */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <DatePicker
-                      label={t('addIssue.label.startDate')}
-                      value={formData.startDate}
-                      onChange={e => handleChange('startDate', e.target.value)}
-                    />
-                    <DatePicker
-                      label={t('addIssue.label.dueDate')}
-                      value={formData.dueDate}
-                      onChange={e => handleChange('dueDate', e.target.value)}
-                      className={
-                        isOverdue(formData.dueDate) ? OVERDUE_INPUT_CLASS : ''
-                      }
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Input
-                      onlyFloat
-                      label={t('addIssue.label.estimatedHours')}
-                      value={formData.estimatedHours}
-                      onChange={e =>
-                        handleChange('estimatedHours', e.target.value)
-                      }
-                      placeholder="e.g. 4.5"
-                    />
-                    <Input
-                      onlyFloat
-                      label={t('addIssue.label.actualHours')}
-                      value={formData.actualHours}
-                      onChange={e =>
-                        handleChange('actualHours', e.target.value)
-                      }
-                      placeholder="e.g. 2.5"
-                    />
-                  </div>
-                  <Select
-                    label={t('addIssue.label.version')}
-                    showSearch={true}
-                    options={VERSION_OPTIONS}
-                    value={formData.version}
-                    onValueChange={value => handleChange('version', value)}
-                    placeholder={t('addIssue.placeholder.version')}
-                  />
-                </div>
-              </div>
+            {/* Nút phụ dưới form cho màn hẹp (toolbar chỉ còn nút chính) */}
+            <div className="flex justify-end gap-2 sm:hidden">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                {isEditMode ? t('issueDetail.cancel') : t('addIssue.discard')}
+              </Button>
             </div>
           </form>
+
+          {showPreview && (
+            <aside className="min-w-0 xl:sticky xl:top-0">{preview}</aside>
+          )}
         </div>
-      </div>
-    </div>
+      </PaneContent>
+    </Pane>
   );
 }

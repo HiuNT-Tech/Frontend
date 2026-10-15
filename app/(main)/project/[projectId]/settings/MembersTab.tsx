@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { MembersTable } from '@/components/shared/tables/MembersTable';
@@ -25,7 +25,7 @@ import { useUserBoard } from '@/hooks/use-user-board';
 import { useBoardRole } from '@/hooks/use-board-role';
 import { useBoardInvitations } from '@/hooks/use-invitation';
 import type { InvitationFormData } from '@/validation/invitation-form-schemas';
-import { useTranslation } from 'react-i18next';
+import { SectionHeader } from './SectionHeader';
 
 export const MembersTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
   const { t } = useTranslation();
@@ -147,32 +147,21 @@ export const MembersTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 border-b border-theme-neutral-4 pb-5 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-theme-neutral-11">
-            {t('settings.members.heading')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-theme-neutral-8">
-            {t('settings.members.hint')}
-          </p>
-        </div>
-        {isManager && (
-          <Button
-            className="h-10 rounded-md bg-theme-main px-4 text-theme-neutral-1 shadow-sm hover:bg-theme-hover"
-            onClick={() => setIsInvitationDialogOpen(true)}
-          >
-            <Image
-              src={Icons.MailPlus}
-              alt=""
-              width={16}
-              height={16}
-              className="mr-2 h-4 w-4"
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-            {t('settings.members.actions.invite')}
-          </Button>
-        )}
-      </div>
+      <SectionHeader
+        title={t('settings.members.heading')}
+        description={t('settings.members.hint')}
+        action={
+          isManager && (
+            <Button
+              variant="primary"
+              onClick={() => setIsInvitationDialogOpen(true)}
+            >
+              <UserPlus />
+              {t('settings.members.actions.invite')}
+            </Button>
+          )
+        }
+      />
 
       <MembersFilter onSearch={handleSearch} />
 
@@ -194,12 +183,12 @@ export const MembersTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
       ) : null}
 
       {isManager && (
-        <div className="space-y-5 border-t border-theme-neutral-4 pt-5">
-          <div>
-            <h3 className="text-lg font-semibold text-theme-neutral-11">
+        <section className="space-y-4 pt-4">
+          <div className="min-w-0">
+            <h3 className="text-[17px] font-bold tracking-[-0.01em] text-ink">
               {t('settings.invitations.heading')}
             </h3>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-theme-neutral-8">
+            <p className="mt-0.5 max-w-[60ch] text-sm text-muted">
               {t('settings.invitations.hint')}
             </p>
           </div>
@@ -220,7 +209,7 @@ export const MembersTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
             isActionPending={isRevokeInvitationPending}
             isResendPending={isResendInvitationPending}
           />
-        </div>
+        </section>
       )}
 
       <InvitationCreatePopup

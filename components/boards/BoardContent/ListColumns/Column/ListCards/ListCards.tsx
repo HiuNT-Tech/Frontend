@@ -6,6 +6,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { useTranslation } from 'react-i18next';
 import Card from './Card/Card';
 import type { Card as CardType, EntityId } from '@/config/interface';
 
@@ -14,7 +15,9 @@ interface ListCardsProps {
   columnId: EntityId;
 }
 
+/** Danh sách thẻ trong một cột: cuộn dọc riêng, luôn có vùng thả kể cả khi trống. */
 function ListCards({ cards, columnId }: ListCardsProps) {
+  const { t } = useTranslation();
   const realCards = useMemo(
     () => cards.filter(card => !card.FE_PlaceholderCard),
     [cards]
@@ -31,15 +34,19 @@ function ListCards({ cards, columnId }: ListCardsProps) {
     <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
       <div
         ref={setNodeRef}
-        className="px-1.5 pb-1.5 mx-1.5 flex flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto max-h-[calc(100vh-10.8rem)]"
-        style={{
-          scrollbarColor: '#ced0da transparent',
-          minHeight: '40px' /* Ensure empty columns have droppable area */,
-        }}
+        className="flex min-h-[80px] min-w-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto px-0.5 pb-0.5"
       >
         {realCards.map(card => (
           <Card key={card.id} card={card} />
         ))}
+        {realCards.length === 0 && (
+          <div className="px-2 py-5 text-center text-[13px] leading-[1.45] text-muted">
+            <b className="mb-0.5 block text-[13.5px] font-semibold text-ink-2">
+              {t('board.column.empty.title')}
+            </b>
+            {t('board.column.empty.description')}
+          </div>
+        )}
       </div>
     </SortableContext>
   );

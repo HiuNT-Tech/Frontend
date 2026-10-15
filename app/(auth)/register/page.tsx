@@ -1,10 +1,10 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
+import type React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,6 @@ import { RegisterUserRequest } from '@/config/interface';
 import { AuthService } from '@/lib/apis/auth';
 import { toastHelpers } from '@/hooks/use-toast';
 import { registerFormSchema } from '@/validation/register-form-schemas';
-import Images from '@/assets';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -23,6 +22,49 @@ interface RegisterFormData extends RegisterUserRequest {
 
 type FormData = z.infer<typeof registerFormSchema>;
 
+// Ô nhập 16px để Safari trên iPad/iPhone không tự phóng to khi focus.
+const INPUT_CLASS = 'h-11 px-3.5 text-base';
+
+const describedBy = (id: string, error?: string) =>
+  error ? `${id}-error` : undefined;
+
+/** Nhãn ở trên, ô nhập, lỗi (đỏ) ngay dưới ô. */
+function AuthField({
+  id,
+  label,
+  error,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={id}
+        className="text-[13px] leading-tight font-semibold text-ink-2"
+      >
+        {label}
+      </label>
+      {children}
+      {error ? (
+        <p
+          id={`${id}-error`}
+          className="text-[12.5px] leading-snug font-medium text-danger"
+        >
+          {error}
+        </p>
+      ) : (
+        hint && <p className="text-[12.5px] leading-snug text-muted">{hint}</p>
+      )}
+    </div>
+  );
+}
+
 function RegisterForm() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -30,11 +72,13 @@ function RegisterForm() {
   const invitationEmail = searchParams.get('email');
   const invitationToken = searchParams.get('invitationToken');
   const redirect = searchParams.get('redirect');
+  const appName = t('shell.appName');
 
   const {
     register,
     handleSubmit,
     setValue,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(registerFormSchema),
@@ -50,6 +94,11 @@ function RegisterForm() {
       setValue('email', invitationEmail, { shouldValidate: true });
     }
   }, [invitationEmail, setValue]);
+
+  // Email đã khoá theo lời mời thì đưa con trỏ thẳng vào ô mật khẩu.
+  useEffect(() => {
+    setFocus(invitationEmail ? 'password' : 'email');
+  }, [invitationEmail, setFocus]);
 
   const getFieldError = (field: keyof FormData): string | undefined => {
     return errors[field]?.message;
@@ -87,111 +136,150 @@ function RegisterForm() {
     setTimeout(() => {}, 200);
   };
 
+  const loginHref = redirect
+    ? `/login?redirect=${encodeURIComponent(redirect)}`
+    : '/login';
+
+  const emailError = getFieldError('email');
+  const passwordError = getFieldError('password');
+  const confirmationError = getFieldError('passwordConfirmation');
+
   return (
-    <form className="w-full max-w-sm">
-      <div className="mt-24 mx-4 p-6 bg-white rounded-lg shadow-xl animate-in fade-in zoom-in duration-300">
-        {/* Header Icons */}
-        <div className="flex justify-center gap-2 mb-4">
-          <div className="w-10 h-10 rounded-full bg-theme-main flex items-center justify-center">
-            <Image
-              src={Images.IconLock}
-              alt="Lock"
-              width={20}
-              height={20}
-              className="text-white"
-            />
-          </div>
-          <div className="w-10 h-10 rounded-full bg-theme-main flex items-center justify-center">
-            <Image
-              src={Images.IconTrello}
-              alt="Trello"
-              width={20}
-              height={20}
-              className="text-white"
-            />
-          </div>
-        </div>
+    <div className="animate-fade-in">
+      <h1 className="text-2xl leading-tight font-bold tracking-[-0.02em] text-balance text-ink">
+        {t('auth.register.heading', { appName })}
+      </h1>
+      <p className="mt-1.5 text-sm leading-normal text-muted">
+        {invitationEmail
+          ? t('auth.register.invitedSubtitle')
+          : t('auth.register.subtitle')}
+      </p>
 
-        {/* Author */}
-        <div className="text-center text-gray-500 text-sm mb-4">
-          {t('auth.author')}
-        </div>
-
-        {/* Form Fields */}
-        <div className="space-y-4">
+      <form
+        noValidate
+        onSubmit={handleSubmit(onSubmit, onError)}
+        className="mt-6 flex flex-col gap-3.5"
+      >
+        <AuthField
+          id="register-email"
+          label={t('auth.fields.email')}
+          error={emailError}
+          hint={
+            invitationEmail ? t('auth.register.invitedEmailHint') : undefined
+          }
+        >
           <Input
-            type="text"
-            placeholder={t('auth.register.emailLabel')}
-            error={getFieldError('email')}
+            id="register-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder={t('auth.fields.emailPlaceholder')}
+            className={INPUT_CLASS}
+            error={emailError}
+            notShowErrorMessage
+            aria-describedby={describedBy('register-email', emailError)}
             {...register('email', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
             readOnly={!!invitationEmail}
             disabled={isSubmitting}
           />
+        </AuthField>
 
+        <AuthField
+          id="register-password"
+          label={t('auth.fields.password')}
+          error={passwordError}
+        >
           <Input
+            id="register-password"
             type="password"
-            placeholder={t('auth.register.passwordLabel')}
-            error={getFieldError('password')}
+            autoComplete="new-password"
+            placeholder={t('auth.register.passwordPlaceholder')}
+            className={INPUT_CLASS}
+            error={passwordError}
+            notShowErrorMessage
+            aria-describedby={describedBy('register-password', passwordError)}
             {...register('password', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
             disabled={isSubmitting}
           />
+        </AuthField>
 
+        <AuthField
+          id="register-password-confirmation"
+          label={t('auth.fields.confirmPassword')}
+          error={confirmationError}
+        >
           <Input
+            id="register-password-confirmation"
             type="password"
-            placeholder={t('auth.register.confirmPasswordLabel')}
-            error={getFieldError('passwordConfirmation')}
+            autoComplete="new-password"
+            placeholder={t('auth.register.confirmPasswordPlaceholder')}
+            className={INPUT_CLASS}
+            error={confirmationError}
+            notShowErrorMessage
+            aria-describedby={describedBy(
+              'register-password-confirmation',
+              confirmationError
+            )}
             {...register('passwordConfirmation', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
             disabled={isSubmitting}
           />
-        </div>
+        </AuthField>
 
-        {/* Submit Button */}
         <Button
+          type="submit"
+          size="lg"
           disabled={isSubmitting}
-          className="w-full mt-6 bg-theme-main hover:bg-theme-hover text-white"
-          onClick={handleSubmit(onSubmit, onError)}
+          className="mt-1.5 w-full"
         >
-          {t('auth.register.submitButton')}
+          {isSubmitting
+            ? t('auth.register.submitting')
+            : t('auth.register.submit')}
         </Button>
+      </form>
 
-        {/* Login Link */}
-        <div className="mt-4 text-center text-sm">
-          <p className="text-gray-600">{t('auth.register.hasAccount')}</p>
-          <Link
-            href={
-              redirect
-                ? `/login?redirect=${encodeURIComponent(redirect)}`
-                : '/login'
-            }
-            className="text-theme-main hover:text-theme-hover font-medium"
-          >
-            {t('auth.register.loginLink')}
-          </Link>
-        </div>
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
+        {t('auth.register.hasAccount')}{' '}
+        <Link
+          href={loginHref}
+          className="-my-1.5 inline-block py-1.5 font-semibold text-accent transition-colors duration-200 ease-soft hover:text-accent-hover"
+        >
+          {t('auth.register.loginLink')}
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/** Khung xương có hình dạng form thật, hiện khi đang đọc tham số URL. */
+function RegisterSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <div className="skel h-7 w-4/5" />
+      <div className="skel mt-2.5 h-4 w-full" />
+      <div className="mt-6 flex flex-col gap-3.5">
+        {[0, 1, 2].map(item => (
+          <div key={item} className="flex flex-col gap-2">
+            <div className="skel h-3.5 w-24" />
+            <div className="skel h-11 w-full rounded-[10px]" />
+          </div>
+        ))}
+        <div className="skel mt-1.5 h-11 w-full rounded-xl" />
       </div>
-    </form>
+    </div>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="mt-24 mx-4 p-6 bg-white rounded-lg shadow-xl animate-pulse">
-          <div className="h-10 w-10 mx-auto rounded-full bg-gray-200 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={<RegisterSkeleton />}>
       <RegisterForm />
     </Suspense>
   );

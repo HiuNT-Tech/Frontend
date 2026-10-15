@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Select, type SelectValue } from '@/components/ui/select';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { MemberRole } from '@/config/enum';
 import type { BoardMemberRole, UserBoardMember } from '@/config/interface';
 
@@ -72,43 +71,29 @@ export default function MemberRoleEditPopup({
   };
 
   const isUnchanged = selectedRole === member?.role;
+  const memberName = member ? member.displayName || member.username : '';
 
   return (
     <Modal
       isOpen={open}
       onClose={handleClose}
       size="sm"
-      title={
-        <span className="flex items-center gap-2 text-theme-neutral-11">
-          <Image
-            src={Icons.Pencil}
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-5 text-theme-main"
-            style={{ filter: 'var(--theme-filter-main)' }}
-          />
-          {t('settings.members.editRoleModal.title')}
-        </span>
-      }
+      closeOnOverlayClick={!isPending}
+      title={t('settings.members.editRoleModal.title')}
     >
       <div className="space-y-5">
-        <p className="text-sm leading-5 text-theme-neutral-8">
+        <p className="text-sm text-ink-2">
           {t('settings.members.editRoleModal.description')}
         </p>
 
         {member && (
-          <div className="flex items-center gap-3 rounded-lg bg-theme-neutral-2 p-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-theme-main text-sm font-semibold text-white">
-              {(member.displayName || member.username)
-                .slice(0, 1)
-                .toUpperCase()}
-            </div>
+          <div className="flex items-center gap-3 rounded-[12px] bg-fill px-3.5 py-3">
+            <UserAvatar name={memberName} src={member.avatar} size={36} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-theme-neutral-11">
-                {member.displayName || member.username}
+              <p className="truncate text-sm font-medium text-ink">
+                {memberName}
               </p>
-              <p className="truncate text-xs text-theme-neutral-8">
+              <p className="truncate text-[12.5px] text-muted">
                 {member.email}
               </p>
             </div>
@@ -125,7 +110,7 @@ export default function MemberRoleEditPopup({
           allowClear={false}
         />
 
-        <div className="flex justify-end gap-3 border-t border-theme-neutral-4 pt-4">
+        <div className="flex justify-end gap-2.5 border-t border-line pt-4">
           <Button
             type="button"
             variant="outline"

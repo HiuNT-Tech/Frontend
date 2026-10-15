@@ -5,12 +5,17 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
+import { Pane, PaneContent } from '@/components/layout/pane';
+import { Segmented } from '@/components/ui/segmented';
 import { Select, type SelectOption } from '@/components/ui/select';
-import { PageSkeleton } from '@/components/ui/skeletons';
+import { Card } from '@/components/ui/surface';
+import { NotificationListSkeleton } from '@/components/ui/skeletons';
 import {
+  formatUnreadBadge,
   NotificationList,
   type NotificationTab,
 } from '@/components/shared/notifications/NotificationList';
+import { useUnreadCount } from '@/hooks/use-notification';
 import { BoardService } from '@/lib/apis/board';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { replaceWithUpdatedSearchParams } from '@/lib/url';
@@ -28,6 +33,7 @@ function NotificationsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { unreadCount } = useUnreadCount();
 
   const tab: NotificationTab =
     searchParams.get('tab') === 'unread' ? 'unread' : 'all';
@@ -59,32 +65,65 @@ function NotificationsPageContent() {
     replaceWithUpdatedSearchParams(router, pathname, searchParams, updater);
 
   return (
-    <div className="min-h-full w-full bg-theme-neutral-3">
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8 sm:py-8">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <h1 className="text-2xl font-semibold text-theme-neutral-11">
-            {t('notifications.title')}
-          </h1>
-          <div className="w-full sm:w-72">
-            <Select
-              label={t('notifications.filter.board')}
-              options={boardOptions}
-              value={boardId ? String(boardId) : ''}
-              disabled={isBoardsLoading || !!boardsError}
-              allowClear={false}
-              onValueChange={value =>
-                updateParams(p => {
-                  if (value) p.set('boardId', value);
-                  else p.delete('boardId');
-                })
-              }
-            />
-          </div>
+    <Pane
+      title={t('notifications.title')}
+      center={
+        <Segmented<NotificationTab>
+          onCanvas
+          label={t('notifications.title')}
+          value={tab}
+          onChange={next =>
+            updateParams(p => {
+              if (next === 'all') p.delete('tab');
+              else p.set('tab', next);
+            })
+          }
+          options={[
+            { value: 'all', label: t('notifications.tabs.all') },
+            {
+              value: 'unread',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  {t('notifications.tabs.unread')}
+                  {unreadCount > 0 && (
+                    <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-on-accent tabular-nums">
+                      {formatUnreadBadge(unreadCount)}
+                    </span>
+                  )}
+                </span>
+              ),
+            },
+          ]}
+        />
+      }
+      actions={
+        <div
+          role="group"
+          aria-label={t('notifications.filter.board')}
+          className="w-[200px] md:w-[240px]"
+        >
+          <Select
+            options={boardOptions}
+            value={boardId ? String(boardId) : ''}
+            // Select coi '' là "chưa chọn" nên nhãn "Tất cả" phải hiện qua placeholder
+            placeholder={t('notifications.filter.allBoards')}
+            disabled={isBoardsLoading || !!boardsError}
+            allowClear={false}
+            onValueChange={value =>
+              updateParams(p => {
+                if (value) p.set('boardId', value);
+                else p.delete('boardId');
+              })
+            }
+          />
         </div>
-
-        <div className="overflow-hidden rounded-2xl border border-theme-neutral-4 bg-theme-neutral-1 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      }
+    >
+      <PaneContent width="narrow">
+        <Card className="animate-pop overflow-hidden">
           <NotificationList
             variant="page"
+            showTabs={false}
             tab={tab}
             onTabChange={next =>
               updateParams(p => {
@@ -94,15 +133,28 @@ function NotificationsPageContent() {
             }
             boardId={boardId}
           />
-        </div>
-      </div>
-    </div>
+        </Card>
+      </PaneContent>
+    </Pane>
+  );
+}
+
+function NotificationsPageFallback() {
+  const { t } = useTranslation();
+  return (
+    <Pane title={t('notifications.title')}>
+      <PaneContent width="narrow">
+        <Card className="overflow-hidden">
+          <NotificationListSkeleton rows={6} />
+        </Card>
+      </PaneContent>
+    </Pane>
   );
 }
 
 export default function NotificationsPage() {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={<NotificationsPageFallback />}>
       <NotificationsPageContent />
     </Suspense>
   );

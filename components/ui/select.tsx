@@ -214,21 +214,21 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
       <div className="space-y-1">
         {label && (
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-sm font-medium text-theme-neutral-11">
+            <label className="text-[13px] font-semibold text-ink-2">
               {label}
-              {required && <span className="ml-1 text-red-500">*</span>}
+              {required && <span className="ml-1 text-danger">*</span>}
             </label>
 
             {isMultiple && showSelectedCount && selectedCount > 0 && (
               <>
-                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-xs font-semibold text-white">
+                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-accent-soft px-1.5 py-0.5 text-xs font-semibold text-accent-text">
                   {selectedCount}
                 </span>
                 <button
                   type="button"
                   onClick={handleClear}
                   disabled={disabled}
-                  className="cursor-pointer text-sm font-medium text-theme-main transition-colors hover:text-theme-hover disabled:cursor-not-allowed disabled:text-theme-neutral-6"
+                  className="cursor-pointer text-[13px] font-semibold text-accent transition-colors hover:text-accent-hover disabled:cursor-not-allowed disabled:text-faint"
                 >
                   {resolvedClearAllLabel}
                 </button>
@@ -240,27 +240,12 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
         <div className={cn('relative', { 'mt-1': !!label })}>
           <AntdSelect
             className={cn(
-              'w-full',
-              'rounded-md border border-theme-neutral-5 bg-theme-neutral-2 px-3 text-theme-neutral-11 shadow-none',
-              '[&_.ant-select-selector]:rounded-md! [&_.ant-select-selector]:border-theme-neutral-5!',
-              '[&_.ant-select-selector]:bg-theme-neutral-2! [&_.ant-select-selector]:px-3!',
-              '[&_.ant-select-selector]:shadow-none! [&_.ant-select-selection-placeholder]:text-theme-neutral-6!',
-              '[&_.ant-select-selection-item]:text-theme-neutral-11!',
-              isMultiple
-                ? [
-                    'min-h-[50px]',
-                    '[&_.ant-select-selector]:min-h-[50px]! [&_.ant-select-selector]:py-1!',
-                    '[&_.ant-select-selection-overflow]:min-h-[40px]!',
-                    '[&_.ant-select-selection-search]:min-h-[32px]!',
-                    '[&_.ant-select-selection-placeholder]:self-center!',
-                  ]
-                : [
-                    'h-10 items-center',
-                    '[&_.ant-select-selector]:h-10! [&_.ant-select-selector]:items-center!',
-                  ],
-              error && '[&_.ant-select-selector]:border-red-500! error-class',
+              'w-full rounded-[10px]! text-[15px]',
+              isMultiple ? 'min-h-10' : 'h-10',
+              error && 'error-class',
               className
             )}
+            status={error ? 'error' : undefined}
             value={selectValue}
             defaultValue={defaultValue}
             options={options}
@@ -273,7 +258,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
             maxTagCount={isMultiple ? 0 : undefined}
             maxTagPlaceholder={omittedValues =>
               omittedValues.length > 0 ? (
-                <span className="text-theme-neutral-7">
+                <span className="text-muted">
                   {t('common.selectedCount', {
                     count: omittedValues.length,
                   })}
@@ -308,7 +293,7 @@ const Select = forwardRef<HTMLInputElement, SelectProps>(
           />
         </div>
         {error && !notShowErrorMessage && (
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-[13px] text-danger">{error}</p>
         )}
       </div>
     );

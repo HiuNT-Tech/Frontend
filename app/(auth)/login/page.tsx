@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+import type React from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,71 @@ import { LoginUserRequest } from '@/config/interface';
 import { useRouter } from 'next/navigation';
 import { EMAIL_RULE, PASSWORD_RULE } from '@/utils/validators';
 import { toastHelpers } from '@/hooks/use-toast';
-import Images from '@/assets';
 import { useAppDispatch } from '@/redux/hooks';
 import { loginUserAPI } from '@/redux/user/userSlice';
+import { cn } from '@/lib/utils';
+
+// Ô nhập 16px để Safari trên iPad/iPhone không tự phóng to khi focus.
+const INPUT_CLASS = 'h-11 px-3.5 text-base';
+
+const describedBy = (id: string, error?: string) =>
+  error ? `${id}-error` : undefined;
+
+/** Nhãn ở trên, ô nhập, lỗi (đỏ) ngay dưới ô. */
+function AuthField({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={id}
+        className="text-[13px] leading-tight font-semibold text-ink-2"
+      >
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p
+          id={`${id}-error`}
+          className="text-[12.5px] leading-snug font-medium text-danger"
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Thông báo trạng thái ngắn phía trên form (vừa xác minh / vừa đăng ký). */
+function Notice({
+  tone = 'neutral',
+  children,
+}: {
+  tone?: 'neutral' | 'accent';
+  children: React.ReactNode;
+}) {
+  return (
+    <p
+      role="status"
+      className={cn(
+        'mt-5 rounded-xl px-3.5 py-2.5 text-[13px] leading-normal break-words',
+        tone === 'accent'
+          ? 'bg-accent-soft text-accent-text'
+          : 'bg-fill text-ink-2'
+      )}
+    >
+      {children}
+    </p>
+  );
+}
 
 function LoginForm() {
   const { t } = useTranslation();
@@ -26,16 +88,23 @@ function LoginForm() {
 
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const appName = t('shell.appName');
 
   const {
     register,
     handleSubmit,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<LoginUserRequest>({
     defaultValues: {
       email: prefilledEmail,
     },
   });
+
+  // Email đã được điền sẵn (vừa đăng ký / xác minh) thì đưa con trỏ vào ô mật khẩu.
+  useEffect(() => {
+    setFocus(prefilledEmail ? 'password' : 'email');
+  }, [prefilledEmail, setFocus]);
 
   const submitLogin = async (data: LoginUserRequest) => {
     try {
@@ -53,68 +122,76 @@ function LoginForm() {
     ? `/register?redirect=${encodeURIComponent(redirect)}`
     : '/register';
 
+  const emailError = errors.email?.message;
+  const passwordError = errors.password?.message;
+
   return (
-    <form onSubmit={handleSubmit(submitLogin)} className="w-full max-w-sm">
-      <div className="mt-24 mx-4 p-6 bg-white rounded-lg shadow-xl animate-in fade-in zoom-in duration-300">
-        {/* Header Icons */}
-        <div className="flex justify-center gap-2 mb-4">
-          <div className="w-10 h-10 rounded-full bg-theme-main flex items-center justify-center">
-            <Image
-              src={Images.IconLock}
-              alt="Lock"
-              width={20}
-              height={20}
-              className="text-white"
-            />
-          </div>
-          <div className="w-10 h-10 rounded-full bg-theme-main flex items-center justify-center">
-            <Image
-              src={Images.IconTrello}
-              alt="Trello"
-              width={20}
-              height={20}
-              className="text-white"
-            />
-          </div>
-        </div>
+    <div className="animate-fade-in">
+      <h1 className="text-2xl leading-tight font-bold tracking-[-0.02em] text-balance text-ink">
+        {t('auth.login.heading', { appName })}
+      </h1>
+      <p className="mt-1.5 text-sm leading-normal text-muted">
+        {t('auth.login.subtitle')}
+      </p>
 
-        {/* Author */}
-        <div className="text-center text-gray-500 text-sm mb-4">
-          {t('auth.author')}
-        </div>
+      {verifiedEmail && (
+        <Notice tone="accent">
+          {t('auth.login.verifiedEmail', { email: verifiedEmail })}
+        </Notice>
+      )}
 
-        {/* Alerts */}
-        {verifiedEmail && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-            {t('auth.login.verifiedEmail', { email: verifiedEmail })}
-          </div>
-        )}
+      {registeredEmail && (
+        <Notice>
+          {t('auth.login.registeredEmail', { email: registeredEmail })}
+        </Notice>
+      )}
 
-        {registeredEmail && (
-          <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded text-sm">
-            {t('auth.login.registeredEmail', { email: registeredEmail })}
-          </div>
-        )}
-
-        {/* Form Fields */}
-        <div className="space-y-4">
+      <form
+        noValidate
+        onSubmit={handleSubmit(submitLogin)}
+        className="mt-[26px] flex flex-col gap-4"
+      >
+        <AuthField
+          id="login-email"
+          label={t('auth.fields.email')}
+          error={emailError}
+        >
           <Input
-            type="text"
-            placeholder={t('auth.login.emailLabel')}
-            error={errors.email?.message}
+            id="login-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder={t('auth.fields.emailPlaceholder')}
+            className={INPUT_CLASS}
+            error={emailError}
+            notShowErrorMessage
+            aria-describedby={describedBy('login-email', emailError)}
             {...register('email', {
               required: t('validation.fieldRequired'),
               pattern: {
                 value: EMAIL_RULE,
-                message: t('validation.emailInvalid'),
+                message: t('validation.email'),
               },
             })}
           />
+        </AuthField>
 
+        <AuthField
+          id="login-password"
+          label={t('auth.fields.password')}
+          error={passwordError}
+        >
           <Input
+            id="login-password"
             type="password"
-            placeholder={t('auth.login.passwordLabel')}
-            error={errors.password?.message}
+            autoComplete="current-password"
+            placeholder={t('auth.login.passwordPlaceholder')}
+            className={INPUT_CLASS}
+            error={passwordError}
+            notShowErrorMessage
+            aria-describedby={describedBy('login-password', passwordError)}
             {...register('password', {
               required: t('validation.fieldRequired'),
               pattern: {
@@ -123,29 +200,28 @@ function LoginForm() {
               },
             })}
           />
-        </div>
+        </AuthField>
 
-        {/* Submit Button */}
         <Button
           type="submit"
+          size="lg"
           disabled={isSubmitting}
-          className="w-full mt-6 bg-theme-main hover:bg-theme-hover text-white"
+          className="mt-1.5 w-full"
         >
-          {t('auth.login.submitButton')}
+          {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </Button>
+      </form>
 
-        {/* Register Link */}
-        <div className="mt-4 text-center text-sm">
-          <p className="text-gray-600">{t('auth.login.noAccount')}</p>
-          <Link
-            href={registerHref}
-            className="text-theme-main hover:text-theme-hover font-medium"
-          >
-            {t('auth.login.createAccount')}
-          </Link>
-        </div>
-      </div>
-    </form>
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
+        {t('auth.login.noAccount', { appName })}{' '}
+        <Link
+          href={registerHref}
+          className="-my-1.5 inline-block py-1.5 font-semibold text-accent transition-colors duration-200 ease-soft hover:text-accent-hover"
+        >
+          {t('auth.login.createAccount')}
+        </Link>
+      </p>
+    </div>
   );
 }
 
@@ -157,19 +233,28 @@ const getSafeRedirectPath = (value: string | null) => {
   return value;
 };
 
+/** Khung xương có hình dạng form thật, hiện khi đang đọc tham số URL. */
+function LoginSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <div className="skel h-7 w-3/4" />
+      <div className="skel mt-2.5 h-4 w-full" />
+      <div className="mt-[26px] flex flex-col gap-4">
+        {[0, 1].map(item => (
+          <div key={item} className="flex flex-col gap-2">
+            <div className="skel h-3.5 w-20" />
+            <div className="skel h-11 w-full rounded-[10px]" />
+          </div>
+        ))}
+        <div className="skel mt-1.5 h-11 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="mt-24 mx-4 p-6 bg-white rounded-lg shadow-xl animate-pulse">
-          <div className="h-10 w-10 mx-auto rounded-full bg-gray-200 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoginSkeleton />}>
       <LoginForm />
     </Suspense>
   );

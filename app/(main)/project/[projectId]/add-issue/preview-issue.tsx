@@ -1,13 +1,10 @@
 'use client';
 
-import Image from 'next/image';
-import Icons from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { getIssueTypeBadgeClassName } from '@/constant/data';
-import { format } from '@/constant/format';
-import { isOverdue, OVERDUE_TEXT_CLASS } from '@/utils/due-date';
+import { ColorTag } from '@/components/ui/tag';
+import { cn } from '@/lib/utils';
 import type {
   Card,
   CardIssueType,
@@ -15,22 +12,11 @@ import type {
   EntityId,
   Version,
 } from '@/config/interface';
-import { DescriptionCard } from '../issues/[id]/description-card';
-
-const StatusBadge: React.FC<{
-  label?: string;
-  statusColor?: string | null;
-}> = ({ label, statusColor }) => {
-  if (!label) return <span className="text-theme-neutral-7">—</span>;
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getIssueTypeBadgeClassName(statusColor)}`}
-    >
-      {label}
-    </span>
-  );
-};
+import {
+  DescriptionCard,
+  DetailsCard,
+  PriorityValue,
+} from '../issues/[id]/description-card';
 
 interface PreviewIssueProps {
   card: Card;
@@ -45,8 +31,15 @@ interface PreviewIssueProps {
   isSubmitting: boolean;
   onBack: () => void;
   onAdd: () => void;
+  /** Hiện nút "Quay lại chỉnh sửa" / "Tạo công việc" dưới bản xem trước */
+  showActions?: boolean;
+  className?: string;
 }
 
+/**
+ * Xem trước issue sắp tạo, cùng ngôn ngữ hình ảnh với inspector chi tiết:
+ * loại + ưu tiên, tiêu đề lớn, trạng thái, thẻ Details, thẻ Description.
+ */
 export const PreviewIssue: React.FC<PreviewIssueProps> = ({
   card,
   versions,
@@ -57,102 +50,87 @@ export const PreviewIssue: React.FC<PreviewIssueProps> = ({
   isSubmitting,
   onBack,
   onAdd,
+  showActions = true,
+  className,
 }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-theme-neutral-3/40">
-      <div className="border-b border-theme-neutral-4/60 bg-white px-6 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="cursor-pointer text-theme-main hover:underline"
-            >
-              <Image
-                src={Icons.ArrowLeft}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
-            </button>
-            {issueTypeInfo && (
-              <StatusBadge
-                label={issueTypeInfo.name}
-                statusColor={issueTypeInfo.statusColor}
-              />
-            )}
-            <span className="font-mono text-sm text-theme-neutral-9">
-              {format.shortKey(card.id)}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-theme-neutral-8">
-            <span>
-              Start Date:{' '}
-              <strong className="text-theme-neutral-11">
-                {format.date(card.startDate)}
-              </strong>
-            </span>
-            <span>
-              Due Date:{' '}
-              <strong
-                className={
-                  isOverdue(card.dueDate)
-                    ? OVERDUE_TEXT_CLASS
-                    : 'text-theme-neutral-11'
-                }
-              >
-                {format.date(card.dueDate)}
-              </strong>
-            </span>
-            {statusInfo && (
-              <StatusBadge
-                label={statusInfo.title}
-                statusColor={statusInfo.statusColor}
-              />
-            )}
-          </div>
-        </div>
+    <div className={cn('animate-pop min-w-0', className)}>
+      <div className="px-1.5 pb-2 text-[13px] font-semibold text-muted">
+        {t('addIssue.previewTitle')}
       </div>
+      <p className="mb-4 px-1.5 text-[13px] text-muted">
+        {t('addIssue.previewHint')}
+      </p>
 
-      <div className="flex-1 px-6 py-4">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <h1 className="mr-4 flex-1 text-xl font-bold leading-tight text-theme-neutral-11">
-            {card.title || '—'}
-          </h1>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-theme-neutral-5 text-theme-neutral-9"
-              onClick={onBack}
-            >
-              {t('issueDetail.edit')}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={onAdd}
-              disabled={isSubmitting}
-              className="bg-theme-main text-theme-neutral-1 hover:bg-theme-hover"
-            >
-              {isSubmitting ? t('common.loading') : t('common.add')}
-            </Button>
-          </div>
+      {(issueTypeInfo || priorityLabel) && (
+        <div className="mb-2.5 flex flex-wrap items-center gap-2.5 px-0.5">
+          {issueTypeInfo && (
+            <ColorTag color={issueTypeInfo.statusColor}>
+              {issueTypeInfo.name}
+            </ColorTag>
+          )}
+          {priorityLabel && (
+            <PriorityValue
+              priority={card.priority}
+              label={t('issueDetail.priorityLabel', {
+                priority: priorityLabel,
+              })}
+              className="text-[13px] text-muted"
+            />
+          )}
         </div>
+      )}
 
-        <DescriptionCard
-          card={card}
-          versions={versions}
-          issueTypeInfo={issueTypeInfo}
-          priorityLabel={priorityLabel}
-          resolveUser={resolveUser}
-        />
-      </div>
+      <h2
+        className={cn(
+          'mb-5 px-0.5 text-[22px] font-bold leading-[1.25] tracking-[-0.02em] text-balance',
+          card.title ? 'text-ink' : 'text-faint'
+        )}
+      >
+        {card.title || t('addIssue.placeholder.title')}
+      </h2>
+
+      <section className="mb-6">
+        <div className="px-1.5 pb-2 text-[13px] font-semibold text-muted">
+          {t('issueDetail.metadata.status')}
+        </div>
+        <div className="flex h-11 items-center rounded-xl border border-line bg-card px-3.5 shadow-card">
+          {statusInfo ? (
+            <ColorTag color={statusInfo.statusColor}>
+              {statusInfo.title}
+            </ColorTag>
+          ) : (
+            <span className="text-sm text-muted">
+              {t('issueDetail.notSet')}
+            </span>
+          )}
+        </div>
+      </section>
+
+      <DetailsCard
+        className="mb-6"
+        card={card}
+        versions={versions}
+        issueTypeInfo={issueTypeInfo}
+        priorityLabel={priorityLabel}
+        resolveUser={resolveUser}
+        hideStatus
+      />
+
+      <DescriptionCard card={card} />
+
+      {showActions && (
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onBack}>
+            {t('addIssue.backToEditing')}
+          </Button>
+          <Button type="button" onClick={onAdd} disabled={isSubmitting}>
+            {isSubmitting ? t('common.loading') : t('addIssue.create')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

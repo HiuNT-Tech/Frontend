@@ -24,14 +24,14 @@ interface StateMessageProps extends Omit<
 }
 
 const variantClassNames: Record<StateMessageVariant, string> = {
-  inline: 'text-sm text-theme-neutral-7',
+  inline: 'text-sm text-muted',
   block:
-    'flex flex-col items-center justify-center gap-3 py-16 text-center text-sm text-theme-neutral-7',
+    'flex flex-col items-center justify-center gap-3 py-16 text-center text-sm text-muted',
 };
 
 const toneClassNames: Record<StateMessageTone, string> = {
-  neutral: 'text-theme-neutral-7',
-  danger: 'text-red-500',
+  neutral: 'text-muted',
+  danger: 'text-danger',
 };
 
 export function StateMessage({
@@ -65,7 +65,7 @@ export function StateMessage({
         <span
           aria-hidden="true"
           className={cn(
-            'h-8 w-8 animate-spin rounded-full border-2 border-theme-neutral-5 border-t-theme-main',
+            'size-7 animate-spin rounded-full border-[2.5px] border-line border-t-accent',
             spinnerClassName
           )}
         />

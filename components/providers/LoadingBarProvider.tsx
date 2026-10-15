@@ -85,7 +85,7 @@ export const LoadingBarProvider: React.FC<{ children: React.ReactNode }> = ({
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
+          height: 2px;
           z-index: 99999;
           overflow: hidden;
           background: transparent;
@@ -99,8 +99,8 @@ export const LoadingBarProvider: React.FC<{ children: React.ReactNode }> = ({
           background: linear-gradient(
             90deg,
             transparent,
-            var(--color-theme-main, #3b82f6),
-            var(--color-theme-hover, #2563eb)
+            var(--accent),
+            var(--accent-hover)
           );
           animation: loading-bar-slide 1.2s ease-in-out infinite;
         }

@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Images from '@/assets';
+import dayjs from 'dayjs';
+
 import type { EntityId, Version } from '@/config/interface';
 import { CustomTable, type TableColumn } from '@/components/ui/custome-table';
-import dayjs from 'dayjs';
+import { actionsColumn } from './settings-table-parts';
 
 export interface VersionTableProps {
   boardId?: EntityId;
@@ -22,8 +24,10 @@ export interface VersionTableProps {
   canManage?: boolean;
 }
 
+const formatDate = (value?: string | null) =>
+  value ? dayjs(value).format('DD/MM/YYYY') : null;
+
 const VersionTable: React.FC<VersionTableProps> = ({
-  boardId,
   data,
   loading,
   totalCount,
@@ -37,40 +41,85 @@ const VersionTable: React.FC<VersionTableProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const columns = useMemo<TableColumn<Version>[]>(
-    () => [
+  const columns = useMemo<TableColumn<Version>[]>(() => {
+    const base: TableColumn<Version>[] = [
       {
         key: 'name',
         title: t('settings.versions.table.name'),
         dataIndex: 'name',
-        render: (_value, record) => record.name ?? '—',
-        minWidth: 300,
+        minWidth: 180,
+        render: (_value, record) => (
+          <span className="font-semibold text-ink">{record.name ?? '—'}</span>
+        ),
       },
       {
         key: 'startDate',
         title: t('settings.versions.table.startDate'),
         dataIndex: 'startDate',
-        align: 'center',
-        render: (_value, record) =>
-          record.startDate ? dayjs(record.startDate).format('DD/MM/YYYY') : '—',
+        minWidth: 120,
+        render: (_value, record) => {
+          const date = formatDate(record.startDate);
+          return date ? (
+            <span className="text-ink-2 tabular-nums">{date}</span>
+          ) : (
+            <span className="text-faint">—</span>
+          );
+        },
       },
       {
         key: 'endDate',
         title: t('settings.versions.table.endDate'),
         dataIndex: 'endDate',
-        align: 'center',
-        render: (_value, record) =>
-          record.endDate ? dayjs(record.endDate).format('DD/MM/YYYY') : '—',
+        minWidth: 120,
+        render: (_value, record) => {
+          const date = formatDate(record.endDate);
+          return date ? (
+            <span className="text-ink-2 tabular-nums">{date}</span>
+          ) : (
+            <span className="text-faint">—</span>
+          );
+        },
       },
       {
         key: 'description',
         title: t('settings.versions.table.description'),
         dataIndex: 'description',
-        render: (_value, record) => record.description ?? '—',
+        minWidth: 240,
+        render: (_value, record) =>
+          record.description ? (
+            <span
+              className="block max-w-[36ch] truncate text-muted"
+              title={record.description}
+            >
+              {record.description}
+            </span>
+          ) : (
+            <span className="text-faint">—</span>
+          ),
       },
-    ],
-    [t]
-  );
+    ];
+    if (!canManage) return base;
+    return [
+      ...base,
+      actionsColumn<Version>(t, record => [
+        {
+          key: 'edit',
+          label: t('common.edit'),
+          icon: <Pencil />,
+          onClick: () => onEdit?.(record),
+        },
+        {
+          key: 'delete',
+          label: t('settings.versions.table.delete'),
+          icon: <Trash2 />,
+          tone: 'danger',
+          onClick: () => {
+            if (record?.id) onDelete?.(record.id);
+          },
+        },
+      ]),
+    ];
+  }, [t, canManage, onEdit, onDelete]);
 
   return (
     <CustomTable
@@ -86,24 +135,6 @@ const VersionTable: React.FC<VersionTableProps> = ({
         onChange: onPageChange,
         onShowSizeChange: onPageSizeChange,
       }}
-      actions={
-        canManage
-          ? [
-              {
-                icon: Images.IconTrash,
-                title: t('settings.versions.table.delete'),
-                onClick: (record: Version) => {
-                  if (record?.id) onDelete?.(record.id);
-                },
-              },
-              {
-                icon: Images.IconEdit,
-                title: t('common.edit'),
-                onClick: (record: Version) => onEdit?.(record),
-              },
-            ]
-          : []
-      }
     />
   );
 };

@@ -1,16 +1,19 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
-import { cn } from '@/lib/utils';
+import { Sparkles } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { useOptionalAiAssistant } from './ai-assistant-provider';
 
 interface AiTriggerButtonProps {
   className?: string;
 }
 
-/** Nút ✨ ở header — chỉ hiện khi đang trong một project. */
+/**
+ * Nút bật/tắt trợ lý (icon ngôi sao) — chỉ hiện khi đang trong một project.
+ * Shell hiện dùng hàng "AI Assistant" riêng trong sidebar; nút này giữ lại cho
+ * nơi nào cần một nút nhỏ.
+ */
 export function AiTriggerButton({ className }: AiTriggerButtonProps) {
   const { t } = useTranslation();
   const assistant = useOptionalAiAssistant();
@@ -18,27 +21,18 @@ export function AiTriggerButton({ className }: AiTriggerButtonProps) {
   if (!assistant?.boardId) return null;
 
   return (
-    <button
-      type="button"
+    <IconButton
       onClick={assistant.toggle}
       title={`${t('aiAssistant.title')} (Ctrl+J)`}
       aria-label={t('aiAssistant.title')}
       aria-pressed={assistant.isOpen}
-      className={cn(
-        'flex h-9 w-9 items-center justify-center rounded-full transition-colors',
-        assistant.isOpen
-          ? 'bg-theme-main text-white'
-          : 'bg-white/10 hover:bg-white/20',
-        className
-      )}
+      active={assistant.isOpen}
+      className={className}
     >
-      <Image
-        src={Icons.Sparkles}
-        alt=""
-        width={20}
-        height={20}
-        className="brightness-0 invert"
+      <Sparkles
+        className={assistant.isOpen ? 'text-accent' : undefined}
+        aria-hidden="true"
       />
-    </button>
+    </IconButton>
   );
 }

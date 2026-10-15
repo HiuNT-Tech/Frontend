@@ -23,6 +23,14 @@ export interface BaseSearchField {
   defaultValue?: any;
   /** Số cột grid mà field chiếm; 'full' để chiếm hết chiều rộng hàng */
   colSpan?: number | 'full';
+  /**
+   * Vị trí trên thanh lọc: 'bar' = ngay trên thanh (ô tìm kiếm / viên lọc),
+   * 'advanced' = trong bảng "Thêm bộ lọc" gập được.
+   * Mặc định: ô text đầu tiên + select/multiOptions nằm trên thanh, còn lại vào advanced.
+   */
+  placement?: 'bar' | 'advanced';
+  /** Icon nhỏ đứng trước nhãn của viên lọc */
+  icon?: React.ReactNode;
 }
 
 export interface TextSearchField extends BaseSearchField {
@@ -101,6 +109,11 @@ export interface SearchSectionConfig {
   syncWithUrl?: boolean; // default: true - sync search state with URL params
   urlParamsPrefix?: string; // default: '' - prefix for URL params to avoid conflicts
   triggerSearchOnMount?: boolean; // default: true - trigger onSearch when mounting with URL params
+  /** Hiện số kết quả (hoặc nội dung bất kỳ) ở cuối thanh lọc */
+  summary?: React.ReactNode;
+  /** Tự áp dụng ngay khi đổi viên lọc / select (mặc định true) */
+  applyOnChange?: boolean;
+  className?: string;
 }
 
 export interface SearchFormValues {

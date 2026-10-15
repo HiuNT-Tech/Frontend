@@ -5,18 +5,19 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StateMessage } from '@/components/ui/state-message';
-import { renderStatusBadge, getIssueTypeBadgeClassName } from '@/constant/data';
+import { Group } from '@/components/ui/surface';
+import { ColorTag } from '@/components/ui/tag';
 import type { ColorStatusKey } from '@/constant/data';
 import { useIssueType } from '@/hooks/use-issue-type';
 import {
   createIssueTypeFormSchema,
   type CreateIssueTypeFormData,
 } from '@/validation/create-issue-type-form-schemas';
-import { cn } from '@/lib/utils';
 import type { EntityId } from '@/config/interface';
+import { ColorSwatchPicker } from './ColorSwatchPicker';
+import { FieldRow, SettingsFormFrame } from './SettingsFormFrame';
 
 export interface IssueTypeCreateFormProps {
   boardId: EntityId;
@@ -69,116 +70,66 @@ export const IssueTypeCreateForm: React.FC<IssueTypeCreateFormProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <form className="space-y-6" onSubmit={handleSubmit(onSubmit, onError)}>
-        <button
-          type="button"
-          className="text-sm text-theme-main hover:underline cursor-pointer"
-          onClick={handleClose}
-        >
-          {t('settings.issueTypes.add.back')}
-        </button>
-
-        <div>
-          <h2 className="text-lg font-semibold text-theme-neutral-11">
-            {t('settings.issueTypes.add.title')}
-          </h2>
-          <p className="text-sm text-theme-neutral-8">
-            {t('settings.issueTypes.add.description')}
-          </p>
-        </div>
-
-        <div className="space-y-4 rounded-lg border border-theme-neutral-4 bg-theme-neutral-1 px-4 py-4">
+    <SettingsFormFrame
+      backLabel={t('settings.issueTypes.add.back')}
+      onBack={handleClose}
+      title={t('settings.issueTypes.add.title')}
+      description={t('settings.issueTypes.add.description')}
+      cancelLabel={t('settings.issueTypes.add.cancel')}
+      submitLabel={t('settings.issueTypes.actions.add')}
+      isPending={isPending}
+      onSubmit={handleSubmit(onSubmit, onError)}
+    >
+      <Group
+        title={t('settings.issueTypes.add.nameLabel')}
+        hint={t('settings.issueTypes.add.nameHint')}
+      >
+        <FieldRow first>
           <Input
-            label={t('settings.issueTypes.add.nameLabel')}
-            requiredIndicator
+            aria-label={t('settings.issueTypes.add.nameLabel')}
             placeholder={t('settings.issueTypes.add.namePlaceholder')}
             error={getFieldError('name')}
             {...register('name')}
             disabled={isPending}
+            autoFocus
           />
-          <p className="text-xs text-theme-neutral-8">
-            {t('settings.issueTypes.add.nameHint')}
-          </p>
-        </div>
+        </FieldRow>
+      </Group>
 
-        <div className="space-y-3 rounded-lg border border-theme-neutral-4 bg-theme-neutral-1 px-4 py-4">
-          <div>
-            <p className="text-sm font-medium text-theme-neutral-11">
-              {t('settings.issueTypes.add.backgroundLabel')}
-              <span className="text-red-500 ml-1">*</span>
-            </p>
-            <p className="text-xs text-theme-neutral-8">
-              {t('settings.issueTypes.add.backgroundHint')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-5 gap-3">
-            {renderStatusBadge(
-              selectedColorKey ?? 'blue',
-              (key: ColorStatusKey) => setValue('selectedColorKey', key),
-              t,
-              name || t('settings.issueTypes.add.colorSample')
-            )}
-          </div>
+      <Group
+        title={t('settings.issueTypes.add.backgroundLabel')}
+        hint={t('settings.issueTypes.add.backgroundHint')}
+      >
+        <FieldRow first>
+          <ColorSwatchPicker
+            value={selectedColorKey ?? 'blue'}
+            onChange={key => setValue('selectedColorKey', key)}
+            previewLabel={name || t('settings.issueTypes.add.colorSample')}
+            disabled={isPending}
+          />
           {getFieldError('selectedColorKey') && (
-            <p className="text-xs text-red-500 mt-1">
+            <p className="mt-2 text-[13px] text-danger">
               {getFieldError('selectedColorKey')}
             </p>
           )}
-        </div>
+        </FieldRow>
+      </Group>
 
-        <div className="space-y-3 rounded-lg border border-theme-neutral-4 bg-theme-neutral-1 px-4 py-4">
-          <p className="text-sm font-medium text-theme-neutral-11">
-            {t('settings.issueTypes.add.existingLabel')}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {isLoading ? (
-              <StateMessage
-                as="p"
-                i18nKey="common.loading"
-                className="text-xs text-theme-neutral-8"
-              />
-            ) : issueTypes.length === 0 ? (
-              <StateMessage
-                as="p"
-                i18nKey="settings.issueTypes.table.empty"
-                className="text-xs text-theme-neutral-8"
-              />
-            ) : (
-              issueTypes.map(type => (
-                <span
-                  key={type.id}
-                  className={cn(
-                    'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium text-white',
-                    getIssueTypeBadgeClassName(type.statusColor)
-                  )}
-                >
-                  {type.name}
-                </span>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-theme-neutral-5 text-theme-neutral-9"
-            onClick={handleClose}
-          >
-            {t('settings.issueTypes.add.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="bg-theme-main text-theme-neutral-1 hover:bg-theme-hover"
-          >
-            {t('settings.issueTypes.add.save')}
-          </Button>
-        </div>
-      </form>
-    </div>
+      <Group title={t('settings.issueTypes.add.existingLabel')}>
+        <FieldRow first className="flex flex-wrap gap-2">
+          {isLoading ? (
+            <StateMessage as="p" i18nKey="common.loading" />
+          ) : issueTypes.length === 0 ? (
+            <StateMessage as="p" i18nKey="settings.issueTypes.table.empty" />
+          ) : (
+            issueTypes.map(type => (
+              <ColorTag key={type.id} color={type.statusColor}>
+                {type.name}
+              </ColorTag>
+            ))
+          )}
+        </FieldRow>
+      </Group>
+    </SettingsFormFrame>
   );
 };
