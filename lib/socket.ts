@@ -54,9 +54,19 @@ export const setNotificationSocketToken = (token: string | null) => {
   authToken = token;
 };
 
-/** README D16: API_ROOT chứa '/api' nên phải lấy origin; dev → http://localhost:8017 */
+/**
+ * Origin của API: API_ROOT chứa '/api' nên phải bỏ path; khi API_ROOT là đường
+ * dẫn tương đối (deploy qua rewrite) thì lấy origin của trang.
+ */
+const resolveApiOrigin = (): string => {
+  const base =
+    typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  return new URL(API_ROOT, base).origin;
+};
+
+/** README D16: dev → http://localhost:8017; production nên đặt NEXT_PUBLIC_SOCKET_URL. */
 export const getNotificationSocketUrl = (): string => {
-  const origin = config.socketUrl || new URL(API_ROOT).origin;
+  const origin = config.socketUrl || resolveApiOrigin();
   return `${origin}${NOTIFICATION_SOCKET_NAMESPACE}`;
 };
 
