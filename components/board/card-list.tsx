@@ -7,16 +7,17 @@ import {
 } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
-import Card from './Card/Card';
+import { Card } from './card';
 import type { Card as CardType, EntityId } from '@/config/interface';
+import { toCardListDndId } from '@/utils/board-dnd';
 
-interface ListCardsProps {
+interface CardListProps {
   cards: CardType[];
   columnId: EntityId;
 }
 
 /** Danh sách thẻ trong một cột: cuộn dọc riêng, luôn có vùng thả kể cả khi trống. */
-function ListCards({ cards, columnId }: ListCardsProps) {
+function CardListBase({ cards, columnId }: CardListProps) {
   const { t } = useTranslation();
   const realCards = useMemo(
     () => cards.filter(card => !card.FE_PlaceholderCard),
@@ -26,7 +27,7 @@ function ListCards({ cards, columnId }: ListCardsProps) {
 
   // Use unique ID "cards-{columnId}" to avoid conflict with Column sortable ID
   const { setNodeRef } = useDroppable({
-    id: `cards-${columnId}`,
+    id: toCardListDndId(columnId),
     data: { type: 'CardList', columnId },
   });
 
@@ -52,4 +53,4 @@ function ListCards({ cards, columnId }: ListCardsProps) {
   );
 }
 
-export default memo(ListCards);
+export const CardList = memo(CardListBase);

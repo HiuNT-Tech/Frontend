@@ -6,16 +6,17 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
-import Column from './Column/Column';
+import { Column } from './column';
 import type { Column as ColumnType } from '@/config/interface';
-interface ListColumnsProps {
+import { toColumnDndId } from '@/utils/board-dnd';
+interface ColumnListProps {
   columns: ColumnType[];
 }
 
 /** Dải cột cuộn ngang trong pane; mỗi cột tự cuộn dọc, cao tối đa bằng vùng này. */
-function ListColumns({ columns }: ListColumnsProps) {
+function ColumnListBase({ columns }: ColumnListProps) {
   const columnIds = useMemo(
-    () => columns?.map(c => `column-${c.id}`) || [],
+    () => columns?.map(c => toColumnDndId(c.id)) || [],
     [columns]
   );
 
@@ -30,4 +31,4 @@ function ListColumns({ columns }: ListColumnsProps) {
   );
 }
 
-export default memo(ListColumns);
+export const ColumnList = memo(ColumnListBase);
