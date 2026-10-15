@@ -1,6 +1,5 @@
 import axios, { AxiosError } from 'axios';
 import { toastHelpers } from '@/hooks/use-toast';
-import config from '@/config';
 import { API_ROOT } from '@/utils/constants';
 import type { RefreshTokenResponse } from '@/config/interface';
 
@@ -12,17 +11,11 @@ const defaultHeaders = {
   Expires: '0',
 };
 
-const createBaseURL = (): string => {
-  if (typeof window === 'undefined') return '';
-
-  if (!!config.apiUrl) return config.apiUrl || '';
-
-  return window.location.origin + config.apiPath;
-};
-
+// Không đặt baseURL: mọi lời gọi đã truyền URL đầy đủ `${API_ROOT}/v1/...`.
+// Nếu đặt baseURL trùng API_ROOT thì với API_ROOT tương đối ('/api' qua rewrite)
+// axios sẽ nối thành '/api/api/v1/...'.
 const authorizedAxiosInstance = axios.create({
   headers: defaultHeaders,
-  baseURL: createBaseURL(),
   withCredentials: true,
   timeout: 10 * 60 * 1000,
 });
