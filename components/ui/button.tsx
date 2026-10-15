@@ -20,33 +20,33 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = 'Button';
 
-// Button variants function
+/*
+ * primary  = nút chính (nền accent) · outline = nút trắng có viền mảnh
+ * secondary = nền xám nhạt · ghost = không nền · danger = hành động phá huỷ
+ * data = nhấn mạnh cảnh báo (amber)
+ */
 export const buttonVariants = (
   options: { variant?: ButtonProps['variant']; size?: ButtonProps['size'] } = {}
 ) => {
   const { variant = 'primary', size = 'md' } = options;
   return cn(
-    'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
+    'press inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-soft disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:shrink-0',
     {
-      'text-white bg-theme-main hover:bg-theme-hover focus:ring-theme-main':
-        variant === 'primary',
-      'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500':
-        variant === 'secondary',
-      'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500':
+      'bg-accent text-on-accent hover:bg-accent-hover': variant === 'primary',
+      'bg-fill text-ink hover:bg-track': variant === 'secondary',
+      'border border-line bg-card text-ink shadow-hair hover:bg-fill':
         variant === 'outline',
-      'text-gray-700 hover:bg-gray-100 focus:ring-gray-500':
-        variant === 'ghost',
-      'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500':
+      'text-ink-2 hover:bg-hover hover:text-ink': variant === 'ghost',
+      'bg-danger text-white hover:opacity-90 dark:text-bg':
         variant === 'danger',
-      'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500':
-        variant === 'data',
+      'bg-warn text-white hover:opacity-90 dark:text-bg': variant === 'data',
     },
     {
-      'h-4 p-2 text-xs': size === 'xs',
-      'h-8 px-3 text-sm': size === 'sm',
-      'h-10 px-4 text-sm': size === 'md',
-      'h-12 px-6 text-base': size === 'lg',
-      'h-10 w-10 p-0': size === 'icon',
+      'h-6 rounded-[8px] px-2 text-xs [&_svg]:size-3.5': size === 'xs',
+      'h-8 rounded-[10px] px-3 text-[13px] [&_svg]:size-4': size === 'sm',
+      'h-[38px] rounded-xl px-4 text-sm [&_svg]:size-4': size === 'md',
+      'h-11 rounded-xl px-5 text-[15px] [&_svg]:size-[18px]': size === 'lg',
+      'size-[38px] rounded-xl p-0 [&_svg]:size-[18px]': size === 'icon',
     }
   );
 };

@@ -1,9 +1,8 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
 import { Dropdown, type MenuProps } from 'antd';
-import Icons from '@/assets/icons';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { EntityId } from '@/config/interface';
@@ -24,7 +23,7 @@ type ActionKey =
   | 'draftComment';
 
 /**
- * Nút "✨ AI" ở header card detail: mở drawer với prompt gửi sẵn, ngữ cảnh
+ * Nút "AI" ở header card detail: mở drawer với prompt gửi sẵn, ngữ cảnh
  * là card đang xem (system prompt sẽ ưu tiên card này).
  */
 export function AiCardActions({
@@ -67,28 +66,13 @@ export function AiCardActions({
         type="button"
         variant="outline"
         size="sm"
-        className={cn(
-          'gap-1.5 border-theme-main-3 text-theme-main-6 hover:bg-theme-main-1',
-          className
-        )}
+        className={cn('gap-1.5', className)}
         title={t('aiAssistant.cardActions.title')}
+        aria-label={t('aiAssistant.cardActions.title')}
       >
-        <Image
-          src={Icons.Sparkles}
-          alt=""
-          width={14}
-          height={14}
-          className="h-3.5 w-3.5"
-          style={{ filter: 'var(--theme-filter-main)' }}
-        />
+        <Sparkles className="text-accent" aria-hidden="true" />
         AI
-        <Image
-          src={Icons.ChevronDown}
-          alt=""
-          width={12}
-          height={12}
-          className="h-3 w-3 opacity-60"
-        />
+        <ChevronDown className="size-3.5 text-muted" aria-hidden="true" />
       </Button>
     </Dropdown>
   );

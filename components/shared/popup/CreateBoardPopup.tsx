@@ -69,37 +69,47 @@ export default function CreateBoardDialog({
     <Modal
       isOpen={open}
       onClose={handleClose}
-      size="md"
+      size="sm"
       title={t('dashboard.createProject.title')}
       closeOnOverlayClick={!isPending}
     >
-      <div className="space-y-5">
-        <p className="text-sm leading-5 text-theme-neutral-8">
+      <form
+        onSubmit={handleSubmit(handleFormSubmit)}
+        className="flex flex-col gap-5"
+        id="create-board-form"
+      >
+        <p className="text-[14.5px] leading-relaxed text-ink-2">
           {t('dashboard.createProject.description')}
         </p>
 
-        <form
-          onSubmit={handleSubmit(handleFormSubmit)}
-          className="flex flex-col gap-4"
-          id="create-board-form"
-        >
+        <div className="flex flex-col gap-4">
           <Input
             label={t('dashboard.createProject.nameLabel')}
+            placeholder={t('dashboard.createProject.namePlaceholder')}
             error={errors.title?.message}
             requiredIndicator
+            autoFocus
             {...register('title')}
             onChange={handleTitleChange}
           />
 
-          <Input
-            label={t('dashboard.createProject.codeLable')}
-            error={errors.boardCode?.message}
-            requiredIndicator
-            {...register('boardCode')}
-          />
-        </form>
+          <div>
+            <Input
+              label={t('dashboard.createProject.codeLable')}
+              error={errors.boardCode?.message}
+              requiredIndicator
+              className="font-semibold uppercase tabular-nums"
+              {...register('boardCode')}
+            />
+            {!errors.boardCode && (
+              <p className="mt-1.5 text-[13px] text-muted">
+                {t('dashboard.createProject.codeHint')}
+              </p>
+            )}
+          </div>
+        </div>
 
-        <div className="flex justify-end gap-3 border-t border-theme-neutral-4 pt-4">
+        <div className="flex justify-end gap-2 pt-1">
           <Button
             type="button"
             variant="outline"
@@ -108,18 +118,13 @@ export default function CreateBoardDialog({
           >
             {t('dashboard.createProject.cancel')}
           </Button>
-          <Button
-            type="submit"
-            form="create-board-form"
-            variant="primary"
-            disabled={isPending}
-          >
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending
               ? t('common.loading')
               : t('dashboard.createProject.submit')}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }

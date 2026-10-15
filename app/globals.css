@@ -1,41 +1,200 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* `dark:` khớp theo data-theme trên <html> (ThemeProvider luôn ghi giá trị đã resolve).
+   Màu sắc gần như không cần `dark:` — token bên dưới tự đổi theo chế độ. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ── Tokens (apple-theme-design, accent teal) ─────────────────────────────────────────────
+   Chỉ dùng các token này trong component. Tên cũ (--theme-*) được ánh xạ lại bên dưới để
+   các màn hình chưa chuyển vẫn theo bảng màu mới và dark mode. */
 :root {
-  --background: var(--theme-neutral-1);
-  --foreground: var(--theme-neutral-11);
+  color-scheme: light;
+  --bg: #f4f4f5; /* nền trang: xám nhạt, thẻ trắng tự tách khỏi nền */
+  --card: #ffffff; /* thẻ, sheet, input */
+  --fill: #f4f4f5; /* track, nền hover, badge trung tính */
+  --sidebar: #ececee; /* source list bên trái */
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --line: #e4e4e7;
+  --line-2: #efeff1;
+  --line-strong: #d4d4d8;
+  --hover: rgba(24, 24, 27, 0.05);
+  --track: rgba(24, 24, 27, 0.06);
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-soft: #ccfbf1;
+  --accent-line: #99f6e4;
+  --accent-text: #115e59; /* chữ màu teal trên nền --accent-soft */
+  --on-accent: #ffffff; /* chữ/icon trên nền --accent */
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --backdrop: rgba(9, 9, 11, 0.45);
+  --shadow-hair: 0 1px 2px rgba(24, 24, 27, 0.06);
+  --shadow-card:
+    0 1px 2px rgba(24, 24, 27, 0.06), 0 8px 24px rgba(24, 24, 27, 0.06);
+  --shadow-lift: 0 12px 40px rgba(24, 24, 27, 0.18); /* chỉ cho lớp nổi: menu, sheet, panel */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Theme variables - Backlog Green/Teal palette */
-  --theme-main: #42CE9F;
-  --theme-hover: #3ab88d;
-  --theme-filter-main: invert(72%) sepia(42%) saturate(503%) hue-rotate(111deg) brightness(94%) contrast(87%);
-  --theme-main-light: #e6f9f3;
-  --theme-header: #323232;
-
-  --theme-main-1: #e6f9f3;
-  --theme-main-2: #a8e6cf;
-  --theme-main-3: #6dd5b1;
-  --theme-main-4: #42CE9F;
-  --theme-main-5: #36a880;
-  --theme-main-6: #2a8264;
-  --theme-main-7: #1e5c48;
-
-  --theme-neutral-1: #ffffff;
-  --theme-neutral-2: #fafafa;
-  --theme-neutral-3: #f5f5f5;
-  --theme-neutral-4: #f0f0f0;
-  --theme-neutral-5: #d9d9d9;
-  --theme-neutral-6: #bfbfbf;
-  --theme-neutral-7: #8c8c8c;
-  --theme-neutral-8: #595959;
-  --theme-neutral-9: #444444;
-  --theme-neutral-10: #262626;
-  --theme-neutral-11: #1f1f1f;
+  /* Tô màu icon dạng ảnh (svg/png đen) theo token */
+  --filter-accent: brightness(0) saturate(100%) invert(21%) sepia(76%)
+    saturate(3825%) hue-rotate(166deg) brightness(86%) contrast(88%);
+  --filter-muted: brightness(0) saturate(100%) invert(45%) sepia(1%)
+    saturate(2383%) hue-rotate(202deg) brightness(95%) contrast(75%);
+  --filter-ink: brightness(0) saturate(100%) invert(23%) sepia(11%)
+    saturate(388%) hue-rotate(201deg) brightness(96%) contrast(91%);
+  --filter-danger: brightness(0) saturate(100%) invert(17%) sepia(78%)
+    saturate(7014%) hue-rotate(356deg) brightness(96%) contrast(78%);
+  --filter-on-accent: brightness(0) invert(1);
 }
 
-@theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #09090b;
+  --card: #18181b;
+  --fill: #27272a;
+  --sidebar: #111113;
+  --ink: #fafafa;
+  --ink-2: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+  --line: #27272a;
+  --line-2: #222225;
+  --line-strong: #3f3f46;
+  --hover: rgba(250, 250, 250, 0.06);
+  --track: rgba(250, 250, 250, 0.08);
+  --accent: #14b8a6;
+  --accent-hover: #2dd4bf;
+  --accent-soft: rgba(20, 184, 166, 0.16);
+  --accent-line: rgba(20, 184, 166, 0.4);
+  --accent-text: #5eead4;
+  --on-accent: #042f2e;
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.14);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --shadow-hair: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+  --filter-accent: brightness(0) saturate(100%) invert(64%) sepia(17%)
+    saturate(6873%) hue-rotate(130deg) brightness(92%) contrast(84%);
+  --filter-muted: brightness(0) saturate(100%) invert(73%) sepia(9%)
+    saturate(217%) hue-rotate(202deg) brightness(88%) contrast(87%);
+  --filter-ink: brightness(0) saturate(100%) invert(85%) sepia(5%)
+    saturate(116%) hue-rotate(202deg) brightness(101%) contrast(91%);
+  --filter-danger: brightness(0) saturate(100%) invert(55%) sepia(10%)
+    saturate(6606%) hue-rotate(322deg) brightness(113%) contrast(95%);
+  --filter-on-accent: brightness(0) saturate(100%) invert(12%) sepia(30%)
+    saturate(2000%) hue-rotate(140deg) brightness(90%) contrast(100%);
+}
+
+/* Trước khi JS chạy (hoặc không có JS): theo hệ thống */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #09090b;
+    --card: #18181b;
+    --fill: #27272a;
+    --sidebar: #111113;
+    --ink: #fafafa;
+    --ink-2: #d4d4d8;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --line: #27272a;
+    --line-2: #222225;
+    --line-strong: #3f3f46;
+    --hover: rgba(250, 250, 250, 0.06);
+    --track: rgba(250, 250, 250, 0.08);
+    --accent: #14b8a6;
+    --accent-hover: #2dd4bf;
+    --accent-soft: rgba(20, 184, 166, 0.16);
+    --accent-line: rgba(20, 184, 166, 0.4);
+    --accent-text: #5eead4;
+    --on-accent: #042f2e;
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.14);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --backdrop: rgba(0, 0, 0, 0.6);
+    --shadow-hair: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lift: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ── Tên cũ → token mới ───────────────────────────────────────────────────────────────────
+   Thang neutral: số nhỏ = bề mặt, số lớn = chữ. Ở dark mode thang tự đảo theo token. */
+:root {
+  --background: var(--bg);
+  --foreground: var(--ink);
+
+  --theme-main: var(--accent);
+  --theme-hover: var(--accent-hover);
+  --theme-filter-main: var(--filter-accent);
+  --theme-main-light: var(--accent-soft);
+  --theme-header: var(--card);
+
+  --theme-main-1: var(--accent-soft);
+  --theme-main-2: var(--accent-line);
+  --theme-main-3: var(--accent-line);
+  --theme-main-4: var(--accent);
+  --theme-main-5: var(--accent-hover);
+  --theme-main-6: var(--accent-text);
+  --theme-main-7: var(--accent-text);
+
+  --theme-neutral-1: var(--card);
+  --theme-neutral-2: color-mix(in srgb, var(--fill) 55%, var(--card));
+  --theme-neutral-3: var(--fill);
+  --theme-neutral-4: var(--line-2);
+  --theme-neutral-5: var(--line);
+  --theme-neutral-6: var(--faint);
+  --theme-neutral-7: var(--muted);
+  --theme-neutral-8: color-mix(in srgb, var(--muted) 60%, var(--ink-2));
+  --theme-neutral-9: var(--ink-2);
+  --theme-neutral-10: color-mix(in srgb, var(--ink-2) 50%, var(--ink));
+  --theme-neutral-11: var(--ink);
+  --theme-neutral-12: var(--ink);
+}
+
+/* Tiện ích Tailwind: bg-card, text-ink, text-muted, border-line, bg-accent, text-on-accent,
+   bg-accent-soft, text-accent-text, bg-warn-soft, text-danger, shadow-card, shadow-lift,
+   rounded-card, rounded-sheet, ease-soft, ease-spring, animate-pop … */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-fill: var(--fill);
+  --color-sidebar: var(--sidebar);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-line-strong: var(--line-strong);
+  --color-hover: var(--hover);
+  --color-track: var(--track);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-backdrop: var(--backdrop);
+
+  --shadow-hair: var(--shadow-hair);
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
 
   --color-theme-main: var(--theme-main);
   --color-theme-hover: var(--theme-hover);
@@ -59,49 +218,260 @@
   --color-theme-neutral-9: var(--theme-neutral-9);
   --color-theme-neutral-10: var(--theme-neutral-10);
   --color-theme-neutral-11: var(--theme-neutral-11);
+  --color-theme-neutral-12: var(--theme-neutral-12);
+}
+
+@theme {
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 18px;
+  --radius-sheet: 22px;
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-pop: pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-rise: rise 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-view-in: view-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-sheet-in: sheet-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-slide-in-right: slide-in-right 0.42s
+    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-slide-in-left: slide-in-left 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 0.25s ease;
+  --animate-drop: drop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-pulse-ring: pulse-ring 1.8s ease-out infinite;
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateX(18px);
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(28px);
+    }
+  }
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(-16px) scale(0.96);
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 9px transparent;
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line); /* v4 mặc định viền = currentColor */
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums; /* mã issue, số đếm, ngày thẳng cột */
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+  ::placeholder {
+    color: var(--faint);
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+}
+
+@layer components {
+  /* Skeleton có hình dạng nội dung thật */
+  .skel {
+    border-radius: 8px;
+    background: linear-gradient(
+      90deg,
+      var(--fill) 25%,
+      color-mix(in srgb, var(--fill) 50%, var(--card)) 37%,
+      var(--fill) 63%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  /* Tag màu do người dùng chọn (trạng thái, loại issue): nền nhạt + chữ cùng tông.
+     Trộn với --ink nên chữ tự đậm ở light và tự sáng ở dark. */
+  .tag-color {
+    color: color-mix(in srgb, var(--tag, var(--muted)) 74%, var(--ink));
+    background-color: color-mix(
+      in srgb,
+      var(--tag, var(--muted)) 15%,
+      transparent
+    );
+    border-color: transparent;
+  }
+  .tag-dot {
+    background-color: var(--tag, var(--muted));
+  }
+  .tag-c-red {
+    --tag: #e52e00;
+  }
+  .tag-c-orange {
+    --tag: #e68a40;
+  }
+  .tag-c-pink {
+    --tag: #db7f9b;
+  }
+  .tag-c-indigo {
+    --tag: #868db8;
+  }
+  .tag-c-blue {
+    --tag: #3b9db7;
+  }
+  .tag-c-teal {
+    --tag: #45ac94;
+  }
+  .tag-c-green {
+    --tag: #90a631;
+  }
+  .tag-c-yellow {
+    --tag: #d8921b;
+  }
+  .tag-c-bright-red {
+    --tag: #f2245f;
+  }
+  .tag-c-black {
+    --tag: #52525b;
+  }
+  .tag-c-gray {
+    --tag: #a1a1aa;
+  }
+  .tag-c-purple {
+    --tag: #9b59b6;
+  }
+  [data-theme='dark'] .tag-c-black {
+    --tag: #a1a1aa;
+  }
+
+  /* Icon dạng ảnh: tô theo token */
+  .icon-accent {
+    filter: var(--filter-accent);
+  }
+  .icon-muted {
+    filter: var(--filter-muted);
+  }
+  .icon-ink {
+    filter: var(--filter-ink);
+  }
+  .icon-danger {
+    filter: var(--filter-danger);
+  }
+  .icon-on-accent {
+    filter: var(--filter-on-accent);
+  }
+
+  /* Nút bấm co nhẹ khi nhấn */
+  .press:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  /* Thanh cuộn ngang mảnh cho bảng nhiều cột */
+  .table-horizontal-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .table-horizontal-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .table-horizontal-scroll::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 6px;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fade-in 0.3s var(--ease) forwards;
 }
 
-/* Global scrollbar from theme migration */
+/* Thanh cuộn mảnh, theo token */
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
-
 *::-webkit-scrollbar-thumb {
-  background-color: #dcdde1;
-  border-radius: 8px;
+  background: var(--line-strong);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
-
 *::-webkit-scrollbar-thumb:hover {
-  background-color: white;
+  background-color: var(--faint);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Custom scrollbar for horizontal scroll table */
-.table-horizontal-scroll::-webkit-scrollbar {
-  height: 4px;
-  cursor: pointer;
-}
-
-.table-horizontal-scroll::-webkit-scrollbar-track {
-  background: var(--theme-neutral-4);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.table-horizontal-scroll::-webkit-scrollbar-thumb {
-  background: var(--theme-neutral-6);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.table-horizontal-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-neutral-7);
-  cursor: pointer;
-}
 /* AI assistant: con trỏ nhấp nháy ở cuối đoạn đang stream */
 .ai-streaming-tail > *:last-child::after {
   content: '';
@@ -110,11 +480,21 @@
   height: 1em;
   margin-left: 2px;
   vertical-align: -0.15em;
-  background: var(--theme-main);
+  background: var(--accent);
   animation: ai-caret-blink 0.9s steps(2, start) infinite;
 }
 @keyframes ai-caret-blink {
   to {
     visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

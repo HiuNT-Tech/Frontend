@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -18,29 +18,49 @@ export const metadata: Metadata = {
   applicationName: 'Backlog',
 };
 
-import { ConfigProvider } from 'antd';
-import theme from '@/lib/theme';
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f4f4f5' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+};
+
 import StyledComponentsRegistry from '@/lib/AntdRegistry';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthGuard } from '@/components/auth-guard';
 import StoreProvider from '@/redux/StoreProvider';
 import { Toaster } from '@/components/ui/toaster';
+import {
+  ThemeProvider,
+  THEME_INIT_SCRIPT,
+} from '@/components/providers/theme-provider';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="antialiased">
         <StoreProvider>
           <StyledComponentsRegistry>
-            <ConfigProvider theme={theme}>
+            <ThemeProvider>
               <TooltipProvider>
                 <AuthGuard>{children}</AuthGuard>
                 <Toaster />
               </TooltipProvider>
-            </ConfigProvider>
+            </ThemeProvider>
           </StyledComponentsRegistry>
         </StoreProvider>
       </body>

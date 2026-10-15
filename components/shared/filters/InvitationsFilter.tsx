@@ -25,6 +25,7 @@ export default function InvitationsFilter({
     {
       id: 'status',
       type: 'select',
+      label: t('settings.invitations.table.status'),
       options: statusOptions,
       props: {
         placeholder: t('settings.invitations.statusFilterPlaceholder'),

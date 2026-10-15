@@ -1,22 +1,26 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Badge, Popover } from 'antd';
+import { Popover } from 'antd';
+import { Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import Images from '@/assets';
 import { useIsMobile } from '@/components/ui/use-mobile';
 import { useUnreadCount } from '@/hooks/use-notification';
 import {
   NotificationList,
   type NotificationTab,
 } from '@/components/shared/notifications/NotificationList';
+import { SidebarButton } from './sidebar-item';
 
 const BADGE_OVERFLOW = 99;
 
-export function NotificationBell() {
+/**
+ * Dòng "Thông báo" trong sidebar: số chưa đọc bên phải, bấm mở danh sách ở popover
+ * cạnh sidebar. Màn hình điện thoại thì chuyển sang trang /notifications.
+ */
+export function NotificationBell({ active }: { active?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -34,12 +38,20 @@ export function NotificationBell() {
   useEffect(() => {
     if (isMobile) setOpen(false);
   }, [isMobile]);
-  // Focus vào dialog khi mở (a11y); Esc trả focus về chuông.
+  // Focus vào dialog khi mở (a11y); Esc trả focus về nút.
   useEffect(() => {
     if (open) requestAnimationFrame(() => contentRef.current?.focus());
   }, [open]);
 
-  const handleBellClick = () => {
+  const count = isUnreadCountLoading ? 0 : unreadCount;
+  const countLabel =
+    count > BADGE_OVERFLOW ? `${BADGE_OVERFLOW}+` : String(count);
+  const label =
+    count > 0
+      ? `${t('notifications.bellAriaLabel')} (${countLabel})`
+      : t('notifications.bellAriaLabel');
+
+  const handleClick = () => {
     if (isMobile) {
       router.push('/notifications');
       return;
@@ -47,54 +59,34 @@ export function NotificationBell() {
     setOpen(v => !v);
   };
 
-  const label =
-    unreadCount > 0
-      ? `${t('notifications.bellAriaLabel')} (${
-          unreadCount > BADGE_OVERFLOW ? `${BADGE_OVERFLOW}+` : unreadCount
-        })`
-      : t('notifications.bellAriaLabel');
-
-  const bellButton = (
-    <button
+  const trigger = (
+    <SidebarButton
       ref={bellRef}
-      type="button"
-      onClick={handleBellClick}
+      onClick={handleClick}
       aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={open}
-      title={t('tooltip.notification')}
-      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full hover:bg-theme-neutral-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-main"
-    >
-      <Image
-        src={Images.Alert}
-        alt=""
-        width={22}
-        height={22}
-        style={{ filter: 'brightness(0) invert(1)' }}
-      />
-    </button>
+      active={active || open}
+      icon={<Bell />}
+      label={t('shell.nav.notifications')}
+      trailing={
+        count > 0 ? (
+          <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-on-accent">
+            {countLabel}
+          </span>
+        ) : undefined
+      }
+    />
   );
 
-  const badged = (
-    <Badge
-      count={isUnreadCountLoading ? 0 : unreadCount}
-      overflowCount={BADGE_OVERFLOW}
-      size="small"
-      offset={[-6, 6]}
-      className="[&_.ant-badge-count]:bg-theme-main [&_.ant-badge-count]:shadow-none"
-    >
-      {bellButton}
-    </Badge>
-  );
-
-  if (isMobile) return badged;
+  if (isMobile) return trigger;
 
   return (
     <Popover
       open={open}
       onOpenChange={setOpen}
       trigger="click"
-      placement="bottomRight"
+      placement="rightTop"
       arrow={false}
       styles={{ container: { padding: 0 } }}
       content={
@@ -109,7 +101,7 @@ export function NotificationBell() {
               bellRef.current?.focus();
             }
           }}
-          className="w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-lg bg-theme-neutral-1 focus:outline-none"
+          className="w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[14px] bg-card focus:outline-none"
         >
           <NotificationList
             variant="popover"
@@ -120,7 +112,7 @@ export function NotificationBell() {
         </div>
       }
     >
-      {badged}
+      {trigger}
     </Popover>
   );
 }

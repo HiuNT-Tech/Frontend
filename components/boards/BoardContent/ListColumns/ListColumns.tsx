@@ -12,6 +12,7 @@ interface ListColumnsProps {
   columns: ColumnType[];
 }
 
+/** Dải cột cuộn ngang trong pane; mỗi cột tự cuộn dọc, cao tối đa bằng vùng này. */
 function ListColumns({ columns }: ListColumnsProps) {
   const columnIds = useMemo(
     () => columns?.map(c => `column-${c.id}`) || [],
@@ -20,7 +21,7 @@ function ListColumns({ columns }: ListColumnsProps) {
 
   return (
     <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-      <div className="w-full h-full flex overflow-x-auto overflow-y-hidden">
+      <div className="flex h-full w-full items-start gap-3.5 overflow-x-auto overflow-y-hidden px-4 pb-5 lg:px-5">
         {columns?.map(column => (
           <Column key={column.id} column={column} />
         ))}

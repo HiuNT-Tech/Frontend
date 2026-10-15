@@ -3,6 +3,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { replaceWithUpdatedSearchParams } from '@/lib/url';
@@ -17,6 +18,7 @@ import { StatusCreateForm } from '@/components/shared/forms/StatusCreateForm';
 import StatusesFilter from '@/components/shared/filters/StatusesFilter';
 import { usePagination } from '@/hooks/use-pagination';
 import type { EntityId } from '@/config/interface';
+import { SectionHeader } from './SectionHeader';
 
 export const StatusesTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
   const { t } = useTranslation();
@@ -100,35 +102,32 @@ export const StatusesTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 border-b border-theme-neutral-4 pb-5 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-theme-neutral-11">
-            {t('settings.statuses.heading')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-theme-neutral-8">
-            {t('settings.statuses.hint')}
-          </p>
-        </div>
-        {isManager && (
-          <Button
-            className="h-10 rounded-md bg-theme-main px-4 text-theme-neutral-1 shadow-sm hover:bg-theme-hover"
-            onClick={() => {
-              replaceWithUpdatedSearchParams(
-                router,
-                pathname,
-                searchParams,
-                params => {
-                  params.set('tab', 'statuses');
-                  params.set('statusesMode', 'create');
-                }
-              );
-              setIsCreatingStatus(true);
-            }}
-          >
-            {t('settings.statuses.actions.add')}
-          </Button>
-        )}
-      </div>
+      <SectionHeader
+        title={t('settings.statuses.heading')}
+        description={t('settings.statuses.hint')}
+        action={
+          isManager && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                replaceWithUpdatedSearchParams(
+                  router,
+                  pathname,
+                  searchParams,
+                  params => {
+                    params.set('tab', 'statuses');
+                    params.set('statusesMode', 'create');
+                  }
+                );
+                setIsCreatingStatus(true);
+              }}
+            >
+              <Plus />
+              {t('settings.statuses.actions.add')}
+            </Button>
+          )
+        }
+      />
 
       <StatusesFilter onSearch={handleSearch} />
 

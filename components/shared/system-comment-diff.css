@@ -1,6 +1,6 @@
 /*
- * Style cho output của jsondiffpatch html formatter, viết lại theo theme
- * của app thay vì dùng CSS mặc định của lib.
+ * Style cho output của jsondiffpatch html formatter, viết lại theo token
+ * của theme (sáng/tối tự đổi) thay vì dùng CSS mặc định của lib.
  *
  * Cấu trúc HTML formatter xuất ra:
  *   .jsondiffpatch-delta > ul > li[data-key]
@@ -20,19 +20,19 @@
 }
 
 .system-comment-diff .jsondiffpatch-delta > ul > li {
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .system-comment-diff .jsondiffpatch-delta > ul > li + li {
-  border-top: 1px dashed var(--theme-neutral-4);
+  border-top: 1px solid var(--line);
 }
 
 /* Tên field */
 .system-comment-diff .jsondiffpatch-property-name {
   font-weight: 600;
-  font-size: 12px;
-  color: var(--theme-neutral-8);
-  margin-bottom: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 3px;
 }
 
 /* Giá trị scalar (modified/added/deleted): hiện old -> new trên cùng hàng */
@@ -44,17 +44,19 @@
 .system-comment-diff .jsondiffpatch-value pre {
   display: inline;
   margin: 0;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: inherit;
   font-size: 13px;
+  font-weight: 500;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .system-comment-diff .jsondiffpatch-left-value pre,
 .system-comment-diff .jsondiffpatch-deleted pre {
-  background: #fff1f0;
-  color: #cf1322;
+  background: var(--danger-soft);
+  color: var(--danger);
   text-decoration: line-through;
 }
 
@@ -64,22 +66,21 @@
 
 .system-comment-diff .jsondiffpatch-left-value::after {
   content: '→';
-  color: var(--theme-neutral-7);
+  color: var(--faint);
   margin-left: 6px;
 }
 
 .system-comment-diff .jsondiffpatch-right-value pre,
 .system-comment-diff .jsondiffpatch-added pre {
-  background: var(--theme-main-1);
-  color: var(--theme-main-6);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* Text diff (mô tả): từng mảnh thêm/xoá/ngữ cảnh */
 .system-comment-diff ul.jsondiffpatch-textdiff {
-  background: var(--theme-neutral-2);
-  border: 1px solid var(--theme-neutral-4);
-  border-radius: 6px;
-  padding: 6px 8px;
+  background: var(--fill);
+  border-radius: 10px;
+  padding: 8px 10px;
 }
 
 .system-comment-diff ul.jsondiffpatch-textdiff > li {
@@ -97,22 +98,23 @@
 
 .system-comment-diff .jsondiffpatch-textdiff-line {
   font-size: 13px;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--theme-neutral-10);
+  color: var(--ink-2);
 }
 
 .system-comment-diff .jsondiffpatch-textdiff-deleted {
-  background: #fff1f0;
-  color: #cf1322;
+  background: var(--danger-soft);
+  color: var(--danger);
   text-decoration: line-through;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .system-comment-diff .jsondiffpatch-textdiff-added {
-  background: var(--theme-main-1);
-  color: var(--theme-main-6);
-  border-radius: 2px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: 3px;
 }
 
 /* Không hiển thị các node không đổi (nếu formatter render kèm) */

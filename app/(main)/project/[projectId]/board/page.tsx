@@ -1,10 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
 import BoardContent from '@/components/boards/BoardContent/BoardContent';
-import { StateMessage } from '@/components/ui/state-message';
 import type { BoardFilterValue } from '@/components/boards/BoardContent/BoardFilters';
+import { Pane } from '@/components/layout/pane';
+import { IssueViewSwitcher } from '@/components/issues/issue-view-switcher';
+import { buttonVariants } from '@/components/ui/button';
+import { useCurrentProject } from '@/hooks/use-current-project';
 import { cloneDeep } from 'lodash';
 import {
   fetchBoardDetailsAPI,
@@ -38,6 +44,30 @@ const countBoardCards = (board: Board): number =>
     (total, column) => total + (column.cards?.length ?? 0),
     0
   );
+
+/** Khung xương board: vài cột mờ với thẻ trống, giữ đúng bố cục khi đang tải. */
+function BoardSkeleton() {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="status"
+      aria-label={t('board.loading')}
+      className="flex h-full min-h-0 items-start gap-3.5 overflow-hidden px-4 pt-4 pb-5 lg:px-5"
+    >
+      {[3, 2, 1, 2].map((cards, column) => (
+        <div
+          key={column}
+          className="flex w-[288px] flex-none flex-col gap-2 rounded-card bg-track p-2"
+        >
+          <div className="skel mx-1 my-2 h-4 w-28" />
+          {Array.from({ length: cards }).map((_, i) => (
+            <div key={i} className="skel h-[92px] rounded-xl" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function BoardPageContent() {
   const dispatch = useDispatch<AppDispatch>();
@@ -90,14 +120,7 @@ function BoardPageContent() {
   }, [dispatch, boardId, boardDetailParams]);
 
   if (!board) {
-    return (
-      <StateMessage
-        variant="block"
-        spinner
-        i18nKey="board.loading"
-        className="h-[calc(100vh-8rem)] py-0 text-lg text-theme-neutral-1"
-      />
-    );
+    return <BoardSkeleton />;
   }
 
   const moveColumns = (dndOrderedColumns: ColumnType[]) => {
@@ -169,20 +192,33 @@ function BoardPageContent() {
   );
 }
 
+/** Trang Board: toolbar của pane + vùng cột tự cuộn ngang, cao bằng pane. */
 function BoardPage() {
+  const { t } = useTranslation();
+  const { projectId, code, title } = useCurrentProject();
+
   return (
-    <Suspense
-      fallback={
-        <StateMessage
-          variant="block"
-          spinner
-          i18nKey="board.loading"
-          className="h-[calc(100vh-8rem)] py-0 text-lg text-theme-neutral-1"
-        />
+    <Pane
+      title={t('shell.nav.board')}
+      subtitle={[code, title].filter(Boolean).join(' · ') || undefined}
+      center={<IssueViewSwitcher />}
+      scroll={false}
+      actions={
+        projectId ? (
+          <Link
+            href={`/project/${projectId}/add-issue`}
+            className={buttonVariants({ size: 'sm' })}
+          >
+            <Plus aria-hidden="true" />
+            {t('shell.nav.newIssue')}
+          </Link>
+        ) : undefined
       }
     >
-      <BoardPageContent />
-    </Suspense>
+      <Suspense fallback={<BoardSkeleton />}>
+        <BoardPageContent />
+      </Suspense>
+    </Pane>
   );
 }
 

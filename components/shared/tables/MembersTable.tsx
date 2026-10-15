@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { Pencil, UserMinus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { CustomTable, type TableColumn } from '@/components/ui/custome-table';
-import { renderMemberRoleBadge } from '@/constant/data';
-import Images from '@/assets';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import {
   EntityId,
   UserBoardMember,
   UsersBoardResponse,
 } from '@/config/interface';
+import { actionsColumn, RoleTag } from './settings-table-parts';
 
 export interface MembersTableProps {
   boardId?: EntityId;
@@ -29,7 +30,6 @@ export interface MembersTableProps {
 }
 
 export const MembersTable: React.FC<MembersTableProps> = ({
-  boardId,
   listUser,
   isListLoading,
   listError,
@@ -44,82 +44,93 @@ export const MembersTable: React.FC<MembersTableProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const columns = useMemo<TableColumn<UserBoardMember>[]>(
-    () => [
+  const columns = useMemo<TableColumn<UserBoardMember>[]>(() => {
+    const base: TableColumn<UserBoardMember>[] = [
       {
         key: 'member',
         title: t('settings.members.table.member'),
         dataIndex: 'displayName',
-        render: (value, record) => (
-          <div className="flex items-center gap-3">
-            {(record.displayName || record.username).slice(0, 1).toUpperCase()}
-            {record.displayName || record.username}
-          </div>
-        ),
+        minWidth: 240,
+        render: (_value, record) => {
+          const name = record.displayName || record.username;
+          return (
+            <div className="flex min-w-0 items-center gap-3">
+              <UserAvatar name={name} src={record.avatar} size={32} />
+              <div className="min-w-0">
+                <div className="truncate font-medium text-ink">{name}</div>
+                <div className="truncate text-[12.5px] text-muted">
+                  {record.email}
+                </div>
+              </div>
+            </div>
+          );
+        },
       },
       {
         key: 'userCode',
         title: t('settings.members.table.userCode'),
         dataIndex: 'userCode',
+        minWidth: 120,
         render: value =>
           value ? (
-            <span className="font-mono text-theme-neutral-9">
-              {value as string}
-            </span>
+            <span className="text-ink-2 tabular-nums">{value as string}</span>
           ) : (
             // User tạo trước khi có tính năng mã người dùng thì để trống.
-            <span className="text-theme-neutral-7">—</span>
+            <span className="text-faint">—</span>
           ),
-      },
-      {
-        key: 'email',
-        title: 'Email',
-        dataIndex: 'email',
       },
       {
         key: 'role',
         title: t('settings.members.table.role'),
         dataIndex: 'role',
-        align: 'center',
-        render: value => renderMemberRoleBadge(value, t),
+        minWidth: 140,
+        render: value => <RoleTag role={value} t={t} />,
       },
       {
         key: 'createdAt',
         title: t('settings.members.table.joinedOn'),
         dataIndex: 'createdAt',
-        align: 'center',
+        align: 'right',
+        minWidth: 120,
         render: value => (
-          <span className="text-theme-neutral-9">
+          <span className="text-muted tabular-nums">
             {value ? new Date(value).toLocaleDateString() : ''}
           </span>
         ),
       },
-    ],
-    [t]
-  );
+    ];
+
+    if (!canManage) return base;
+
+    return [
+      ...base,
+      actionsColumn<UserBoardMember>(t, record => [
+        {
+          key: 'edit',
+          label: t('settings.members.table.editRole'),
+          icon: <Pencil />,
+          onClick: () => onEditRole?.(record),
+        },
+        {
+          key: 'remove',
+          label: t('settings.members.table.delete'),
+          icon: <UserMinus />,
+          tone: 'danger',
+          onClick: () => onRemove?.(record),
+        },
+      ]),
+    ];
+  }, [t, canManage, onEditRole, onRemove]);
 
   return (
     <CustomTable
       rowKey="userId"
       columns={columns}
       dataSource={listUser?.items ?? []}
+      loading={isListLoading}
+      error={Boolean(listError)}
+      onRetry={refetchList}
       emptyText={t('settings.members.table.empty')}
-      actions={
-        canManage
-          ? [
-              {
-                icon: Images.IconEdit,
-                title: t('settings.members.table.editRole'),
-                onClick: record => onEditRole?.(record),
-              },
-              {
-                icon: Images.IconTrash,
-                title: t('settings.members.table.delete'),
-                onClick: record => onRemove?.(record),
-              },
-            ]
-          : []
-      }
       pagination={{
         current: page,
         total: listUser?.total || 0,

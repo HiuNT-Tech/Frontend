@@ -1,5 +1,6 @@
 'use client';
 import { useTranslation } from 'react-i18next';
+import { CircleDot, Flag, Shapes, Tag, UserRound } from 'lucide-react';
 import { SearchSection } from '@/components/search/SearchSection';
 import type { SearchField } from '@/types/search-section';
 import type { CardListParams, EntityId } from '@/config/interface';
@@ -7,14 +8,24 @@ import { useColumn } from '@/hooks/use-column';
 import { useVersion } from '@/hooks/use-version';
 import { useIssueType } from '@/hooks/use-issue-type';
 import { useUserBoard } from '@/hooks/use-user-board';
-import { PRIORITY_OPTIONS, renderIssueTypeBadge } from '@/constant/data';
+import { PRIORITY_OPTIONS } from '@/constant/data';
+import { ColorTag } from '@/components/ui/tag';
+import { UserAvatar } from '@/components/ui/user-avatar';
+import { PriorityLabel } from '@/components/issues/priority-flag';
 
+/**
+ * Thanh lọc của màn Issues: ô tìm kiếm + viên lọc trạng thái / loại / ưu tiên / người được giao,
+ * phiên bản và người đăng ký nằm trong "Thêm bộ lọc". Tham số API giữ nguyên như trước.
+ */
 const IssuesFilter = ({
   boardId,
   onSearch,
+  summary,
 }: {
   boardId?: EntityId;
   onSearch: (params: CardListParams) => void;
+  /** Dòng tóm tắt ở cuối thanh (vd. số công việc) */
+  summary?: React.ReactNode;
 }) => {
   const { t } = useTranslation();
 
@@ -26,9 +37,9 @@ const IssuesFilter = ({
   const OptionsStatus = columnList.map(column => ({
     value: column.id.toString(),
     label: (
-      <div className="flex items-center gap-2">
-        {renderIssueTypeBadge(column.statusColor, column.title)}
-      </div>
+      <ColorTag color={column.statusColor} className="font-medium">
+        {column.title}
+      </ColorTag>
     ),
   }));
 
@@ -40,54 +51,54 @@ const IssuesFilter = ({
   const IssueTypeOptions = issueTypes.map(issueType => ({
     value: issueType.id.toString(),
     label: (
-      <div className="flex items-center gap-2">
-        {renderIssueTypeBadge(issueType.statusColor, issueType.name)}
-      </div>
+      <ColorTag color={issueType.statusColor} className="font-medium">
+        {issueType.name}
+      </ColorTag>
     ),
   }));
 
-  const Assignee = listUser.items.map(user => ({
+  const userOptions = listUser.items.map(user => ({
     value: user.userId.toString(),
-    label: user.displayName,
+    label: (
+      <span className="flex min-w-0 items-center gap-2">
+        <UserAvatar name={user.displayName} src={user.avatar} size={22} />
+        <span className="truncate">{user.displayName}</span>
+      </span>
+    ),
   }));
 
-  const RegisteredBy = listUser.items.map(user => ({
-    value: user.userId.toString(),
-    label: user.displayName,
+  const PriorityOptions = PRIORITY_OPTIONS.map(option => ({
+    value: option.value,
+    label: (
+      <PriorityLabel priority={Number(option.value)} label={option.label} />
+    ),
   }));
 
   const searchFields: SearchField[] = [
     {
-      id: 'registeredBy',
-      type: 'multiOptions',
-      label: t('issues.filter.registeredBy'),
-      options: RegisteredBy,
+      id: 'search',
+      type: 'text',
+      label: t('issues.filter.search'),
+      placement: 'bar',
       props: {
-        placeholder: t('issues.filter.registerByPlaceholder'),
+        placeholder: t('issues.filter.searchPlaceholder'),
       },
     },
     {
       id: 'status',
       type: 'multiOptions',
       label: t('issues.filter.status'),
+      icon: <CircleDot aria-hidden="true" />,
       options: OptionsStatus,
       props: {
         placeholder: t('issues.filter.statusPlaceholder'),
       },
     },
     {
-      id: 'version',
-      type: 'multiOptions',
-      label: t('issues.filter.version'),
-      options: VersionOptions,
-      props: {
-        placeholder: t('issues.filter.versionPlaceholder'),
-      },
-    },
-    {
       id: 'issueType',
       type: 'multiOptions',
       label: t('issues.filter.issueType'),
+      icon: <Shapes aria-hidden="true" />,
       options: IssueTypeOptions,
       props: {
         placeholder: t('issues.filter.issueTypePlaceholder'),
@@ -97,7 +108,8 @@ const IssuesFilter = ({
       id: 'priority',
       type: 'multiOptions',
       label: t('issues.filter.priority'),
-      options: PRIORITY_OPTIONS,
+      icon: <Flag aria-hidden="true" />,
+      options: PriorityOptions,
       props: {
         placeholder: t('issues.filter.priorityPlaceholder'),
       },
@@ -106,19 +118,32 @@ const IssuesFilter = ({
       id: 'assignee',
       type: 'multiOptions',
       label: t('issues.filter.assignee'),
-      options: Assignee,
+      icon: <UserRound aria-hidden="true" />,
+      options: userOptions,
       props: {
         placeholder: t('issues.filter.assigneePlaceholder'),
       },
     },
     {
-      id: 'search',
-      type: 'text',
-      label: t('issues.filter.search'),
-      // Đứng một mình ở hàng cuối nên cho chiếm hết chiều rộng cho cân.
-      colSpan: 'full',
+      id: 'version',
+      type: 'multiOptions',
+      label: t('issues.filter.version'),
+      icon: <Tag aria-hidden="true" />,
+      placement: 'advanced',
+      options: VersionOptions,
       props: {
-        placeholder: t('issues.filter.searchPlaceholder'),
+        placeholder: t('issues.filter.versionPlaceholder'),
+      },
+    },
+    {
+      id: 'registeredBy',
+      type: 'multiOptions',
+      label: t('issues.filter.registeredBy'),
+      icon: <UserRound aria-hidden="true" />,
+      placement: 'advanced',
+      options: userOptions,
+      props: {
+        placeholder: t('issues.filter.registerByPlaceholder'),
       },
     },
   ];
@@ -146,7 +171,7 @@ const IssuesFilter = ({
 
     const params: CardListParams = {};
 
-    if (search) {
+    if (search && String(search).trim()) {
       params.search = String(search).trim();
     }
 
@@ -165,15 +190,13 @@ const IssuesFilter = ({
   };
 
   return (
-    <div className="mt-0">
-      <SearchSection
-        itemsPerRow={3}
-        title={t('common.search')}
-        fields={searchFields}
-        onSearch={handleSearch}
-        onReset={handleReset}
-      />
-    </div>
+    <SearchSection
+      title={t('common.search')}
+      fields={searchFields}
+      onSearch={handleSearch}
+      onReset={handleReset}
+      summary={summary}
+    />
   );
 };
 

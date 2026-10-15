@@ -86,7 +86,7 @@ const TimeRangePicker = forwardRef<HTMLDivElement, TimeRangePickerProps>(
         {label && (
           <label className="text-sm font-medium text-theme-neutral-11">
             {label}
-            {required && <span className="text-red-500 ml-1">*</span>}
+            {required && <span className="ml-1 text-danger">*</span>}
           </label>
         )}
         <div
@@ -102,13 +102,13 @@ const TimeRangePicker = forwardRef<HTMLDivElement, TimeRangePickerProps>(
             format="HH:mm"
             className={cn(
               'w-full h-10',
-              error && '!border-red-500 error-class',
+              error && '[&.ant-picker]:border-danger! error-class',
               className
             )}
             style={{ width: '100%' }}
           />
         </div>
-        {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+        {error && <p className="mt-1 text-[13px] text-danger">{error}</p>}
       </div>
     );
   }

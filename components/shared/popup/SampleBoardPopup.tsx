@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,13 @@ interface SampleBoardDialogProps {
 
 const createDefaultSampleBoardCode = () =>
   `SAMPLE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
+const INCLUDES_KEYS = [
+  'dashboard.sampleProject.includesColumns',
+  'dashboard.sampleProject.includesIssueTypes',
+  'dashboard.sampleProject.includesMilestones',
+  'dashboard.sampleProject.includesTickets',
+] as const;
 
 export default function SampleBoardDialog({
   open,
@@ -70,23 +78,37 @@ export default function SampleBoardDialog({
       title={t('dashboard.sampleProject.title')}
       closeOnOverlayClick={!isPending}
     >
-      <div className="space-y-5">
-        <p className="text-sm leading-5 text-theme-neutral-8">
+      <form
+        onSubmit={handleSubmit(handleFormSubmit)}
+        className="flex flex-col gap-5"
+        id="sample-board-form"
+      >
+        <p className="text-[14.5px] leading-relaxed text-ink-2">
           {t('dashboard.sampleProject.description')}
         </p>
 
-        <ul className="flex flex-col gap-1 rounded-md bg-theme-neutral-1 p-3 text-sm text-theme-neutral-8">
-          <li>• {t('dashboard.sampleProject.includesColumns')}</li>
-          <li>• {t('dashboard.sampleProject.includesIssueTypes')}</li>
-          <li>• {t('dashboard.sampleProject.includesMilestones')}</li>
-          <li>• {t('dashboard.sampleProject.includesTickets')}</li>
-        </ul>
+        {/* Nhóm "có sẵn": tiêu đề nhóm nhỏ + khối nền xám, mỗi dòng một hairline */}
+        <section>
+          <h4 className="mb-2 px-1.5 text-[13px] font-semibold text-muted">
+            {t('dashboard.sampleProject.includesTitle')}
+          </h4>
+          <ul className="m-0 list-none overflow-hidden rounded-[14px] bg-fill p-0 text-[14px] text-ink-2">
+            {INCLUDES_KEYS.map(key => (
+              <li
+                key={key}
+                className="flex items-start gap-2.5 border-t border-line px-3.5 py-2.5 first:border-t-0"
+              >
+                <Check
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 flex-none text-accent"
+                />
+                <span>{t(key)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        <form
-          onSubmit={handleSubmit(handleFormSubmit)}
-          className="flex flex-col gap-4"
-          id="sample-board-form"
-        >
+        <div className="flex flex-col gap-4">
           <Input
             label={t('dashboard.sampleProject.nameLabel')}
             error={errors.title?.message}
@@ -98,11 +120,12 @@ export default function SampleBoardDialog({
             label={t('dashboard.sampleProject.codeLabel')}
             error={errors.boardCode?.message}
             requiredIndicator
+            className="font-semibold uppercase tabular-nums"
             {...register('boardCode')}
           />
-        </form>
+        </div>
 
-        <div className="flex justify-end gap-3 border-t border-theme-neutral-4 pt-4">
+        <div className="flex justify-end gap-2 pt-1">
           <Button
             type="button"
             variant="outline"
@@ -111,18 +134,13 @@ export default function SampleBoardDialog({
           >
             {t('common.cancel')}
           </Button>
-          <Button
-            type="submit"
-            form="sample-board-form"
-            variant="primary"
-            disabled={isPending}
-          >
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending
               ? t('common.loading')
               : t('dashboard.sampleProject.submit')}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }

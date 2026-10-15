@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/vi';
+import { Check, Clock, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import Icons from '@/assets/icons';
+import { IconButton } from '@/components/ui/icon-button';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { format } from '@/constant/format';
 import type { Notification } from '@/config/interface';
@@ -25,17 +25,21 @@ export interface NotificationItemProps {
   onMarkRead: (notification: Notification) => void;
   onRemove: (notification: Notification) => void;
   compact?: boolean;
+  /** Hàng đầu tiên trong thẻ không có hairline phía trên */
+  first?: boolean;
 }
 
-const iconButtonClassName =
-  'rounded-md p-1 text-theme-neutral-7 hover:bg-theme-neutral-3 hover:text-theme-neutral-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-main';
-
+/**
+ * Một hàng thông báo, yên tĩnh: chưa đọc = chấm accent nhỏ + tiêu đề đậm;
+ * đã đọc = chữ nhạt hơn. Không tô nền, không vòng tròn icon màu.
+ */
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification: n,
   onOpen,
   onMarkRead,
   onRemove,
   compact = false,
+  first = false,
 }) => {
   const { t, i18n } = useTranslation();
   // 3 picker đang gọi dayjs.locale('ja') toàn cục → luôn set locale theo instance.
@@ -49,111 +53,97 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return (
     <li
       className={cn(
-        'group relative border-b border-theme-neutral-4 last:border-b-0',
-        isUnread ? 'bg-theme-main-1/60' : 'bg-theme-neutral-1'
+        'group relative flex items-start gap-3 transition-colors duration-200 ease-soft hover:bg-hover',
+        compact ? 'px-3 py-2.5' : 'px-[18px] py-3',
+        !first && 'border-t border-line'
       )}
       data-unread={isUnread || undefined}
     >
-      {/* Vùng bấm chính là <button>; nút phụ đặt là anh em (không lồng button trong button). */}
+      {/* Vùng bấm chính là <button> phủ toàn hàng bằng ::after; nút phụ là
+          anh em (không lồng button trong button) và nổi lên trên bằng z-index. */}
+      <span className="mt-[11px] flex w-2 flex-none justify-center">
+        {isUnread && (
+          <span aria-hidden="true" className="size-2 rounded-full bg-accent" />
+        )}
+      </span>
+
+      <span className="mt-0.5 flex-none">
+        {hasActor ? (
+          <UserAvatar
+            name={actorName}
+            src={n.actor?.avatar ?? null}
+            size={28}
+          />
+        ) : (
+          <span className="inline-flex size-7 items-center justify-center rounded-full bg-fill text-muted shadow-[inset_0_0_0_1px_var(--line)]">
+            <Clock aria-hidden="true" className="size-[15px]" />
+          </span>
+        )}
+      </span>
+
       <button
         type="button"
         onClick={() => onOpen(n)}
-        className="flex w-full items-start gap-3 px-4 py-3 pr-16 text-left hover:bg-theme-neutral-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-main"
+        className="min-w-0 flex-1 cursor-pointer text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-[10px] focus-visible:after:outline-2 focus-visible:after:outline-accent focus-visible:after:-outline-offset-2"
       >
-        <span className="relative mt-0.5 shrink-0">
-          {hasActor ? (
-            <UserAvatar
-              name={actorName}
-              src={n.actor?.avatar ?? null}
-              size={32}
-            />
-          ) : (
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-theme-main-1">
-              <Image
-                src={Icons.Clock}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-                style={{ filter: 'var(--theme-filter-main)' }}
-              />
-            </span>
+        <span
+          className={cn(
+            'block text-[14px] leading-[1.4] line-clamp-2',
+            isUnread ? 'font-semibold text-ink' : 'text-ink-2'
           )}
-          {isUnread && (
-            <span
-              aria-hidden="true"
-              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-theme-neutral-1 bg-theme-main"
-            />
-          )}
+        >
+          {text}
         </span>
-        <span className="min-w-0 flex-1">
-          <span
-            className={cn(
-              'block text-sm text-theme-neutral-11 line-clamp-2',
-              isUnread && 'font-semibold'
-            )}
-          >
-            {text}
+        {n.payload.cardTitle && (
+          <span className="mt-0.5 block truncate text-[13px] text-muted">
+            {n.payload.cardTitle}
           </span>
-          {n.payload.cardTitle && (
-            <span className="mt-0.5 block truncate text-xs text-theme-neutral-8">
-              {n.payload.cardTitle}
-            </span>
-          )}
-          <span className="mt-1 flex items-center gap-2 text-xs text-theme-neutral-7">
-            {n.payload.boardTitle && !compact && (
+        )}
+        <span className="mt-1 flex items-center gap-1.5 text-[12.5px] text-muted">
+          {n.payload.boardTitle && !compact && (
+            <>
               <span className="truncate">{n.payload.boardTitle}</span>
-            )}
-            <time
-              dateTime={n.createdAt}
-              title={format.dateTime(n.createdAt)}
-              className="shrink-0"
-            >
-              {relative}
-            </time>
-          </span>
+              <span aria-hidden="true" className="text-faint">
+                ·
+              </span>
+            </>
+          )}
+          <time
+            dateTime={n.createdAt}
+            title={format.dateTime(n.createdAt)}
+            className="shrink-0 tabular-nums"
+          >
+            {relative}
+          </time>
         </span>
       </button>
 
-      <span className="absolute right-2 top-2 flex items-center gap-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100">
+      {/* Hành động phụ: hiện khi hover trên máy có chuột, luôn hiện trên cảm ứng. */}
+      <span className="relative z-[1] -my-1 -mr-1.5 flex flex-none items-center gap-0.5 focus-within:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
         {isUnread && (
-          <button
-            type="button"
+          <IconButton
+            size="sm"
             aria-label={t('notifications.markRead')}
-            title={t('notifications.markRead')}
             onClick={e => {
               e.stopPropagation();
               onMarkRead(n);
             }}
-            className={iconButtonClassName}
+            className="text-muted"
           >
-            <Image
-              src={Icons.Check}
-              alt=""
-              width={14}
-              height={14}
-              className="h-3.5 w-3.5"
-            />
-          </button>
+            <Check aria-hidden="true" />
+          </IconButton>
         )}
-        <button
-          type="button"
+        <IconButton
+          size="sm"
           aria-label={t('notifications.delete')}
-          title={t('notifications.delete')}
           onClick={e => {
             e.stopPropagation();
             onRemove(n);
           }}
-          className={iconButtonClassName}
+          className="text-muted"
         >
-          <Image
-            src={Icons.X}
-            alt=""
-            width={14}
-            height={14}
-            className="h-3.5 w-3.5"
-          />
-        </button>
+          <X aria-hidden="true" />
+        </IconButton>
       </span>
     </li>
   );

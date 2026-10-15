@@ -35,7 +35,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-theme-neutral-10 font-semibold text-white',
+        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-fill font-semibold text-ink-2 shadow-[inset_0_0_0_1px_var(--line)]',
         className
       )}
       style={{ width: size, height: size }}
@@ -50,7 +50,10 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           className="h-full w-full object-cover"
         />
       ) : (
-        <span style={{ fontSize: Math.max(10, Math.round(size * 0.4)) }}>
+        <span
+          className="leading-none"
+          style={{ fontSize: Math.max(10, Math.round(size * 0.38)) }}
+        >
           {initials}
         </span>
       )}

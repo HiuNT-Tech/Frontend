@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Group } from '@/components/ui/surface';
 import { useMe } from '@/hooks/use-me';
 import {
   changePasswordFormSchema,
@@ -48,61 +49,58 @@ export function PasswordTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-theme-neutral-11">
-          {t('accountSettings.password.heading')}
-        </h2>
-        <p className="text-sm text-theme-neutral-8">
-          {t('accountSettings.password.hint')}
-        </p>
-      </div>
-
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-md space-y-6"
-        autoComplete="off"
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      autoComplete="off"
+      noValidate
+      className="space-y-5"
+    >
+      <Group
+        title={t('accountSettings.password.heading')}
+        hint={t('validation.passwordRule')}
       >
-        <Input
-          type="password"
-          label={t('accountSettings.password.currentPasswordLabel')}
-          requiredIndicator
-          error={getFieldError('currentPassword')}
-          {...register('currentPassword')}
-          disabled={isChangePasswordPending}
-          autoComplete="current-password"
-        />
-
-        <Input
-          type="password"
-          label={t('accountSettings.password.newPasswordLabel')}
-          requiredIndicator
-          error={getFieldError('newPassword')}
-          {...register('newPassword')}
-          disabled={isChangePasswordPending}
-          autoComplete="new-password"
-        />
-
-        <Input
-          type="password"
-          label={t('accountSettings.password.confirmPasswordLabel')}
-          requiredIndicator
-          error={getFieldError('confirmPassword')}
-          {...register('confirmPassword')}
-          disabled={isChangePasswordPending}
-          autoComplete="new-password"
-        />
-
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            className="bg-theme-main text-theme-neutral-1 hover:bg-theme-hover min-w-[120px]"
+        <div className="px-[18px] py-4">
+          <Input
+            type="password"
+            label={t('accountSettings.password.currentPasswordLabel')}
+            requiredIndicator
+            error={getFieldError('currentPassword')}
+            {...register('currentPassword')}
             disabled={isChangePasswordPending}
-          >
-            {t('common.submit')}
-          </Button>
+            autoComplete="current-password"
+          />
         </div>
-      </form>
-    </div>
+        <div className="grid gap-4 border-t border-line px-[18px] py-4 sm:grid-cols-2">
+          <Input
+            type="password"
+            label={t('accountSettings.password.newPasswordLabel')}
+            requiredIndicator
+            error={getFieldError('newPassword')}
+            {...register('newPassword')}
+            disabled={isChangePasswordPending}
+            autoComplete="new-password"
+          />
+          <Input
+            type="password"
+            label={t('accountSettings.password.confirmPasswordLabel')}
+            requiredIndicator
+            error={getFieldError('confirmPassword')}
+            {...register('confirmPassword')}
+            disabled={isChangePasswordPending}
+            autoComplete="new-password"
+          />
+        </div>
+      </Group>
+
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isChangePasswordPending}
+        >
+          {t('accountSettings.password.save')}
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -4,10 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { History, SquarePen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { StateMessage } from '@/components/ui/state-message';
 import { useAiChat } from '@/hooks/use-ai-chat';
 import { useBoardRole } from '@/hooks/use-board-role';
@@ -15,8 +14,8 @@ import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentActiveBoard } from '@/redux/activeBoard/activeBoardSlice';
 import type { Card, EntityId } from '@/config/interface';
 import type { AiChatContext, AiUiAction } from '@/types/ai-assistant';
-import { useIsMobile } from '@/components/ui/use-mobile';
 import { useOptionalAiAssistant } from './ai-assistant-provider';
+import { AiMark } from './ai-mark';
 import { ChatHistory } from './chat-history';
 import { Composer } from './composer';
 import { MessageList } from './message-list';
@@ -28,11 +27,10 @@ interface ChatThreadProps {
   className?: string;
 }
 
-const iconMain = { filter: 'var(--theme-filter-main)' } as const;
-
 /**
- * Khung chat trong drawer AI (Ctrl/⌘ + J): cột lịch sử hội thoại bên trái
- * (thu gọn được) + luồng chat bên phải.
+ * Khung chat trong drawer AI (Ctrl/⌘ + J): đầu 60px (dấu AI, tên, dự án,
+ * hành động), luồng tin ở giữa, ô hỏi ở dưới. Lịch sử hội thoại phủ lên
+ * phần thân khi bật.
  */
 export function ChatThread({ boardId, context, className }: ChatThreadProps) {
   const { t, i18n } = useTranslation();
@@ -44,10 +42,7 @@ export function ChatThread({ boardId, context, className }: ChatThreadProps) {
   const activeBoard = useAppSelector(selectCurrentActiveBoard);
   const { isGuest, isReady } = useBoardRole(boardId);
   const [draft, setDraft] = useState('');
-  const isMobile = useIsMobile();
-  // Desktop mặc định mở lịch sử; mobile mặc định ẩn (lịch sử phủ toàn khung).
-  const [historyOpen, setHistoryOpen] = useState<boolean | null>(null);
-  const showHistory = historyOpen ?? !isMobile;
+  const [historyOpen, setHistoryOpen] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const consumedPromptRef = useRef<object | null>(null);
 
@@ -73,13 +68,14 @@ export function ChatThread({ boardId, context, className }: ChatThreadProps) {
   });
   const { sendMessage, isLoadingConversation } = chat;
 
-  // Prompt từ nơi khác (nút ✨ trong card detail / add-issue).
+  // Prompt từ nơi khác (nút AI trong card detail / add-issue).
   const pendingPrompt = assistant?.pendingPrompt ?? null;
   useEffect(() => {
     if (!pendingPrompt || consumedPromptRef.current === pendingPrompt) return;
     if (isLoadingConversation) return; // chờ nạp xong hội thoại đang mở
     consumedPromptRef.current = pendingPrompt;
     assistant?.consumePendingPrompt();
+    setHistoryOpen(false);
     if (pendingPrompt.autoSend) {
       setDraft('');
       void sendMessage(pendingPrompt.text);
@@ -119,15 +115,15 @@ export function ChatThread({ boardId, context, className }: ChatThreadProps) {
   const handleSelectConversation = useCallback(
     (id: EntityId) => {
       chat.selectConversation(id);
-      if (isMobile) setHistoryOpen(false);
+      setHistoryOpen(false);
     },
-    [chat, isMobile]
+    [chat]
   );
 
   const handleNewFromHistory = useCallback(() => {
     chat.reset();
-    if (isMobile) setHistoryOpen(false);
-  }, [chat, isMobile]);
+    setHistoryOpen(false);
+  }, [chat]);
 
   const handleSuggestion = useCallback(
     (prompt: string) => {
@@ -137,81 +133,63 @@ export function ChatThread({ boardId, context, className }: ChatThreadProps) {
   );
 
   const header = (
-    <div className="flex items-center justify-between gap-2 border-b border-theme-neutral-5/60 px-3 py-3 md:px-4">
-      <div className="flex min-w-0 items-center gap-2">
-        {!showHistory && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 flex-shrink-0"
-            onClick={() => setHistoryOpen(true)}
-            title={t('aiAssistant.history.show')}
-            aria-label={t('aiAssistant.history.show')}
-          >
-            <Image src={Icons.PanelLeftOpen} alt="" width={18} height={18} />
-          </Button>
-        )}
-        <Image
-          src={Icons.Sparkles}
-          alt=""
-          width={20}
-          height={20}
-          style={iconMain}
-        />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-theme-neutral-11">
-            {t('aiAssistant.title')}
+    <div className="flex h-[60px] flex-none items-center gap-3 border-b border-line bg-card pl-[18px] pr-3">
+      <AiMark size={28} spin={chat.isStreaming} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold leading-tight text-ink">
+          {t('aiAssistant.title')}
+        </p>
+        {(boardTitle || contextCardId) && (
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] leading-tight text-muted">
+            {boardTitle && <span className="truncate">{boardTitle}</span>}
+            {contextCardId && (
+              <>
+                {boardTitle && (
+                  <span aria-hidden="true" className="flex-none">
+                    ·
+                  </span>
+                )}
+                <span
+                  className="truncate font-medium text-accent-text"
+                  title={t('aiAssistant.contextCardHint')}
+                >
+                  {t('aiAssistant.contextCard', {
+                    code: contextCard?.cardCode ?? `#${contextCardId}`,
+                  })}
+                </span>
+              </>
+            )}
           </p>
-          {boardTitle && (
-            <p className="truncate text-xs text-theme-neutral-7">
-              {boardTitle}
-            </p>
-          )}
-        </div>
-        {contextCardId && (
-          <span
-            className="ml-1 hidden max-w-[160px] truncate rounded-full bg-theme-main-1 px-2 py-0.5 text-[11px] font-medium text-theme-main-7 sm:inline-block"
-            title={t('aiAssistant.contextCardHint')}
-          >
-            {t('aiAssistant.contextCard', {
-              code: contextCard?.cardCode ?? `#${contextCardId}`,
-            })}
-          </span>
         )}
       </div>
-      <div className="flex items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-xs"
+      <div className="flex flex-none items-center gap-0.5">
+        <IconButton
           onClick={chat.reset}
           disabled={
             (!chat.hasMessages && !chat.conversationId) || chat.isStreaming
           }
-          title={t('aiAssistant.newChat')}
+          aria-label={t('aiAssistant.newChat')}
         >
-          <Image
-            src={Icons.Plus}
-            alt=""
-            width={16}
-            height={16}
-            className="mr-1"
-          />
-          {t('aiAssistant.newChat')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
+          <SquarePen aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          onClick={() => setHistoryOpen(open => !open)}
+          active={historyOpen}
+          aria-pressed={historyOpen}
+          aria-label={t(
+            historyOpen
+              ? 'aiAssistant.history.hide'
+              : 'aiAssistant.history.show'
+          )}
+        >
+          <History aria-hidden="true" />
+        </IconButton>
+        <IconButton
           onClick={() => assistant?.close()}
-          title={t('aiAssistant.close')}
           aria-label={t('aiAssistant.close')}
         >
-          <Image src={Icons.X} alt="" width={16} height={16} />
-        </Button>
+          <X aria-hidden="true" />
+        </IconButton>
       </div>
     </div>
   );
@@ -233,67 +211,55 @@ export function ChatThread({ boardId, context, className }: ChatThreadProps) {
       onRetry={chat.retryLast}
     />
   ) : (
-    <div className="flex h-full flex-col items-center justify-center gap-5 px-6 py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-theme-main-1">
-        <Image
-          src={Icons.Sparkles}
-          alt=""
-          width={24}
-          height={24}
-          style={iconMain}
-        />
-      </div>
+    <div className="animate-pop flex min-h-full flex-col items-center justify-center gap-5 px-6 py-10 text-center">
+      <AiMark size={40} />
       <div>
-        <p className="text-base font-semibold text-theme-neutral-11">
+        <p className="text-balance text-[17px] font-semibold tracking-[-0.01em] text-ink">
           {t('aiAssistant.emptyTitle')}
         </p>
-        <p className="mt-1 text-sm text-theme-neutral-7">
+        <p className="mx-auto mt-1.5 max-w-[42ch] text-pretty text-sm text-muted">
           {t('aiAssistant.emptyDescription')}
         </p>
       </div>
-      <SuggestionChips canWrite={canWrite} onSelect={handleSuggestion} />
+      <SuggestionChips
+        canWrite={canWrite}
+        onSelect={handleSuggestion}
+        className="max-w-[440px]"
+      />
       {isReady && isGuest && (
-        <p className="text-xs text-theme-neutral-7">
+        <p className="max-w-[42ch] text-pretty text-[12.5px] text-muted">
           {t('aiAssistant.guestNotice')}
         </p>
       )}
     </div>
   );
 
-  const thread = (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
-      {header}
-      <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
-      <Composer
-        ref={composerRef}
-        value={draft}
-        onChange={setDraft}
-        onSend={handleSend}
-        onStop={chat.stop}
-        isStreaming={chat.isStreaming}
-        disabled={!boardId || chat.isLoadingConversation}
-      />
-    </div>
-  );
-
   return (
-    <div className={cn('relative flex h-full min-h-0', className)}>
-      {showHistory && (
-        <ChatHistory
-          boardId={boardId}
-          activeId={chat.conversationId}
-          onSelect={handleSelectConversation}
-          onNew={handleNewFromHistory}
-          onDeleted={handleConversationDeleted}
-          onCollapse={() => setHistoryOpen(false)}
-          className={cn(
-            'border-r border-theme-neutral-5/60',
-            // Mobile: phủ toàn bộ khung chat. Desktop: cột cố định bên trái.
-            'absolute inset-0 z-10 md:static md:w-[260px] md:flex-shrink-0'
-          )}
+    <div className={cn('flex h-full min-h-0 flex-col', className)}>
+      {header}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+        <Composer
+          ref={composerRef}
+          value={draft}
+          onChange={setDraft}
+          onSend={handleSend}
+          onStop={chat.stop}
+          isStreaming={chat.isStreaming}
+          disabled={!boardId || chat.isLoadingConversation}
         />
-      )}
-      <div className="flex min-w-0 flex-1 flex-col">{thread}</div>
+        {historyOpen && (
+          <ChatHistory
+            boardId={boardId}
+            activeId={chat.conversationId}
+            onSelect={handleSelectConversation}
+            onNew={handleNewFromHistory}
+            onDeleted={handleConversationDeleted}
+            onCollapse={() => setHistoryOpen(false)}
+            className="animate-fade-in absolute inset-0 z-10"
+          />
+        )}
+      </div>
     </div>
   );
 }

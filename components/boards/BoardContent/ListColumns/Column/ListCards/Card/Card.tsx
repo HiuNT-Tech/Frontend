@@ -1,16 +1,24 @@
 'use client';
 
-import { memo, type ReactNode } from 'react';
+import { memo, useCallback, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import Image from 'next/image';
-import type { Card as CardType } from '@/config/interface';
+import { useTranslation } from 'react-i18next';
+import { CalendarDays, MessageSquare, Plus } from 'lucide-react';
 import dayjs from 'dayjs';
-import { renderIssueTypeBadge } from '@/constant/data';
-import Images from '@/assets';
+import type { Card as CardType } from '@/config/interface';
+import { ColorTag } from '@/components/ui/tag';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { PriorityFlag } from '@/components/issues/priority-flag';
+import {
+  ISSUE_KEY_LINK_CLASS,
+  issueFullPageHref,
+} from '@/components/issues/issue-inspector';
 import { useCardQuickUpdate } from '@/hooks/use-card-quick-update';
-import { isOverdue, OVERDUE_BADGE_CLASS } from '@/utils/due-date';
+import { isOverdue } from '@/utils/due-date';
+import { cn } from '@/lib/utils';
 import AssigneePicker from './AssigneePicker';
 import DueDatePicker from './DueDatePicker';
 
@@ -24,62 +32,66 @@ interface CardInnerProps {
   dueDateControl: ReactNode;
 }
 
+/** Thẻ trắng bo 12px, viền mảnh; đậm viền khi rê chuột, viền accent + quầng khi đang kéo. */
 const CARD_CLASS =
-  'rounded-lg border border-transparent bg-theme-neutral-1 px-3 py-2.5 shadow-sm transition-colors hover:border-theme-main flex flex-col gap-1.5 h-32 shrink-0 w-full min-w-[256px] overflow-hidden';
+  'flex w-full min-w-0 shrink-0 flex-col gap-2 rounded-xl border border-line bg-card px-3.5 py-3 shadow-hair transition-[border-color,box-shadow,transform] duration-200 ease-soft';
 
 const CardInner = memo(function CardInner({
   card,
   assigneeControl,
   dueDateControl,
 }: CardInnerProps) {
+  const { t } = useTranslation();
   const countComment = card.countComment ?? 0;
 
   return (
     <>
-      {/* Row 1: IssueType badge + CardCode + menu */}
-      <div className="flex items-center gap-2">
+      {/* Row 1: issue type + key */}
+      <div className="flex min-w-0 items-center gap-2">
         {card.issueType && (
-          <span className="shrink-0 [&>span]:!px-2 [&>span]:!py-0.5 [&>span]:!min-w-0 [&>span]:!text-[10px]">
-            {renderIssueTypeBadge(
-              card.issueType.statusColor,
-              card.issueType.name
-            )}
-          </span>
+          <ColorTag
+            color={card.issueType.statusColor}
+            className="px-2 py-[2px] text-[11.5px]"
+          >
+            {card.issueType.name}
+          </ColorTag>
         )}
         {card.cardCode && (
-          <span className="text-xs font-medium text-theme-neutral-7 truncate">
+          // data-no-dnd: bấm vào mã không bắt đầu kéo; mở trang riêng của issue
+          <Link
+            href={issueFullPageHref(card.boardId, card.id)}
+            data-no-dnd
+            onClick={event => event.stopPropagation()}
+            className={cn(
+              'truncate text-[12.5px] font-medium tabular-nums',
+              ISSUE_KEY_LINK_CLASS
+            )}
+          >
             {card.cardCode}
-          </span>
+          </Link>
         )}
       </div>
 
       {/* Row 2: Title */}
-      <div className="line-clamp-2 text-sm font-medium leading-snug text-theme-neutral-11">
+      <h4 className="line-clamp-2 text-sm font-medium leading-[1.4] text-ink">
         {card.title}
-      </div>
+      </h4>
 
-      {/* Row 3: Assignee + CommentCount + DueDate (pinned to bottom) */}
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-theme-neutral-3 pt-2">
+      {/* Row 3: priority · due · comments · assignee */}
+      <div className="flex items-center gap-2.5 text-muted">
+        <PriorityFlag priority={card.priority} />
+        {dueDateControl}
+        {countComment > 0 && (
+          <span
+            className="inline-flex items-center gap-1 text-[12.5px] tabular-nums"
+            title={t('board.card.comments', { count: countComment })}
+          >
+            <MessageSquare aria-hidden="true" className="size-[13px]" />
+            {countComment}
+          </span>
+        )}
+        <span className="flex-1" />
         {assigneeControl}
-
-        <div className="flex items-center gap-2">
-          {countComment > 0 && (
-            <span
-              className="flex items-center gap-1 text-xs font-semibold text-theme-neutral-7"
-              title={`${countComment} bình luận`}
-            >
-              <Image
-                src={Images.IconChat}
-                alt="comments"
-                width={16}
-                height={16}
-              />
-              {countComment}
-            </span>
-          )}
-
-          {dueDateControl}
-        </div>
       </div>
     </>
   );
@@ -94,13 +106,15 @@ const StaticAssignee = memo(function StaticAssignee({
 
   if (card.assigneeUserId == null) {
     return (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-theme-neutral-6 text-theme-neutral-7">
-        +
+      <span className="grid size-6 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-faint">
+        <Plus aria-hidden="true" className="size-3" />
       </span>
     );
   }
 
-  return <UserAvatar name={assigneeName} src={card.assignee?.avatar} />;
+  return (
+    <UserAvatar name={assigneeName} src={card.assignee?.avatar} size={24} />
+  );
 });
 
 const StaticDueDate = memo(function StaticDueDate({
@@ -112,15 +126,16 @@ const StaticDueDate = memo(function StaticDueDate({
 }) {
   return (
     <span
-      className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${
+      className={cn(
+        'inline-flex h-6 items-center gap-1 rounded-full text-[12.5px] font-medium tabular-nums',
         value
           ? overdue
-            ? OVERDUE_BADGE_CLASS
-            : 'bg-theme-neutral-3 text-theme-neutral-8'
-          : 'text-theme-neutral-6 opacity-60'
-      }`}
+            ? 'bg-danger-soft px-2 text-danger'
+            : 'bg-fill px-2 text-ink-2'
+          : 'text-faint'
+      )}
     >
-      <Image src={Images.IconCalendar} alt="calendar" width={14} height={14} />
+      <CalendarDays aria-hidden="true" className="size-[13px]" />
       {value && dayjs(value).format('DD/MM')}
     </span>
   );
@@ -161,7 +176,12 @@ export const CardPreview = memo(function CardPreview({ card }: CardProps) {
   const overdue = isOverdue(card.dueDate);
 
   return (
-    <div className={`${CARD_CLASS} pointer-events-none`}>
+    <div
+      className={cn(
+        CARD_CLASS,
+        'pointer-events-none rotate-[1.5deg] border-accent shadow-lift'
+      )}
+    >
       <CardInner
         card={card}
         assigneeControl={<StaticAssignee card={card} />}
@@ -173,7 +193,12 @@ export const CardPreview = memo(function CardPreview({ card }: CardProps) {
   );
 });
 
+/** Phần tử tương tác bên trong thẻ: bấm vào đó không mở chi tiết. */
+const INTERACTIVE_SELECTOR =
+  'a, button, input, textarea, [role="dialog"], [data-no-dnd]';
+
 function Card({ card }: CardProps) {
+  const router = useRouter();
   const {
     attributes,
     listeners,
@@ -189,21 +214,42 @@ function Card({ card }: CardProps) {
   const dndKitCardStyles: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : undefined,
-    border: isDragging ? '1px solid #2ecc71' : undefined,
+    opacity: isDragging ? 0.4 : undefined,
     willChange: 'transform',
   };
 
+  // Mở chi tiết issue (inspector cạnh danh sách) khi bấm thẻ mà không kéo
+  // (sensor chỉ bắt đầu kéo sau khi di chuyển 10px) và không bấm vào picker/nút bên trong.
+  // Enter trên thẻ đang focus cũng mở (board không dùng KeyboardSensor nên phím này còn trống).
+  const openDetail = useCallback(
+    (
+      event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+    ) => {
+      if (isDragging) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest(INTERACTIVE_SELECTOR)) return;
+      if ('key' in event && event.key !== 'Enter') return;
+      router.push(`/project/${card.boardId}/issues/${card.id}`);
+    },
+    [card.boardId, card.id, isDragging, router]
+  );
+
   return (
-    <div
+    <article
       ref={setNodeRef}
       style={dndKitCardStyles}
       {...attributes}
       {...listeners}
-      className={`${CARD_CLASS} cursor-pointer`}
+      onClick={openDetail}
+      onKeyDown={openDetail}
+      className={cn(
+        CARD_CLASS,
+        'relative cursor-grab active:cursor-grabbing hover:border-line-strong hover:shadow-card',
+        isDragging && 'border-accent ring-[3px] ring-accent-soft'
+      )}
     >
       <InteractiveCardInner card={card} />
-    </div>
+    </article>
   );
 }
 

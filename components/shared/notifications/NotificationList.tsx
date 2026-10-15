@@ -3,10 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Tabs } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Segmented } from '@/components/ui/segmented';
 import { NotificationListSkeleton } from '@/components/ui/skeletons';
 import { StateMessage } from '@/components/ui/state-message';
 import type { EntityId, Notification } from '@/config/interface';
@@ -33,8 +34,13 @@ export interface NotificationListProps {
   boardId?: EntityId;
   /** popover: đóng trước khi push */
   onNavigate?: () => void;
+  /** false khi trang cha đã đặt segmented all/unread ở toolbar của Pane */
+  showTabs?: boolean;
   className?: string;
 }
+
+export const formatUnreadBadge = (count: number): string =>
+  count > BADGE_OVERFLOW ? `${BADGE_OVERFLOW}+` : String(count);
 
 export const NotificationList: React.FC<NotificationListProps> = ({
   variant,
@@ -42,6 +48,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   onTabChange,
   boardId,
   onNavigate,
+  showTabs = true,
   className,
 }) => {
   const { t } = useTranslation();
@@ -147,37 +154,52 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   const isEmpty = !isInitialLoading && !isInitialError && itemCount === 0;
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      <div className="flex items-center justify-between border-b border-theme-neutral-4 px-3">
-        <Tabs
-          size="small"
-          activeKey={tab}
-          onChange={key => onTabChange(key as NotificationTab)}
-          items={[
-            { key: 'all', label: t('notifications.tabs.all') },
-            {
-              key: 'unread',
-              label: (
-                <span className="inline-flex items-center gap-1.5">
-                  {t('notifications.tabs.unread')}
-                  {unreadCount > 0 && (
-                    <span className="rounded-full bg-theme-main px-1.5 text-[11px] font-semibold leading-4 text-theme-neutral-1">
-                      {unreadCount > BADGE_OVERFLOW
-                        ? `${BADGE_OVERFLOW}+`
-                        : unreadCount}
-                    </span>
-                  )}
-                </span>
-              ),
-            },
-          ]}
-          className="[&_.ant-tabs-nav]:mb-0 [&_.ant-tabs-nav]:before:border-b-0 [&_.ant-tabs-tab-btn]:text-sm [&_.ant-tabs-tab-btn]:text-theme-neutral-8 [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:text-theme-neutral-11 [&_.ant-tabs-ink-bar]:bg-theme-main"
-        />
+    <div className={cn('flex min-w-0 flex-col', className)}>
+      {/* Thanh công cụ yên tĩnh: segmented bên trái (hoặc số chưa đọc), hành động dạng chữ bên phải */}
+      <div
+        className={cn(
+          'flex flex-none flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b border-line',
+          isPopover ? 'px-3 py-2' : 'px-[18px] py-2.5'
+        )}
+      >
+        {showTabs ? (
+          <Segmented<NotificationTab>
+            size="sm"
+            label={t('notifications.title')}
+            value={tab}
+            onChange={onTabChange}
+            options={[
+              { value: 'all', label: t('notifications.tabs.all') },
+              {
+                value: 'unread',
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    {t('notifications.tabs.unread')}
+                    {unreadCount > 0 && (
+                      <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-on-accent tabular-nums">
+                        {formatUnreadBadge(unreadCount)}
+                      </span>
+                    )}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <span
+            className="text-[13px] font-semibold text-muted tabular-nums"
+            aria-live="polite"
+          >
+            {unreadCount > 0
+              ? t('notifications.unreadCount', { count: unreadCount })
+              : t('notifications.allRead')}
+          </span>
+        )}
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="text-xs text-theme-main hover:bg-theme-main-1 disabled:text-theme-neutral-6"
+          className="-mr-1.5 text-accent hover:text-accent-hover disabled:text-faint"
           disabled={unreadCount === 0 || isMarkAllReadPending}
           aria-busy={isMarkAllReadPending || undefined}
           onClick={handleMarkAllRead}
@@ -189,49 +211,54 @@ export const NotificationList: React.FC<NotificationListProps> = ({
       <div
         ref={scrollRef}
         className={cn(
-          'overflow-y-auto',
-          isPopover ? 'max-h-[420px]' : 'max-h-none'
+          'min-h-0',
+          isPopover ? 'max-h-[min(420px,60dvh)] overflow-y-auto' : 'max-h-none'
         )}
         aria-busy={isInitialLoading || undefined}
       >
         {isInitialLoading && <NotificationListSkeleton rows={4} />}
 
         {isInitialError && (
-          <div className="flex flex-col items-center gap-3 py-10">
-            <StateMessage
-              variant="inline"
-              tone="danger"
-              i18nKey="notifications.loadError"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void refetchNotifications()}
-            >
-              {t('common.retry')}
-            </Button>
-          </div>
+          <EmptyState
+            className="py-8"
+            title={t('notifications.loadError')}
+            description={t('notifications.loadErrorHint')}
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void refetchNotifications()}
+              >
+                {t('common.retry')}
+              </Button>
+            }
+          />
         )}
 
         {isEmpty && (
-          <StateMessage
-            variant="block"
-            className="py-12"
-            i18nKey={
+          <EmptyState
+            className={isPopover ? 'py-8' : 'py-12'}
+            title={
               tab === 'unread'
-                ? 'notifications.emptyUnread'
-                : 'notifications.empty'
+                ? t('notifications.emptyUnread')
+                : t('notifications.empty')
+            }
+            description={
+              tab === 'unread'
+                ? t('notifications.emptyUnreadHint')
+                : t('notifications.emptyHint')
             }
           />
         )}
 
         {itemCount > 0 && (
           <ul role="list" className="m-0 list-none p-0">
-            {notifications.map(n => (
+            {notifications.map((n, i) => (
               <NotificationItem
                 key={n.id}
                 notification={n}
                 compact={isPopover}
+                first={i === 0}
                 onOpen={handleOpen}
                 onMarkRead={handleMarkRead}
                 onRemove={handleRemove}
@@ -242,12 +269,16 @@ export const NotificationList: React.FC<NotificationListProps> = ({
 
         {/* Sentinel + trạng thái tải thêm */}
         {itemCount > 0 && hasNextNotifications && (
-          <div ref={sentinelRef} className="flex justify-center py-3">
+          <div
+            ref={sentinelRef}
+            className="flex justify-center border-t border-line py-3"
+          >
             {isFetchingNextNotifications && (
               <StateMessage
                 variant="inline"
                 spinner
-                spinnerClassName="h-5 w-5"
+                spinnerClassName="size-4"
+                className="flex items-center gap-2 text-[13px]"
                 i18nKey="notifications.loadMore"
               />
             )}
@@ -268,11 +299,11 @@ export const NotificationList: React.FC<NotificationListProps> = ({
       </div>
 
       {isPopover && (
-        <div className="border-t border-theme-neutral-4 px-4 py-2 text-center">
+        <div className="flex-none border-t border-line p-1.5">
           <Link
             href="/notifications"
             onClick={onNavigate}
-            className="text-sm font-medium text-theme-main hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-main"
+            className="press flex h-9 items-center justify-center rounded-[10px] text-[13.5px] font-semibold text-accent transition-colors duration-200 ease-soft hover:bg-hover hover:text-accent-hover"
           >
             {t('notifications.viewAll')}
           </Link>

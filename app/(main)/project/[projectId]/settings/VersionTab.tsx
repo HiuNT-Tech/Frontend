@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { toastHelpers } from '@/hooks/use-toast';
 import type { EntityId, Version } from '@/config/interface';
 import type { CreateVersionFormData } from '@/validation/version-form-schema';
 import VersionsFilter from '@/components/shared/filters/VersionsFilter';
+import { SectionHeader } from './SectionHeader';
 
 export const VersionsTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
   const { t } = useTranslation();
@@ -117,36 +119,33 @@ export const VersionsTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 border-b border-theme-neutral-4 pb-5 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-theme-neutral-11">
-            {t('settings.versions.heading')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-theme-neutral-8">
-            {t('settings.versions.hint')}
-          </p>
-        </div>
-        {isManager && (
-          <Button
-            className="h-10 rounded-md bg-theme-main px-4 text-theme-neutral-1 shadow-sm hover:bg-theme-hover"
-            onClick={() => {
-              replaceWithUpdatedSearchParams(
-                router,
-                pathname,
-                searchParams,
-                params => {
-                  params.set('tab', 'versions');
-                  params.set('versionsMode', 'create');
-                }
-              );
-              setEditingVersion(null);
-              setIsCreatingVersion(true);
-            }}
-          >
-            {t('settings.versions.actions.add')}
-          </Button>
-        )}
-      </div>
+      <SectionHeader
+        title={t('settings.versions.heading')}
+        description={t('settings.versions.hint')}
+        action={
+          isManager && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                replaceWithUpdatedSearchParams(
+                  router,
+                  pathname,
+                  searchParams,
+                  params => {
+                    params.set('tab', 'versions');
+                    params.set('versionsMode', 'create');
+                  }
+                );
+                setEditingVersion(null);
+                setIsCreatingVersion(true);
+              }}
+            >
+              <Plus />
+              {t('settings.versions.actions.add')}
+            </Button>
+          )
+        }
+      />
 
       <VersionsFilter onSearch={handleSearch} />
 

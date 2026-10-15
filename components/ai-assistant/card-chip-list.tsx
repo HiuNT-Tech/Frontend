@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { getIssueTypeBadgeClassName } from '@/constant/data';
+import { ColorDot } from '@/components/ui/tag';
 import type { EntityId } from '@/config/interface';
 import type { AiCardSummary } from '@/types/ai-assistant';
 
@@ -13,12 +13,6 @@ interface CardChipListProps {
   total: number;
   className?: string;
 }
-
-const PRIORITY_CLASS: Record<number, string> = {
-  1: 'bg-theme-neutral-3 text-theme-neutral-8',
-  2: 'bg-amber-100 text-amber-800',
-  3: 'bg-red-100 text-red-700',
-};
 
 const PRIORITY_KEY: Record<number, string> = {
   1: 'issues.priority.low',
@@ -32,7 +26,11 @@ const formatDate = (value: string | null) => {
   return `${day}/${month}/${year.slice(2)}`;
 };
 
-/** Danh sách card do tool trả về — click mở trang chi tiết. */
+/**
+ * Card do tool trả về: viên thuốc nhỏ (chấm trạng thái + mã + tiêu đề), bấm mở
+ * chi tiết. Trạng thái / người làm / hạn / ưu tiên nằm trong tooltip; hạn quá
+ * hạn hiện luôn vì quan trọng.
+ */
 export function CardChipList({
   boardId,
   items,
@@ -43,69 +41,46 @@ export function CardChipList({
   if (items.length === 0) return null;
 
   return (
-    <div
-      className={cn(
-        'overflow-hidden rounded-xl border border-theme-neutral-5/70',
-        className
-      )}
-    >
-      <ul className="divide-y divide-theme-neutral-4">
-        {items.map(card => (
-          <li key={card.id}>
-            <Link
-              href={`/project/${boardId}/issues/${card.id}`}
-              className="flex flex-col gap-1 px-3 py-2 transition-colors hover:bg-theme-neutral-2"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <span className="mr-1.5 text-xs font-semibold text-theme-main-6">
-                    {card.cardCode}
-                  </span>
-                  <span className="text-sm text-theme-neutral-11">
-                    {card.title}
-                  </span>
-                </div>
-                {card.priority != null && (
-                  <span
-                    className={cn(
-                      'flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-                      PRIORITY_CLASS[card.priority] ?? PRIORITY_CLASS[1]
-                    )}
-                  >
-                    {t(PRIORITY_KEY[card.priority] ?? 'common.unknown')}
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-theme-neutral-7">
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                    getIssueTypeBadgeClassName(card.column.statusColor),
-                    'min-w-0'
-                  )}
-                >
-                  {card.column.title}
+    <div className={cn('min-w-0', className)}>
+      <ul className="flex flex-wrap gap-[7px]">
+        {items.map(card => {
+          const due = formatDate(card.dueDate);
+          const details = [
+            card.column.title,
+            card.priority != null
+              ? t(PRIORITY_KEY[card.priority] ?? 'common.unknown')
+              : null,
+            card.assignee?.displayName,
+            due,
+          ]
+            .filter(Boolean)
+            .join(' · ');
+          return (
+            <li key={card.id} className="min-w-0 max-w-full">
+              <Link
+                href={`/project/${boardId}/issues/${card.id}`}
+                title={`${card.cardCode} ${card.title}\n${details}`}
+                className="press inline-flex max-w-full items-center gap-[7px] rounded-full bg-fill py-1.5 pl-2.5 pr-[11px] text-[13px] font-medium text-ink transition-[background-color,transform] duration-200 ease-soft hover:bg-track"
+              >
+                <ColorDot color={card.column.statusColor} />
+                <span className="flex-none text-xs font-medium tabular-nums text-muted">
+                  {card.cardCode}
                 </span>
-                {card.assignee && <span>👤 {card.assignee.displayName}</span>}
-                {card.dueDate && (
-                  <span
-                    className={cn(
-                      card.isOverdue && 'font-semibold text-red-600'
-                    )}
-                  >
-                    {card.isOverdue ? '⏰ ' : '📅 '}
-                    {formatDate(card.dueDate)}
+                <span className="max-w-[210px] truncate">{card.title}</span>
+                {due && card.isOverdue && (
+                  <span className="flex-none text-xs font-semibold tabular-nums text-danger">
+                    {due}
                   </span>
                 )}
-              </div>
-            </Link>
-          </li>
-        ))}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
       {total > items.length && (
-        <div className="border-t border-theme-neutral-4 bg-theme-neutral-2 px-3 py-1.5 text-xs text-theme-neutral-7">
+        <p className="mt-2 text-[12.5px] text-muted">
           {t('aiAssistant.moreCards', { count: total - items.length })}
-        </div>
+        </p>
       )}
     </div>
   );

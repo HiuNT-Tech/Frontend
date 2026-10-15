@@ -82,7 +82,7 @@ const TableLoading: React.FC<{ text: React.ReactNode }> = ({ text }) => (
   <StateMessage
     variant="block"
     spinner
-    className="py-16 text-gray-500"
+    className="py-16 text-muted"
     textClassName="mt-1"
   >
     {text}
@@ -90,11 +90,11 @@ const TableLoading: React.FC<{ text: React.ReactNode }> = ({ text }) => (
 );
 
 const TableLoadingOverlay: React.FC<{ text: React.ReactNode }> = ({ text }) => (
-  <div className="absolute inset-0 bg-white opacity-50 flex flex-col items-center justify-center z-10">
+  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60">
     <StateMessage
       variant="block"
       spinner
-      className="py-0 text-gray-500"
+      className="py-0 text-muted"
       textClassName="mt-1"
     >
       {text}
@@ -114,7 +114,7 @@ const TableError: React.FC<{
     {onRetry && (
       <button
         onClick={onRetry}
-        className="px-4 py-2 bg-theme-main text-white rounded-lg hover:bg-theme-hover transition-colors"
+        className="press h-[38px] rounded-xl bg-accent px-4 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hover"
       >
         {retryText}
       </button>
@@ -123,7 +123,7 @@ const TableError: React.FC<{
 );
 
 const TableEmpty: React.FC<{ text: React.ReactNode }> = ({ text }) => (
-  <StateMessage variant="block" className="py-16 text-gray-500">
+  <StateMessage variant="block" className="py-16 text-muted">
     {text}
   </StateMessage>
 );
@@ -149,10 +149,10 @@ const IconButton = ({
       }}
       disabled={disabled}
       className={cn(
-        'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent transition-colors',
+        'press inline-flex size-8 items-center justify-center rounded-[9px] transition-colors',
         disabled
           ? 'cursor-not-allowed opacity-50'
-          : 'cursor-pointer text-theme-neutral-7 hover:border-theme-neutral-5 hover:bg-theme-neutral-2'
+          : 'cursor-pointer hover:bg-hover'
       )}
       title={title}
     >
@@ -161,8 +161,7 @@ const IconButton = ({
         alt={title}
         width={20}
         height={20}
-        className="w-5 h-5"
-        style={{ filter: 'var(--theme-filter-main)' }}
+        className="icon-accent h-[18px] w-[18px]"
       />
     </button>
   );
@@ -276,7 +275,7 @@ const CustomTable = <T extends Record<string, any>>({
     >
       <div
         className={cn(
-          'overflow-visible rounded-xl border border-theme-neutral-4 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]',
+          'overflow-hidden rounded-card border border-line bg-card shadow-card',
           className
         )}
         style={
@@ -298,7 +297,7 @@ const CustomTable = <T extends Record<string, any>>({
                 : { width: '100%' }
             }
           >
-            <thead className="bg-theme-neutral-2">
+            <thead>
               {isNested ? (
                 <>
                   <tr>
@@ -308,7 +307,7 @@ const CustomTable = <T extends Record<string, any>>({
                           <th
                             key={child.key}
                             className={cn(
-                              'border-b border-theme-neutral-4 px-4 py-3 text-[12px] font-semibold tracking-[0.02em] text-theme-neutral-8 relative whitespace-break-spaces',
+                              'relative border-b border-line px-4 py-2.5 text-[12.5px] font-semibold whitespace-break-spaces text-muted',
                               horizontalScroll
                                 ? 'whitespace-nowrap'
                                 : 'whitespace-break-spaces',
@@ -341,7 +340,7 @@ const CustomTable = <T extends Record<string, any>>({
                     <th
                       key={column.key}
                       className={cn(
-                        'border-b border-theme-neutral-4 px-4 py-3 text-[12px] font-semibold tracking-[0.02em] text-theme-neutral-8 relative whitespace-break-spaces',
+                        'relative border-b border-line px-4 py-2.5 text-[12.5px] font-semibold whitespace-break-spaces text-muted',
                         horizontalScroll
                           ? 'whitespace-nowrap'
                           : 'whitespace-break-spaces',
@@ -403,7 +402,7 @@ const CustomTable = <T extends Record<string, any>>({
                     <tr
                       key={`${recordKey}-${index}`}
                       className={cn(
-                        'border-b border-theme-neutral-4 bg-white transition-colors hover:bg-theme-neutral-2/70',
+                        'border-b border-line transition-colors last:border-b-0 hover:bg-fill/70',
                         rowProps.className,
                         hasClick && 'cursor-pointer'
                       )}
@@ -423,7 +422,7 @@ const CustomTable = <T extends Record<string, any>>({
                           <td
                             key={column.key}
                             className={cn(
-                              'px-4 py-4 text-sm text-theme-neutral-11',
+                              'px-4 py-3 text-sm text-ink',
                               horizontalScroll && 'whitespace-nowrap',
                               column.align === 'center' && 'text-center',
                               column.align === 'right' && 'text-right',
@@ -451,7 +450,7 @@ const CustomTable = <T extends Record<string, any>>({
         </div>
 
         {pagination && !loading && !error && dataSource.length > 0 && (
-          <div className="border-t border-theme-neutral-4 bg-white">
+          <div className="border-t border-line">
             <Pagination
               currentPage={pagination.current || 1}
               totalPages={Math.ceil(

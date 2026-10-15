@@ -2,38 +2,46 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Group } from '@/components/ui/surface';
 import { BoardInvitationStatus } from '@/config/enum';
-import {
-  renderInvitationStatusBadge,
-  renderMemberRoleBadge,
-} from '@/constant/data';
+import { renderMemberRoleBadge } from '@/constant/data';
 import { useMyInvitations } from '@/hooks/use-invitation';
 import type { BoardInvitation, MyBoardInvitation } from '@/config/interface';
+import { cn } from '@/lib/utils';
 
-/* ─── Single invitation card ──────────────────────────────────────────── */
+/* ─── Một hàng lời mời ─────────────────────────────────────────────────── */
 
-function InvitationCard({
+function InvitationRow({
   invitation,
+  first,
   onAccept,
+  onDecline,
   isAcceptPending,
+  isDeclinePending,
 }: {
   invitation: MyBoardInvitation;
+  first: boolean;
   onAccept: (token: string) => Promise<BoardInvitation>;
+  onDecline: (token: string) => Promise<BoardInvitation>;
   isAcceptPending: boolean;
+  isDeclinePending: boolean;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
 
   const isPending = invitation.status === BoardInvitationStatus.PENDING;
+  const busy =
+    isAcceptPending || isDeclinePending || isAccepting || isDeclining;
 
   const handleAccept = async () => {
-    if (isAcceptPending || isAccepting) return;
+    if (busy) return;
 
     setIsAccepting(true);
     try {
@@ -46,61 +54,64 @@ function InvitationCard({
     }
   };
 
-  return (
-    <div className="group relative flex items-center gap-4 rounded-lg border border-theme-neutral-4/80 bg-theme-neutral-1 px-4 py-3 shadow-sm transition-all duration-200 hover:border-theme-main-3 hover:shadow-md">
-      {/* Icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-theme-main-1">
-        <Image
-          src={Icons.MailOpen}
-          alt=""
-          width={20}
-          height={20}
-          className="h-5 w-5 text-theme-main-6"
-          style={{ filter: 'var(--theme-filter-main)' }}
-        />
-      </div>
+  const handleDecline = async () => {
+    if (busy) return;
 
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-theme-neutral-11">
+    setIsDeclining(true);
+    try {
+      await onDecline(invitation.token);
+    } catch {
+      return;
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  return (
+    <div
+      className={cn(
+        'flex min-h-[54px] flex-wrap items-center gap-x-3.5 gap-y-2.5 px-[18px] py-[13px]',
+        !first && 'border-t border-line'
+      )}
+    >
+      <div className="min-w-0 flex-[1_1_14em]">
+        <p className="truncate text-[15px] font-medium text-ink">
           {invitation.board.title}
-          <span className="ml-2 text-xs font-normal text-theme-neutral-7">
-            ({invitation.board.boardCode})
+          <span className="ml-2 text-[12.5px] font-normal text-muted tabular-nums">
+            {invitation.board.boardCode}
           </span>
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-theme-neutral-8">
+        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-muted">
           <span>
             {t('dashboard.invitations.invitedBy', {
               name: invitation.invitedBy?.displayName || t('common.unknown'),
             })}
           </span>
-          <span className="text-theme-neutral-5">·</span>
+          <span className="text-faint">·</span>
           {renderMemberRoleBadge(invitation.role, t)}
         </div>
       </div>
 
-      {/* Status */}
-      <div className="shrink-0">
-        {renderInvitationStatusBadge(invitation.status, t)}
-      </div>
-
       {isPending && (
-        <div className="shrink-0">
+        <div className="flex flex-none items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            aria-busy={isDeclining || undefined}
+            onClick={() => void handleDecline()}
+          >
+            {t('dashboard.invitations.declineAction')}
+          </Button>
           <Button
             type="button"
             variant="primary"
             size="sm"
-            className="h-8 text-xs"
-            disabled={isAcceptPending || isAccepting}
+            disabled={busy}
+            aria-busy={isAccepting || undefined}
             onClick={() => void handleAccept()}
           >
-            <Image
-              src={Icons.CheckCircle2}
-              alt=""
-              width={14}
-              height={14}
-              className="mr-1.5 h-3.5 w-3.5"
-            />
             {t('dashboard.invitations.acceptAction')}
           </Button>
         </div>
@@ -109,7 +120,7 @@ function InvitationCard({
   );
 }
 
-/* ─── Banner component ────────────────────────────────────────────────── */
+/* ─── Nhóm "Lời mời đang chờ" trên dashboard ───────────────────────────── */
 
 export default function MyInvitationsBanner() {
   const { t } = useTranslation();
@@ -118,6 +129,8 @@ export default function MyInvitationsBanner() {
     isMyInvitationsLoading,
     acceptMyInvitation,
     isAcceptMyInvitationPending,
+    declineMyInvitation,
+    isDeclineMyInvitationPending,
   } = useMyInvitations(true);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -135,89 +148,54 @@ export default function MyInvitationsBanner() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-theme-main-3/60 bg-gradient-to-r from-theme-main-1 via-theme-neutral-1 to-theme-main-1 shadow-sm">
-      {/* Decorative gradient accent */}
-      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-theme-main to-transparent" />
-
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-theme-main-2">
-            <Image
-              src={Icons.MailOpen}
-              alt=""
-              width={16}
-              height={16}
-              className="h-4 w-4 text-theme-main-7"
-              style={{ filter: 'var(--theme-filter-main)' }}
-            />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-theme-neutral-11">
-              {t('dashboard.invitations.bannerTitle')}
-            </h3>
-            <p className="text-xs text-theme-neutral-8">
-              {t('dashboard.invitations.bannerHint', {
-                count: pendingInvitations.length,
-              })}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="rounded-md p-1.5 text-theme-neutral-7 transition-colors hover:bg-theme-neutral-3 hover:text-theme-neutral-10"
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+    <Group
+      title={t('dashboard.invitations.bannerTitle')}
+      action={
+        <div className="-my-1.5 flex items-center gap-0.5">
+          <IconButton
+            size="sm"
+            aria-label={
+              isExpanded
+                ? t('dashboard.invitations.collapse')
+                : t('dashboard.invitations.expand')
+            }
+            aria-expanded={isExpanded}
+            onClick={() => setIsExpanded(v => !v)}
           >
             {isExpanded ? (
-              <Image
-                src={Icons.ChevronUp}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
+              <ChevronUp aria-hidden="true" />
             ) : (
-              <Image
-                src={Icons.ChevronDown}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
+              <ChevronDown aria-hidden="true" />
             )}
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
+            size="sm"
+            aria-label={t('dashboard.invitations.dismiss')}
             onClick={() => setIsDismissed(true)}
-            className="rounded-md p-1.5 text-theme-neutral-7 transition-colors hover:bg-theme-neutral-3 hover:text-theme-neutral-10"
-            aria-label="Dismiss"
           >
-            <Image
-              src={Icons.X}
-              alt=""
-              width={16}
-              height={16}
-              className="h-4 w-4"
-            />
-          </button>
+            <X aria-hidden="true" />
+          </IconButton>
         </div>
-      </div>
-
-      {isExpanded && (
-        <div className="space-y-2 px-5 pb-4">
-          {pendingInvitations.map(invitation => (
-            <InvitationCard
-              key={invitation.id}
-              invitation={invitation}
-              onAccept={acceptMyInvitation}
-              isAcceptPending={isAcceptMyInvitationPending}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      }
+      className="animate-pop"
+    >
+      <p className="px-[18px] py-3 text-[13px] text-muted">
+        {t('dashboard.invitations.bannerHint', {
+          count: pendingInvitations.length,
+        })}
+      </p>
+      {isExpanded &&
+        pendingInvitations.map(invitation => (
+          <InvitationRow
+            key={invitation.id}
+            invitation={invitation}
+            first={false}
+            onAccept={acceptMyInvitation}
+            onDecline={declineMyInvitation}
+            isAcceptPending={isAcceptMyInvitationPending}
+            isDeclinePending={isDeclineMyInvitationPending}
+          />
+        ))}
+    </Group>
   );
 }

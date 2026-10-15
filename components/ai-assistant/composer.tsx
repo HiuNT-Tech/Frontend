@@ -8,9 +8,9 @@ import {
   useRef,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { ArrowUp, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AiMark } from './ai-mark';
 
 interface ComposerProps {
   value: string;
@@ -23,13 +23,17 @@ interface ComposerProps {
 }
 
 const MAX_ROWS = 6;
-const LINE_HEIGHT = 20;
-/** padding dọc của textarea (py-1.5) — 1 dòng = 32px, bằng nút gửi. */
-const PADDING_Y = 12;
+/** Chữ 16px (không zoom trên iOS) với line-height 24px. */
+const LINE_HEIGHT = 24;
+/** padding dọc của textarea (py-2) — 1 dòng = 40px. */
+const PADDING_Y = 16;
 const MIN_HEIGHT = LINE_HEIGHT + PADDING_Y;
 const MAX_HEIGHT = LINE_HEIGHT * MAX_ROWS + PADDING_Y;
 
-/** Ô nhập: Enter gửi, Shift+Enter xuống dòng, tự giãn tối đa 6 dòng. */
+/**
+ * Ô hỏi — phần tử "to" duy nhất của trợ lý: ô trắng lớn, sáng viền accent khi focus.
+ * Enter gửi, Shift+Enter xuống dòng, tự giãn tối đa 6 dòng.
+ */
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
   (
     { value, onChange, onSend, onStop, isStreaming, disabled, className },
@@ -71,17 +75,19 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
     return (
       <div
         className={cn(
-          'border-t border-theme-neutral-5/60 bg-theme-neutral-1 px-3 pb-2 pt-3',
+          'flex-none border-t border-line bg-bg px-4 pb-3 pt-3',
           className
         )}
       >
-        <div className="flex items-end gap-2 rounded-2xl border border-theme-neutral-5 bg-theme-neutral-2 py-1.5 pl-3 pr-1.5 focus-within:border-theme-main-3">
+        <div className="flex items-end gap-2.5 rounded-2xl border border-line bg-card py-1.5 pl-3 pr-1.5 shadow-card transition-[border-color,box-shadow] duration-200 ease-soft focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft),var(--shadow-card)]">
+          <AiMark size={28} spin={isStreaming} className="mb-1.5" />
           <textarea
             ref={innerRef}
             rows={1}
             value={value}
             disabled={disabled}
             placeholder={t('aiAssistant.placeholder')}
+            aria-label={t('aiAssistant.placeholder')}
             onChange={event => onChange(event.target.value)}
             onKeyDown={event => {
               if (
@@ -93,7 +99,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
                 submit();
               }
             }}
-            className="max-h-[132px] min-h-[32px] flex-1 resize-none bg-transparent py-1.5 text-sm leading-5 text-theme-neutral-11 placeholder:text-theme-neutral-6 focus:outline-none disabled:cursor-not-allowed"
+            className="max-h-[160px] min-h-[40px] flex-1 resize-none bg-transparent py-2 text-base leading-6 text-ink placeholder:text-faint focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
           />
           {isStreaming ? (
             <button
@@ -101,9 +107,9 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
               onClick={onStop}
               title={t('aiAssistant.stop')}
               aria-label={t('aiAssistant.stop')}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-theme-neutral-10 text-white transition-colors hover:bg-theme-neutral-9"
+              className="press mb-0.5 grid size-9 flex-none place-items-center rounded-[10px] bg-ink text-card transition-[opacity,transform] duration-200 ease-soft hover:opacity-90"
             >
-              <span className="block h-3 w-3 rounded-sm bg-white" />
+              <Square className="size-3.5 fill-current" />
             </button>
           ) : (
             <button
@@ -112,21 +118,13 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(
               disabled={!canSend}
               title={t('aiAssistant.send')}
               aria-label={t('aiAssistant.send')}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-theme-main text-white transition-colors hover:bg-theme-hover disabled:cursor-not-allowed disabled:opacity-40"
+              className="press mb-0.5 grid size-9 flex-none place-items-center rounded-[10px] bg-accent text-on-accent transition-[background-color,opacity,transform] duration-200 ease-soft hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-40"
             >
-              <Image
-                src={Icons.SendHorizontal}
-                alt=""
-                width={16}
-                height={16}
-                className="brightness-0 invert"
-              />
+              <ArrowUp className="size-[18px]" />
             </button>
           )}
         </div>
-        <p className="mt-1.5 px-1 text-[11px] text-theme-neutral-6">
-          {t('aiAssistant.hint')}
-        </p>
+        <p className="mt-2 px-1 text-xs text-muted">{t('aiAssistant.hint')}</p>
       </div>
     );
   }

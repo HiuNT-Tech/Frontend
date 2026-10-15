@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -104,29 +103,19 @@ export default function InvitationCreatePopup({
     <Modal
       isOpen={open}
       onClose={handleClose}
-      size="md"
-      title={
-        <span className="flex items-center gap-2 text-theme-neutral-11">
-          <Image
-            src={Icons.Mail}
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-5 text-theme-main"
-            style={{ filter: 'var(--theme-filter-main)' }}
-          />
-          {t('settings.invitations.form.title')}
-        </span>
-      }
+      size="sm"
+      closeOnOverlayClick={!isPending}
+      title={t('settings.invitations.form.title')}
     >
       <div className="space-y-5">
-        <p className="text-sm leading-5 text-theme-neutral-8">
+        <p className="text-sm text-ink-2">
           {t('settings.invitations.form.description')}
         </p>
 
         <form
           id="invitation-create-form"
           onSubmit={handleSubmit(handleFormSubmit)}
+          noValidate
           className="space-y-4"
         >
           <Input
@@ -136,6 +125,7 @@ export default function InvitationCreatePopup({
             error={errors.email?.message}
             requiredIndicator
             disabled={isPending}
+            autoFocus
             {...register('email', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
@@ -149,10 +139,11 @@ export default function InvitationCreatePopup({
             required
             disabled={isPending}
             onValueChange={handleRoleChange}
+            allowClear={false}
           />
         </form>
 
-        <div className="flex justify-end gap-3 border-t border-theme-neutral-4 pt-4">
+        <div className="flex justify-end gap-2.5 border-t border-line pt-4">
           <Button
             type="button"
             variant="outline"
@@ -167,14 +158,7 @@ export default function InvitationCreatePopup({
             variant="primary"
             disabled={isPending}
           >
-            <Image
-              src={Icons.Send}
-              alt=""
-              width={16}
-              height={16}
-              className="mr-2 h-4 w-4"
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
+            <Send />
             {isPending
               ? t('common.loading')
               : t('settings.invitations.form.submit')}

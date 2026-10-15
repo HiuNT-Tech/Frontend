@@ -1,8 +1,7 @@
 'use client';
 import React from 'react';
 import { Button } from './button';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -71,47 +70,41 @@ export function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3 bg-white w-full">
+    <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
       <div className="flex items-center gap-3">
-        <div className="flex items-center text-sm text-theme-neutral-8">
-          <span className="font-medium text-theme-neutral-11">
+        <div className="flex items-center text-[13px] text-muted tabular-nums">
+          <span className="font-semibold text-ink">
             {startItem}-{endItem}
           </span>
           <span className="mx-1">{t('common.of')}</span>
           <span>{totalItems}</span>
         </div>
-        <div className="h-5 w-px bg-theme-neutral-5" />
+        <div className="h-5 w-px bg-line" />
         {totalPages > 1 && (
           <>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 rounded-md border border-theme-neutral-5 bg-white p-0 text-theme-neutral-8 hover:bg-theme-neutral-2"
+              className="size-8 rounded-[9px] p-0 text-ink-2"
+              aria-label="Previous page"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              <Image
-                src={Icons.ChevronLeft}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
+              <ChevronLeft aria-hidden="true" />
             </Button>
 
             {getVisiblePages().map((page, index) => (
               <div key={index}>
                 {page === '...' ? (
-                  <span className="px-3 py-1 text-gray-500">...</span>
+                  <span className="px-2 py-1 text-faint">…</span>
                 ) : (
                   <Button
                     variant={currentPage === page ? 'outline' : 'ghost'}
                     size="sm"
+                    aria-current={currentPage === page ? 'page' : undefined}
                     className={cn(
-                      'h-8 min-w-8 rounded-md px-2 text-sm',
-                      currentPage === page
-                        ? 'border-theme-neutral-5 bg-theme-neutral-2 text-theme-neutral-11'
-                        : 'text-theme-neutral-8 hover:bg-theme-neutral-2'
+                      'h-8 min-w-8 rounded-[9px] px-2 text-[13px] tabular-nums',
+                      currentPage === page ? 'text-ink' : 'text-muted'
                     )}
                     onClick={() => onPageChange(page as number)}
                   >
@@ -123,56 +116,48 @@ export function Pagination({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 rounded-md border border-theme-neutral-5 bg-white p-0 text-theme-neutral-8 hover:bg-theme-neutral-2"
+              className="size-8 rounded-[9px] p-0 text-ink-2"
+              aria-label="Next page"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              <Image
-                src={Icons.ChevronRight}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
+              <ChevronRight aria-hidden="true" />
             </Button>
           </>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-theme-neutral-8">
+        <div className="flex items-center gap-2 text-[13px] text-muted">
           <span>{t('common.rowsPerPage')}</span>
           <div className="relative">
             <button
               type="button"
-              className="flex min-w-[72px] items-center justify-between gap-2 rounded-md border border-theme-neutral-5 bg-white px-3 py-1.5 text-sm text-theme-neutral-11 transition-colors hover:bg-theme-neutral-2"
+              className="press flex h-8 min-w-[68px] items-center justify-between gap-2 rounded-[9px] border border-line bg-card px-2.5 text-[13px] text-ink shadow-hair transition-colors hover:bg-fill"
+              aria-haspopup="listbox"
+              aria-expanded={showPerPageDropdown}
               onClick={() => setShowPerPageDropdown(prev => !prev)}
             >
-              <span className="font-medium">{itemsPerPage || 10}</span>
-              <Image
-                src={Icons.ChevronDown}
-                alt=""
-                width={16}
-                height={16}
-                className="h-4 w-4 text-theme-neutral-7"
-              />
+              <span className="font-semibold tabular-nums">
+                {itemsPerPage || 10}
+              </span>
+              <ChevronDown className="size-4 text-muted" aria-hidden="true" />
             </button>
             {showPerPageDropdown && (
-              <div className="absolute bottom-full right-0 mb-2 w-28 overflow-hidden rounded-md border border-theme-neutral-5 bg-white shadow-lg z-50">
+              <div className="animate-pop absolute right-0 bottom-full z-50 mb-2 w-28 overflow-hidden rounded-[14px] border border-line bg-card p-1 shadow-lift">
                 {perPageOptions.map(option => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => handlePerPageChange(option)}
                     className={cn(
-                      'flex w-full items-center justify-between px-3 py-2 text-sm text-theme-neutral-11 hover:bg-theme-neutral-2',
-                      (itemsPerPage || 10) === option &&
-                        'bg-theme-neutral-2 font-medium'
+                      'flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-sm text-ink tabular-nums hover:bg-fill',
+                      (itemsPerPage || 10) === option && 'font-semibold'
                     )}
                   >
                     <span>{option}</span>
                     {(itemsPerPage || 10) === option && (
-                      <span className="text-theme-main">•</span>
+                      <span className="text-accent">•</span>
                     )}
                   </button>
                 ))}

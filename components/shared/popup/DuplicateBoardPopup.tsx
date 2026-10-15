@@ -81,24 +81,25 @@ export default function DuplicateBoardDialog({
     <Modal
       isOpen={open}
       onClose={handleClose}
-      size="md"
+      size="sm"
       title={t('dashboard.duplicateProject.title')}
       closeOnOverlayClick={!isPending}
     >
-      <div className="space-y-5">
-        <p className="text-sm leading-5 text-theme-neutral-8">
+      <form
+        onSubmit={handleSubmit(handleFormSubmit)}
+        className="flex flex-col gap-5"
+        id="duplicate-board-form"
+      >
+        <p className="text-[14.5px] leading-relaxed text-ink-2">
           {t('dashboard.duplicateProject.description', { sourceTitle })}
         </p>
 
-        <form
-          onSubmit={handleSubmit(handleFormSubmit)}
-          className="flex flex-col gap-4"
-          id="duplicate-board-form"
-        >
+        <div className="flex flex-col gap-4">
           <Input
             label={t('dashboard.duplicateProject.nameLabel')}
             error={errors.title?.message}
             requiredIndicator
+            autoFocus
             {...register('title')}
             onChange={handleTitleChange}
           />
@@ -107,11 +108,12 @@ export default function DuplicateBoardDialog({
             label={t('dashboard.duplicateProject.codeLable')}
             error={errors.boardCode?.message}
             requiredIndicator
+            className="font-semibold uppercase tabular-nums"
             {...register('boardCode')}
           />
-        </form>
+        </div>
 
-        <div className="flex justify-end gap-3 border-t border-theme-neutral-4 pt-4">
+        <div className="flex justify-end gap-2 pt-1">
           <Button
             type="button"
             variant="outline"
@@ -120,18 +122,13 @@ export default function DuplicateBoardDialog({
           >
             {t('dashboard.duplicateProject.cancel')}
           </Button>
-          <Button
-            type="submit"
-            form="duplicate-board-form"
-            variant="primary"
-            disabled={isPending}
-          >
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending
               ? t('common.loading')
               : t('dashboard.duplicateProject.submit')}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }

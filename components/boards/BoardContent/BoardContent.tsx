@@ -631,7 +631,7 @@ function BoardContent({
   );
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-[#d9d9d9] py-2.5">
+    <div className="animate-pop flex h-full min-h-0 w-full min-w-0 flex-col">
       <BoardFilters
         boardId={board.id}
         value={filters}
@@ -648,7 +648,7 @@ function BoardContent({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1">
           <ListColumns columns={orderedColumns} />
         </div>
         <DragOverlay dropAnimation={customDropAnimation}>

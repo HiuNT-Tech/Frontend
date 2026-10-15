@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import type { CreateIssueTypeFormData } from '@/validation/create-issue-type-for
 import IssueTypesFilter from '@/components/shared/filters/IssueTypesFilter';
 import { usePagination } from '@/hooks/use-pagination';
 import type { EntityId } from '@/config/interface';
+import { SectionHeader } from './SectionHeader';
 
 export const IssueTypesTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
   const { t } = useTranslation();
@@ -102,35 +104,32 @@ export const IssueTypesTab: React.FC<{ boardId: EntityId }> = ({ boardId }) => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 border-b border-theme-neutral-4 pb-5 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-theme-neutral-11">
-            {t('settings.issueTypes.heading')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-theme-neutral-8">
-            {t('settings.issueTypes.hint')}
-          </p>
-        </div>
-        {isManager && (
-          <Button
-            className="h-10 rounded-md bg-theme-main px-4 text-theme-neutral-1 shadow-sm hover:bg-theme-hover"
-            onClick={() => {
-              replaceWithUpdatedSearchParams(
-                router,
-                pathname,
-                searchParams,
-                params => {
-                  params.set('tab', 'issueTypes');
-                  params.set('issueTypesMode', 'create');
-                }
-              );
-              setIsCreatingIssueType(true);
-            }}
-          >
-            {t('settings.issueTypes.actions.add')}
-          </Button>
-        )}
-      </div>
+      <SectionHeader
+        title={t('settings.issueTypes.heading')}
+        description={t('settings.issueTypes.hint')}
+        action={
+          isManager && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                replaceWithUpdatedSearchParams(
+                  router,
+                  pathname,
+                  searchParams,
+                  params => {
+                    params.set('tab', 'issueTypes');
+                    params.set('issueTypesMode', 'create');
+                  }
+                );
+                setIsCreatingIssueType(true);
+              }}
+            >
+              <Plus />
+              {t('settings.issueTypes.actions.add')}
+            </Button>
+          )
+        }
+      />
 
       <IssueTypesFilter onSearch={handleSearch} />
 

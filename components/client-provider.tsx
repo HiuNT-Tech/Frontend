@@ -12,9 +12,7 @@ interface ClientProvidersProps {
   withLayout?: boolean;
 }
 
-import { usePathname } from 'next/navigation';
-import { Sidebar } from './layout/sidebar';
-import { Header } from './layout/header';
+import { AppShell } from './layout/app-shell';
 import { ModalConfirmInstance } from './modal/static-method-confirm';
 import { LoadingBarProvider } from './providers/LoadingBarProvider';
 import { AiAssistantProvider } from './ai-assistant/ai-assistant-provider';
@@ -25,11 +23,6 @@ export default function ClientProviders({
   children,
   withLayout = true,
 }: ClientProvidersProps) {
-  const pathname = usePathname();
-  // Sidebar chỉ có nghĩa trong phạm vi một project — ngoài đó các link của nó
-  // (add-issue, issues, board) không có boardId nên sẽ dẫn tới route lỗi.
-  const showSidebar = pathname.startsWith('/project/');
-
   if (withLayout) {
     return (
       <Provider store={store}>
@@ -37,15 +30,9 @@ export default function ClientProviders({
           <LoadingBarProvider>
             <NotificationSocketBridge />
             <AiAssistantProvider>
-              <div className="h-screen flex flex-col overflow-hidden">
-                <DocumentTitle />
-                <Header />
-                <div className="flex flex-1 overflow-hidden">
-                  {showSidebar && <Sidebar />}
-                  <div className="flex-1 overflow-auto">{children}</div>
-                </div>
-                <ModalConfirmInstance />
-              </div>
+              <DocumentTitle />
+              <AppShell>{children}</AppShell>
+              <ModalConfirmInstance />
             </AiAssistantProvider>
           </LoadingBarProvider>
         </QueryClientProvider>

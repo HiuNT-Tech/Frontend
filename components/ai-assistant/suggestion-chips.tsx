@@ -9,14 +9,14 @@ interface SuggestionChipsProps {
   className?: string;
 }
 
-const SUGGESTIONS: { key: string; icon: string; writeOnly?: boolean }[] = [
-  { key: 'stats', icon: '📊' },
-  { key: 'overdue', icon: '⏰' },
-  { key: 'mine', icon: '👤' },
-  { key: 'create', icon: '➕', writeOnly: true },
+const SUGGESTIONS: { key: string; writeOnly?: boolean }[] = [
+  { key: 'stats' },
+  { key: 'overdue' },
+  { key: 'mine' },
+  { key: 'create', writeOnly: true },
 ];
 
-/** Gợi ý câu hỏi ở empty state — bấm = gửi luôn. */
+/** Gợi ý câu hỏi ở empty state — viên thuốc viền mảnh, bấm = gửi luôn. */
 export function SuggestionChips({
   canWrite,
   onSelect,
@@ -26,24 +26,25 @@ export function SuggestionChips({
 
   return (
     <div
-      className={cn(
-        'grid w-full max-w-sm grid-cols-1 gap-2 sm:grid-cols-2',
-        className
-      )}
+      className={cn('flex flex-wrap justify-center gap-2', className)}
+      role="group"
+      aria-label={t('aiAssistant.emptyTitle')}
     >
-      {SUGGESTIONS.filter(item => canWrite || !item.writeOnly).map(item => (
-        <button
-          key={item.key}
-          type="button"
-          onClick={() =>
-            onSelect(t(`aiAssistant.suggestions.${item.key}.prompt`))
-          }
-          className="flex items-start gap-2 rounded-xl border border-theme-neutral-5/70 bg-theme-neutral-1 px-3 py-2.5 text-left text-xs text-theme-neutral-10 transition-colors hover:border-theme-main-3 hover:bg-theme-main-1"
-        >
-          <span aria-hidden>{item.icon}</span>
-          <span>{t(`aiAssistant.suggestions.${item.key}.label`)}</span>
-        </button>
-      ))}
+      {SUGGESTIONS.filter(item => canWrite || !item.writeOnly).map(
+        (item, index) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() =>
+              onSelect(t(`aiAssistant.suggestions.${item.key}.prompt`))
+            }
+            style={{ animationDelay: `${index * 45}ms` }}
+            className="press animate-rise min-h-9 rounded-full border border-line bg-card px-[13px] py-2 text-[13px] font-medium text-ink-2 shadow-hair transition-[background-color,border-color,color,transform] duration-200 ease-soft hover:border-transparent hover:bg-accent-soft hover:text-accent-text"
+          >
+            {t(`aiAssistant.suggestions.${item.key}.label`)}
+          </button>
+        )
+      )}
     </div>
   );
 }

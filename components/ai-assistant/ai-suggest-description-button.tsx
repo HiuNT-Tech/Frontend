@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
+import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useOptionalAiAssistant } from './ai-assistant-provider';
 
@@ -13,7 +13,7 @@ interface AiSuggestDescriptionButtonProps {
 }
 
 /**
- * Nút "✨ Gợi ý mô tả" ở form tạo/sửa card: mở drawer và nhờ AI soạn mô tả
+ * Nút "Gợi ý mô tả" ở form tạo/sửa card: mở drawer và nhờ AI soạn mô tả
  * theo tiêu đề. Kết quả hiện trong chat để người dùng copy vào editor.
  */
 export function AiSuggestDescriptionButton({
@@ -38,23 +38,15 @@ export function AiSuggestDescriptionButton({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       onClick={handleClick}
-      className={cn(
-        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-theme-main-6 transition-colors hover:bg-theme-main-1',
-        className
-      )}
+      className={cn('gap-1.5 px-2.5 text-[13px]', className)}
     >
-      <Image
-        src={Icons.Sparkles}
-        alt=""
-        width={14}
-        height={14}
-        className="h-3.5 w-3.5"
-        style={{ filter: 'var(--theme-filter-main)' }}
-      />
+      <Sparkles className="text-accent" aria-hidden="true" />
       {t('aiAssistant.addIssue.button')}
-    </button>
+    </Button>
   );
 }

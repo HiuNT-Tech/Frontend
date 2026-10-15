@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
+import { Check, CircleX, Copy, LoaderCircle } from 'lucide-react';
 import { MARKDOWN_REMARK_PLUGINS } from '@/constant/markdown';
-import Image from 'next/image';
-import Icons from '@/assets/icons';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { EntityId } from '@/config/interface';
@@ -15,10 +14,12 @@ import type {
   AiProposalState,
 } from '@/types/ai-assistant';
 import { ActionCard } from './action-card';
+import { AiMark } from './ai-mark';
 import { CardChipList } from './card-chip-list';
 
+/** Markdown của câu trả lời: 14.5px/1.6, chữ ink-2, code trên nền fill. */
 const markdownClassName =
-  'prose prose-sm max-w-none text-theme-neutral-11 text-sm leading-relaxed [&_h1]:text-base [&_h1]:font-bold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic [&_a]:text-theme-main [&_a]:hover:underline [&_blockquote]:border-l-4 [&_blockquote]:border-theme-neutral-5 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-theme-neutral-8 [&_code]:bg-theme-neutral-3 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-theme-neutral-3 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:mb-2 [&_table]:w-full [&_table]:text-xs [&_table]:mb-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-b [&_th]:border-theme-neutral-5 [&_th]:px-2 [&_th]:py-1 [&_td]:border-b [&_td]:border-theme-neutral-4 [&_td]:px-2 [&_td]:py-1';
+  'max-w-none text-[14.5px] leading-[1.6] text-ink-2 text-pretty [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-ink [&_h1]:mt-3 [&_h1]:mb-1 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:text-ink [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:text-[14.5px] [&_h3]:font-semibold [&_h3]:text-ink [&_h3]:mt-2 [&_h3]:mb-1 [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ul:last-child]:mb-0 [&_ol:last-child]:mb-0 [&_li]:mb-1 [&_li]:marker:text-muted [&_strong]:font-semibold [&_strong]:text-ink [&_em]:italic [&_a]:text-accent [&_a]:font-medium [&_a]:hover:underline [&_blockquote]:border-l-2 [&_blockquote]:border-line-strong [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_code]:bg-fill [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:text-[13px] [&_code]:font-mono [&_code]:text-ink [&_pre]:bg-fill [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:overflow-x-auto [&_pre]:mb-2 [&_pre]:text-[13px] [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_table]:text-[13px] [&_table]:mb-2 [&_table]:tabular-nums [&_th]:text-left [&_th]:font-semibold [&_th]:text-muted [&_th]:border-b [&_th]:border-line [&_th]:px-2 [&_th]:py-1.5 [&_td]:border-b [&_td]:border-line-2 [&_td]:px-2 [&_td]:py-1.5 [&_hr]:my-3 [&_hr]:border-line';
 
 interface MessageListProps {
   boardId: EntityId;
@@ -48,7 +49,7 @@ export function MessageList({
   const lastMessage = messages[messages.length - 1];
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4" aria-live="polite">
+    <div className="flex flex-col gap-3.5 px-4 py-4" aria-live="polite">
       {messages.map(message =>
         message.role === 'user' ? (
           <UserMessage key={message.id} message={message} />
@@ -71,10 +72,11 @@ export function MessageList({
   );
 }
 
+/** Tin của người dùng: bong bóng lặng, canh phải, nền fill. */
 function UserMessage({ message }: { message: AiChatMessage }) {
   return (
-    <div className="flex justify-end">
-      <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-theme-main-1 px-4 py-2.5 text-sm text-theme-neutral-11">
+    <div className="flex justify-end pl-8">
+      <div className="max-w-[85%] whitespace-pre-wrap text-pretty rounded-2xl rounded-br-md bg-fill px-4 py-2.5 text-[14.5px] leading-[1.55] text-ink">
         {message.content}
       </div>
     </div>
@@ -92,6 +94,32 @@ interface AssistantMessageProps {
   onRetry: MessageListProps['onRetry'];
 }
 
+type IndexedBlock = { block: AiMessageBlock; index: number };
+/**
+ * Một tin trả lời được chia thành các đoạn: văn bản / hoạt động tool / card
+ * gom vào một thẻ trắng; đề xuất và lỗi đứng riêng (tránh thẻ lồng thẻ).
+ */
+type Segment =
+  | { kind: 'card'; blocks: IndexedBlock[] }
+  | { kind: 'standalone'; item: IndexedBlock };
+
+const splitSegments = (blocks: AiMessageBlock[]): Segment[] => {
+  const segments: Segment[] = [];
+  blocks.forEach((block, index) => {
+    if (block.kind === 'proposal' || block.kind === 'error') {
+      segments.push({ kind: 'standalone', item: { block, index } });
+      return;
+    }
+    const last = segments[segments.length - 1];
+    if (last && last.kind === 'card') {
+      last.blocks.push({ block, index });
+    } else {
+      segments.push({ kind: 'card', blocks: [{ block, index }] });
+    }
+  });
+  return segments;
+};
+
 function AssistantMessage({
   boardId,
   message,
@@ -106,6 +134,11 @@ function AssistantMessage({
   const [copied, setCopied] = useState(false);
   const hasText = message.blocks.some(b => b.kind === 'text' && b.text.trim());
   const waitingFirstToken = isStreaming && message.blocks.length === 0;
+  const segments = useMemo(
+    () => splitSegments(message.blocks),
+    [message.blocks]
+  );
+  const lastIndex = message.blocks.length - 1;
 
   const copy = async () => {
     try {
@@ -118,51 +151,69 @@ function AssistantMessage({
   };
 
   return (
-    <div className="group flex gap-2.5">
-      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-theme-main-1">
-        <Image
-          src={Icons.Sparkles}
-          alt=""
-          width={16}
-          height={16}
-          style={{ filter: 'var(--theme-filter-main)' }}
-        />
-      </div>
-      <div className="min-w-0 flex-1 space-y-2">
-        {waitingFirstToken && <TypingDots />}
-        {message.blocks.map((block, index) => (
-          <Block
-            key={`${message.id}-${index}`}
-            boardId={boardId}
-            messageId={message.id}
-            block={block}
-            isStreamingTail={
-              isStreaming &&
-              index === message.blocks.length - 1 &&
-              block.kind === 'text'
-            }
-            isLast={isLast}
-            onApply={onApply}
-            onCancel={onCancel}
-            onRetryProposal={onRetryProposal}
-            onRetry={onRetry}
-          />
-        ))}
-        {hasText && !isStreaming && (
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={copy}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-theme-neutral-7 hover:bg-theme-neutral-3 hover:text-theme-neutral-10"
+    <div className="group flex gap-2.5 pr-2">
+      <AiMark size={22} spin={isStreaming} className="mt-3" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        {waitingFirstToken && <Thinking />}
+        {segments.map((segment, segmentIndex) =>
+          segment.kind === 'standalone' ? (
+            <Block
+              key={`${message.id}-${segment.item.index}`}
+              boardId={boardId}
+              messageId={message.id}
+              block={segment.item.block}
+              isStreamingTail={false}
+              isLast={isLast}
+              onApply={onApply}
+              onCancel={onCancel}
+              onRetryProposal={onRetryProposal}
+              onRetry={onRetry}
+            />
+          ) : (
+            <div
+              key={`${message.id}-seg-${segmentIndex}`}
+              className="animate-pop min-w-0 rounded-card border border-line bg-card px-4 py-3.5 shadow-card"
             >
-              <Image
-                src={copied ? Icons.Check : Icons.Copy}
-                alt=""
-                width={12}
-                height={12}
-              />
+              <div className="flex flex-col gap-2.5">
+                {segment.blocks.map(({ block, index }) => (
+                  <Block
+                    key={`${message.id}-${index}`}
+                    boardId={boardId}
+                    messageId={message.id}
+                    block={block}
+                    isStreamingTail={
+                      isStreaming &&
+                      index === lastIndex &&
+                      block.kind === 'text'
+                    }
+                    isLast={isLast}
+                    onApply={onApply}
+                    onCancel={onCancel}
+                    onRetryProposal={onRetryProposal}
+                    onRetry={onRetry}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+        {hasText && !isStreaming && (
+          <div className="-mt-1 flex justify-end transition-opacity duration-200 ease-soft focus-within:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="h-7 gap-1 px-2 text-muted"
+              onClick={copy}
+              aria-live="polite"
+            >
+              {copied ? (
+                <Check aria-hidden="true" />
+              ) : (
+                <Copy aria-hidden="true" />
+              )}
               {copied ? t('aiAssistant.copied') : t('aiAssistant.copy')}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -231,20 +282,17 @@ function Block({
       );
     case 'error':
       return (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-          <span>
+        <div
+          role="alert"
+          className="animate-pop flex flex-wrap items-center justify-between gap-2 rounded-xl bg-danger-soft px-3.5 py-2.5 text-[13px] leading-relaxed text-danger"
+        >
+          <span className="min-w-0 flex-1 text-pretty">
             {t(`aiAssistant.error.${block.code}`, {
               defaultValue: block.message || t('aiAssistant.error.generic'),
             })}
           </span>
           {isLast && block.code !== 'AI_NOT_CONFIGURED' && (
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              className="h-6 border-red-300 bg-white px-2 text-red-700 hover:bg-red-100"
-              onClick={onRetry}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
               {t('aiAssistant.retry')}
             </Button>
           )}
@@ -269,41 +317,47 @@ function ToolActivity({
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 text-xs text-theme-neutral-7',
-        block.status === 'error' && 'text-red-600'
+        'flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted',
+        block.status === 'error' && 'text-danger'
       )}
     >
       {block.status === 'running' ? (
-        <Image
-          src={Icons.Loader2}
-          alt=""
-          width={12}
-          height={12}
-          className="animate-spin"
+        <LoaderCircle
+          className="size-3.5 flex-none animate-spin"
+          aria-hidden="true"
         />
       ) : block.status === 'ok' ? (
-        <Image src={Icons.Check} alt="" width={12} height={12} />
+        <Check className="size-3.5 flex-none" aria-hidden="true" />
       ) : (
-        <Image src={Icons.XCircle} alt="" width={12} height={12} />
+        <CircleX className="size-3.5 flex-none" aria-hidden="true" />
       )}
-      <span>{label}</span>
+      <span className="flex-none">{label}</span>
       {block.summary && block.status !== 'running' && (
-        <span className="truncate text-theme-neutral-6">· {block.summary}</span>
+        <span className="min-w-0 truncate text-faint">· {block.summary}</span>
       )}
     </div>
   );
 }
 
-function TypingDots() {
+/** Đang chờ token đầu tiên: khung xương hình đoạn văn + một dòng trạng thái. */
+function Thinking() {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-1 py-2" aria-hidden>
-      {[0, 1, 2].map(i => (
-        <span
-          key={i}
-          className="h-1.5 w-1.5 animate-bounce rounded-full bg-theme-neutral-6"
-          style={{ animationDelay: `${i * 120}ms` }}
+    <div
+      role="status"
+      aria-live="polite"
+      className="animate-pop flex flex-col gap-2.5 rounded-card border border-line bg-card px-4 py-4 shadow-card"
+    >
+      {[78, 94, 62].map((width, index) => (
+        <div
+          key={index}
+          className="skel h-[11px] rounded-md"
+          style={{ width: `${width}%`, animationDelay: `${index * 120}ms` }}
         />
       ))}
+      <span className="mt-0.5 text-[12.5px] text-muted">
+        {t('aiAssistant.thinking')}
+      </span>
     </div>
   );
 }

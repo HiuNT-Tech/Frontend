@@ -25,16 +25,17 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className={cn('space-y-1', classNameContainer)}>
         {label && (
-          <label className="text-sm font-medium text-theme-neutral-11">
+          <label className="text-[13px] font-semibold text-ink-2">
             {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
+            {props.required && <span className="ml-1 text-danger">*</span>}
           </label>
         )}
         <div className={cn('relative', { 'mt-1': !!label })}>
           <textarea
             className={cn(
-              'flex min-h-[120px] w-full rounded-md border border-theme-neutral-5 bg-theme-neutral-2 px-3 py-2 text-sm placeholder:text-theme-neutral-6 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none',
-              error && 'border-red-500 focus:ring-red-500 error-class',
+              'flex min-h-[120px] w-full resize-none rounded-[10px] border border-line bg-card px-3 py-2.5 text-[15px] leading-relaxed text-ink transition-[border-color,box-shadow] duration-200 ease-soft placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)] focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-fill disabled:opacity-60',
+              error &&
+                'border-danger focus:border-danger focus:shadow-[0_0_0_3px_var(--danger-soft)] error-class',
               className
             )}
             ref={ref}
@@ -42,7 +43,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           />
         </div>
         {error && !notShowErrorMessage && (
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-[13px] text-danger">{error}</p>
         )}
       </div>
     );
