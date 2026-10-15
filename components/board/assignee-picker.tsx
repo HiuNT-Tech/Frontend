@@ -28,7 +28,7 @@ const ROW_CLASS =
   'flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2 text-left text-sm text-ink transition-colors hover:bg-hover';
 
 /** Gán nhanh người phụ trách ngay trên thẻ: monogram → popover tìm thành viên. */
-function AssigneePicker({
+export function AssigneePicker({
   boardId,
   assigneeUserId,
   assigneeName,
@@ -173,5 +173,3 @@ function AssigneePicker({
     </Popover>
   );
 }
-
-export default AssigneePicker;

@@ -17,7 +17,7 @@ const formatDueDate = (dateStr: string): string =>
   dayjs(dateStr).format('DD/MM');
 
 /** Hạn chót trên thẻ: viên nhỏ (đỏ nhạt khi quá hạn); bấm mở lịch antd phủ trong suốt phía trên. */
-function DueDatePicker({
+export function DueDatePicker({
   value,
   overdue,
   disabled,
@@ -68,5 +68,3 @@ function DueDatePicker({
     </div>
   );
 }
-
-export default DueDatePicker;

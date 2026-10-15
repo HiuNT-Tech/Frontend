@@ -21,7 +21,7 @@ import type { EntityId } from '@/config/interface';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { isOverdue, OVERDUE_INPUT_CLASS } from '@/utils/due-date';
 
-interface AddNewCardPopupProps {
+interface AddCardPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: (cardData: CardFormData) => void;
@@ -60,7 +60,7 @@ const emptyForm = (columnId?: EntityId): CardFormData => ({
 });
 
 /** Sheet "Thêm thẻ" trên board: tiêu đề + mô tả, rồi các trường phụ xếp hai cột. */
-const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
+export const AddCardPopup: React.FC<AddCardPopupProps> = ({
   isOpen,
   onClose,
   onConfirm,
@@ -250,5 +250,3 @@ const AddNewCardPopup: React.FC<AddNewCardPopupProps> = ({
     </Modal>
   );
 };
-
-export default AddNewCardPopup;

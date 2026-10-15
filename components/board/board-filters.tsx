@@ -41,7 +41,7 @@ const getDisplayName = (user: UserBoardMember): string => {
  * Thanh lọc của board: viên lọc loại công việc + người được giao (chọn một),
  * nút "Việc của tôi" dạng avatar, số thẻ đang hiện / tổng và nút xoá lọc.
  */
-function BoardFilters({
+export function BoardFilters({
   boardId,
   value,
   totalCards,
@@ -187,5 +187,3 @@ function BoardFilters({
     </div>
   );
 }
-
-export default BoardFilters;

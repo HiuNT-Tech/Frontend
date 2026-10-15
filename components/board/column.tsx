@@ -6,11 +6,9 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus } from 'lucide-react';
 
-import ListCards from './ListCards/ListCards';
+import { CardList } from './card-list';
 import type { Column as ColumnType } from '@/config/interface';
-import AddNewCardPopup, {
-  type CardFormData,
-} from '@/components/shared/popup/AddNewCardPopup';
+import { AddCardPopup, type CardFormData } from './add-card-popup';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   selectCurrentActiveBoard,
@@ -24,7 +22,7 @@ import { CreateNewCardRequest } from '@/config/interface';
 import { toEntityIdOrUndefined } from '@/lib/entity-id';
 import { useTranslation } from 'react-i18next';
 import { sortByPosition } from '@/utils/sorts';
-import { CardPreview } from './ListCards/Card/Card';
+import { CardPreview } from './card';
 import { useBoardRole } from '@/hooks/use-board-role';
 import { ColorDot } from '@/components/ui/tag';
 import { IconButton } from '@/components/ui/icon-button';
@@ -91,7 +89,7 @@ export const ColumnPreview = memo(function ColumnPreview({
   );
 });
 
-function Column({ column }: ColumnProps) {
+function ColumnBase({ column }: ColumnProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const board = useSelector(selectCurrentActiveBoard);
@@ -228,7 +226,7 @@ function Column({ column }: ColumnProps) {
         />
 
         {/* List Cards */}
-        <ListCards cards={orderedCards} columnId={column.id} />
+        <CardList cards={orderedCards} columnId={column.id} />
 
         {isContributor && (
           <button
@@ -243,7 +241,7 @@ function Column({ column }: ColumnProps) {
         )}
 
         {/* Add New Card Popup */}
-        <AddNewCardPopup
+        <AddCardPopup
           isOpen={isAddCardPopupOpen}
           onClose={() => setIsAddCardPopupOpen(false)}
           onConfirm={handleAddCardConfirm}
@@ -254,4 +252,4 @@ function Column({ column }: ColumnProps) {
   );
 }
 
-export default memo(Column);
+export const Column = memo(ColumnBase);

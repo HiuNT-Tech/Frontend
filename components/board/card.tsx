@@ -19,8 +19,8 @@ import {
 import { useCardQuickUpdate } from '@/hooks/use-card-quick-update';
 import { isOverdue } from '@/utils/due-date';
 import { cn } from '@/lib/utils';
-import AssigneePicker from './AssigneePicker';
-import DueDatePicker from './DueDatePicker';
+import { AssigneePicker } from './assignee-picker';
+import { DueDatePicker } from './due-date-picker';
 
 interface CardProps {
   card: CardType;
@@ -197,7 +197,7 @@ export const CardPreview = memo(function CardPreview({ card }: CardProps) {
 const INTERACTIVE_SELECTOR =
   'a, button, input, textarea, [role="dialog"], [data-no-dnd]';
 
-function Card({ card }: CardProps) {
+function CardBase({ card }: CardProps) {
   const router = useRouter();
   const {
     attributes,
@@ -253,4 +253,4 @@ function Card({ card }: CardProps) {
   );
 }
 
-export default memo(Card);
+export const Card = memo(CardBase);
