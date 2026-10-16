@@ -8,12 +8,19 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { AuthDivider } from '@/components/auth/auth-divider';
+import {
+  GoogleSignInButton,
+  isGoogleSignInEnabled,
+} from '@/components/auth/google-sign-in-button';
 import { LoginUserRequest } from '@/config/interface';
 import { useRouter } from 'next/navigation';
 import { EMAIL_RULE, PASSWORD_RULE } from '@/utils/validators';
 import { toastHelpers } from '@/hooks/use-toast';
+import { useGoogleAuth } from '@/hooks/use-google-auth';
 import { useAppDispatch } from '@/redux/hooks';
 import { loginUserAPI } from '@/redux/user/userSlice';
+import { getSafeRedirectPath } from '@/lib/url';
 import { cn } from '@/lib/utils';
 
 // Ô nhập 16px để Safari trên iPad/iPhone không tự phóng to khi focus.
@@ -89,6 +96,10 @@ function LoginForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const appName = t('shell.appName');
+  const googleEnabled = isGoogleSignInEnabled();
+  const { signInWithGoogle, isPending: isGooglePending } = useGoogleAuth({
+    redirect,
+  });
 
   const {
     register,
@@ -124,6 +135,7 @@ function LoginForm() {
 
   const emailError = errors.email?.message;
   const passwordError = errors.password?.message;
+  const isBusy = isSubmitting || isGooglePending;
 
   return (
     <div className="animate-fade-in">
@@ -146,10 +158,24 @@ function LoginForm() {
         </Notice>
       )}
 
+      {googleEnabled && (
+        <div className="mt-[26px] flex flex-col gap-4">
+          <GoogleSignInButton
+            text="continue_with"
+            onCredential={signInWithGoogle}
+            busy={isBusy}
+          />
+          <AuthDivider label={t('auth.google.dividerLogin')} />
+        </div>
+      )}
+
       <form
         noValidate
         onSubmit={handleSubmit(submitLogin)}
-        className="mt-[26px] flex flex-col gap-4"
+        className={cn(
+          'flex flex-col gap-4',
+          googleEnabled ? 'mt-4' : 'mt-[26px]'
+        )}
       >
         <AuthField
           id="login-email"
@@ -205,7 +231,7 @@ function LoginForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={isSubmitting}
+          disabled={isBusy}
           className="mt-1.5 w-full"
         >
           {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
@@ -224,14 +250,6 @@ function LoginForm() {
     </div>
   );
 }
-
-const getSafeRedirectPath = (value: string | null) => {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) {
-    return '/dashboard';
-  }
-
-  return value;
-};
 
 /** Khung xương có hình dạng form thật, hiện khi đang đọc tham số URL. */
 function LoginSkeleton() {

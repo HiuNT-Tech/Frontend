@@ -10,6 +10,11 @@ const config = {
    * WebSocket (demo fallback README 4.8). Socket vẫn là nguồn nhanh, REST là nguồn đúng.
    */
   notificationPollMs: Number(process.env.NEXT_PUBLIC_NOTIFICATION_POLL_MS ?? 0),
+  /**
+   * OAuth 2.0 Client ID (Web) cho nút "Đăng nhập bằng Google"; phải trùng
+   * GOOGLE_CLIENT_ID của BE. Để trống thì ẩn nút, đăng nhập email vẫn chạy.
+   */
+  googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
 };
 
 export default config;

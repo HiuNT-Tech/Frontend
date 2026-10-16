@@ -723,6 +723,11 @@ const vi = {
       newPasswordLabel: 'Mật khẩu mới',
       confirmPasswordLabel: 'Xác nhận mật khẩu mới',
       success: 'Đổi mật khẩu thành công.',
+      setHeading: 'Đặt mật khẩu',
+      setHint:
+        'Tài khoản này đăng nhập bằng Google và chưa có mật khẩu. Đặt mật khẩu để có thể đăng nhập bằng email khi cần.',
+      setSave: 'Đặt mật khẩu',
+      setSuccess: 'Đặt mật khẩu thành công.',
     },
   },
   toast: {
@@ -995,6 +1000,14 @@ const vi = {
       incompleteDescription:
         'Hãy mở liên kết trong email chúng tôi đã gửi, hoặc đăng nhập nếu tài khoản đã được xác minh.',
       goToLogin: 'Tới trang đăng nhập',
+    },
+    google: {
+      dividerLogin: 'hoặc đăng nhập bằng email',
+      dividerRegister: 'hoặc đăng ký bằng email',
+      pending:
+        'Đã gửi liên kết xác minh tới {{email}}. Mở liên kết để kích hoạt tài khoản, rồi đăng nhập lại bằng Google.',
+      loadError:
+        'Không tải được nút đăng nhập Google. Kiểm tra kết nối mạng rồi tải lại trang.',
     },
     author: 'Tác giả: TrungHieuDev',
   },

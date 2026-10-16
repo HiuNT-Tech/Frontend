@@ -9,9 +9,16 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { AuthDivider } from '@/components/auth/auth-divider';
+import {
+  GoogleSignInButton,
+  isGoogleSignInEnabled,
+} from '@/components/auth/google-sign-in-button';
 import { RegisterUserRequest } from '@/config/interface';
 import { AuthService } from '@/lib/apis/auth';
+import { cn } from '@/lib/utils';
 import { toastHelpers } from '@/hooks/use-toast';
+import { useGoogleAuth } from '@/hooks/use-google-auth';
 import { registerFormSchema } from '@/validation/register-form-schemas';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,6 +80,13 @@ function RegisterForm() {
   const invitationToken = searchParams.get('invitationToken');
   const redirect = searchParams.get('redirect');
   const appName = t('shell.appName');
+  // Đăng ký qua lời mời thì sau khi đăng nhập quay lại trang lời mời.
+  const nextRedirect =
+    redirect ?? (invitationToken ? `/invitations/${invitationToken}` : null);
+  const googleEnabled = isGoogleSignInEnabled();
+  const { signInWithGoogle, isPending: isGooglePending } = useGoogleAuth({
+    redirect: nextRedirect,
+  });
 
   const {
     register,
@@ -118,9 +132,6 @@ function RegisterForm() {
       const loginParams = new URLSearchParams({
         registeredEmail: response.email,
       });
-      const nextRedirect =
-        redirect ??
-        (invitationToken ? `/invitations/${invitationToken}` : undefined);
 
       if (nextRedirect) {
         loginParams.set('redirect', nextRedirect);
@@ -143,6 +154,7 @@ function RegisterForm() {
   const emailError = getFieldError('email');
   const passwordError = getFieldError('password');
   const confirmationError = getFieldError('passwordConfirmation');
+  const isBusy = isSubmitting || isGooglePending;
 
   return (
     <div className="animate-fade-in">
@@ -155,10 +167,21 @@ function RegisterForm() {
           : t('auth.register.subtitle')}
       </p>
 
+      {googleEnabled && (
+        <div className="mt-6 flex flex-col gap-4">
+          <GoogleSignInButton
+            text="signup_with"
+            onCredential={signInWithGoogle}
+            busy={isBusy}
+          />
+          <AuthDivider label={t('auth.google.dividerRegister')} />
+        </div>
+      )}
+
       <form
         noValidate
         onSubmit={handleSubmit(onSubmit, onError)}
-        className="mt-6 flex flex-col gap-3.5"
+        className={cn('flex flex-col gap-3.5', googleEnabled ? 'mt-4' : 'mt-6')}
       >
         <AuthField
           id="register-email"
@@ -184,7 +207,7 @@ function RegisterForm() {
               setValueAs: (value: string) => value?.trim() || '',
             })}
             readOnly={!!invitationEmail}
-            disabled={isSubmitting}
+            disabled={isBusy}
           />
         </AuthField>
 
@@ -205,7 +228,7 @@ function RegisterForm() {
             {...register('password', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
-            disabled={isSubmitting}
+            disabled={isBusy}
           />
         </AuthField>
 
@@ -229,14 +252,14 @@ function RegisterForm() {
             {...register('passwordConfirmation', {
               setValueAs: (value: string) => value?.trim() || '',
             })}
-            disabled={isSubmitting}
+            disabled={isBusy}
           />
         </AuthField>
 
         <Button
           type="submit"
           size="lg"
-          disabled={isSubmitting}
+          disabled={isBusy}
           className="mt-1.5 w-full"
         >
           {isSubmitting

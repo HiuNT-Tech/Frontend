@@ -13,3 +13,18 @@ export const replaceWithUpdatedSearchParams = (
 
   router.replace(queryString ? `${pathname}?${queryString}` : pathname);
 };
+
+/**
+ * Chỉ chấp nhận đường dẫn nội bộ (bắt đầu bằng "/" nhưng không phải "//")
+ * cho query `redirect` sau đăng nhập, tránh open redirect sang domain khác.
+ */
+export const getSafeRedirectPath = (
+  value: string | null | undefined,
+  fallback = '/dashboard'
+): string => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+    return fallback;
+  }
+
+  return value;
+};

@@ -56,10 +56,18 @@ export const useMe = () => {
   } = useMutation({
     mutationFn: (data: ChangePasswordRequest): Promise<void> =>
       MeService.changePassword(data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Không gửi currentPassword = tài khoản Google vừa đặt mật khẩu lần đầu.
+      const isFirstPassword = variables.currentPassword === undefined;
       toastHelpers.success({
-        description: t('accountSettings.password.success'),
+        description: t(
+          isFirstPassword
+            ? 'accountSettings.password.setSuccess'
+            : 'accountSettings.password.success'
+        ),
       });
+      // `hasPassword` đổi → tab mật khẩu chuyển sang form "Đổi mật khẩu".
+      void queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 

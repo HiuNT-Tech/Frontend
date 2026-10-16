@@ -1,6 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthService } from '@/lib/apis/auth';
-import { LoginUserRequest, LoginUserResponse } from '@/config/interface';
+import { GoogleAuthStatus } from '@/config/enum';
+import {
+  GoogleLoginRequest,
+  GoogleLoginResponse,
+  LoginUserRequest,
+  LoginUserResponse,
+} from '@/config/interface';
 import { RootState } from '@/redux/store';
 
 // User type from API response
@@ -30,6 +36,16 @@ export const loginUserAPI = createAsyncThunk<User, LoginUserRequest>(
     return response;
   }
 );
+
+// Đăng nhập / đăng ký bằng Google. Chỉ AUTHENTICATED mới có phiên;
+// PENDING_VERIFICATION = BE đã gửi mail xác minh, chưa đăng nhập.
+export const loginWithGoogleAPI = createAsyncThunk<
+  GoogleLoginResponse,
+  GoogleLoginRequest
+>('user/loginWithGoogleAPI', async (data: GoogleLoginRequest) => {
+  const response = await AuthService.loginWithGoogle(data);
+  return response;
+});
 
 // Logout (clear cookie + clear Redux user state)
 export const logoutUserAPI = createAsyncThunk<void, void>(
@@ -68,6 +84,23 @@ export const userSlice = createSlice({
       .addCase(loginUserAPI.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to login';
+      })
+      // Google login lifecycle
+      .addCase(loginWithGoogleAPI.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginWithGoogleAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        // Chưa xác minh email thì chưa có phiên: giữ nguyên currentUser.
+        if (action.payload.status === GoogleAuthStatus.AUTHENTICATED) {
+          const { status: _status, ...user } = action.payload;
+          state.currentUser = user;
+        }
+      })
+      .addCase(loginWithGoogleAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to login with Google';
       })
       // Logout lifecycle
       .addCase(logoutUserAPI.pending, state => {

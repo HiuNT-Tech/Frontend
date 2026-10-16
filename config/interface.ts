@@ -1,6 +1,7 @@
 import type { ColorStatusKey } from '@/constant/data';
 import type {
   BoardInvitationStatus,
+  GoogleAuthStatus,
   NotificationChannel,
   NotificationSessionReason,
   NotificationType,
@@ -279,6 +280,20 @@ export interface LoginUserResponse {
   refreshToken: string;
 }
 
+export interface GoogleLoginRequest {
+  /** Google ID token (credential) do Google Identity Services trả về trên trình duyệt. */
+  idToken: string;
+}
+
+/**
+ * Kết quả POST /auth/google, phân biệt theo `status`:
+ * AUTHENTICATED có token (BE đã set cookie); PENDING_VERIFICATION chỉ có thông tin
+ * user, BE đã gửi mail xác minh và chưa tạo phiên.
+ */
+export type GoogleLoginResponse =
+  | ({ status: GoogleAuthStatus.AUTHENTICATED } & LoginUserResponse)
+  | ({ status: GoogleAuthStatus.PENDING_VERIFICATION } & User);
+
 export interface RefreshTokenResponse {
   accessToken: string;
   /** BE thực trả kèm (AuthService.refreshToken); socket hook dùng để cập nhật Redux. */
@@ -301,6 +316,8 @@ export interface MeProfile {
   avatar: string | null;
   userCode: string | null;
   phone: string | null;
+  /** False với tài khoản tạo bằng Google chưa đặt mật khẩu. */
+  hasPassword: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -313,7 +330,8 @@ export interface UpdateProfileRequest {
 }
 
 export interface ChangePasswordRequest {
-  currentPassword: string;
+  /** Bỏ trống khi tài khoản (tạo bằng Google) chưa có mật khẩu: đặt lần đầu. */
+  currentPassword?: string;
   newPassword: string;
 }
 
