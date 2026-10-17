@@ -47,6 +47,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         <img
           src={src}
           alt={name || ''}
+          // Ảnh Google (lh3.googleusercontent.com) hay trả 403 khi có Referer.
+          referrerPolicy="no-referrer"
           className="h-full w-full object-cover"
         />
       ) : (

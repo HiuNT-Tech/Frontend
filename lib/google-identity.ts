@@ -76,7 +76,14 @@ export function loadGoogleIdentity(): Promise<GoogleAccountsId> {
 
   if (!loader) {
     loader = new Promise<GoogleAccountsId>((resolve, reject) => {
+      let script = document.querySelector<HTMLScriptElement>(
+        `script[src="${GSI_SCRIPT_SRC}"]`
+      );
+
       const fail = (message: string) => {
+        // Gỡ thẻ script hỏng để lần gọi sau tạo thẻ mới; nếu giữ lại,
+        // querySelector sẽ gắn listener lên script đã chết và promise treo mãi.
+        script?.remove();
         loader = null;
         reject(new Error(message));
       };
@@ -85,10 +92,6 @@ export function loadGoogleIdentity(): Promise<GoogleAccountsId> {
         if (gsi) resolve(gsi);
         else fail('Google Identity Services không khởi tạo được');
       };
-
-      let script = document.querySelector<HTMLScriptElement>(
-        `script[src="${GSI_SCRIPT_SRC}"]`
-      );
 
       if (!script) {
         script = document.createElement('script');
