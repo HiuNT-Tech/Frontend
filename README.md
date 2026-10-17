@@ -33,12 +33,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 FE chạy trên Vercel, BE (`backlog-be`) chạy trên Render. Biến môi trường trên Vercel:
 
-| Biến                     | Giá trị                              |
-| ------------------------ | ------------------------------------ |
-| `NEXT_PUBLIC_API_URL`    | `/api`                               |
-| `BACKEND_URL`            | `https://<ten-service>.onrender.com` |
-| `NEXT_PUBLIC_SOCKET_URL` | `https://<ten-service>.onrender.com` |
+| Biến                           | Giá trị                                          |
+| ------------------------------ | ------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`          | `/api`                                           |
+| `BACKEND_URL`                  | `https://<ten-service>.onrender.com`             |
+| `NEXT_PUBLIC_SOCKET_URL`       | `https://<ten-service>.onrender.com`             |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | OAuth Client ID (Web) – tuỳ chọn, bật nút Google |
 
 `BACKEND_URL` bật rewrite `/api/*` và `/uploads/*` sang BE (xem `next.config.ts`) nên
 cookie đăng nhập cùng origin với trang; websocket nối thẳng BE. Bên BE cần
 `CORS_ORIGINS` và `FRONTEND_URL` trỏ về domain Vercel. Xem `.env.example` cho chạy local.
+
+### Đăng nhập / đăng ký bằng Google
+
+Nút Google dùng [Google Identity Services](https://developers.google.com/identity/gsi/web):
+FE nhận ID token rồi gửi `POST /api/v1/auth/google`. Luồng xác minh email giữ nguyên:
+tài khoản mới (hoặc chưa xác minh) được tạo ở trạng thái chưa kích hoạt và nhận mail
+xác minh như đăng ký thường; chỉ tài khoản đã xác minh mới được đăng nhập. Tài khoản
+email/mật khẩu có cùng email sẽ được liên kết với Google; tài khoản tạo bằng Google
+đặt mật khẩu lần đầu ở Cài đặt → Mật khẩu (không cần mật khẩu hiện tại).
+
+Cấu hình: tạo OAuth 2.0 Client ID loại _Web application_, thêm origin của FE vào
+_Authorized JavaScript origins_, đặt `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (FE) và
+`GOOGLE_CLIENT_ID` (BE) cùng giá trị. Không đặt thì nút Google ẩn đi.

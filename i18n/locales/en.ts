@@ -727,6 +727,11 @@ const en = {
       newPasswordLabel: 'New password',
       confirmPasswordLabel: 'Confirm new password',
       success: 'Password changed successfully.',
+      setHeading: 'Set a password',
+      setHint:
+        'This account signs in with Google and has no password yet. Set one so you can also sign in with your email.',
+      setSave: 'Set password',
+      setSuccess: 'Password set successfully.',
     },
   },
   toast: {
@@ -1001,6 +1006,14 @@ const en = {
       incompleteDescription:
         'Open the link from the email we sent you, or sign in if your account is already verified.',
       goToLogin: 'Go to sign in',
+    },
+    google: {
+      dividerLogin: 'or sign in with email',
+      dividerRegister: 'or sign up with email',
+      pending:
+        'We sent a verification link to {{email}}. Open it to activate your account, then sign in with Google again.',
+      loadError:
+        'Could not load the Google sign-in button. Check your connection and reload the page.',
     },
     author: 'Author: TrungHieuDev',
   },

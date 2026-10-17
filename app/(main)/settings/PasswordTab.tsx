@@ -10,10 +10,24 @@ import { Group } from '@/components/ui/surface';
 import { useMe } from '@/hooks/use-me';
 import {
   changePasswordFormSchema,
+  setPasswordFormSchema,
   type ChangePasswordFormData,
 } from '@/validation/settings-form-schemas';
 
+/**
+ * Tài khoản tạo bằng Google chưa có mật khẩu: form "Đặt mật khẩu" (không hỏi mật
+ * khẩu hiện tại). Có mật khẩu rồi: form "Đổi mật khẩu" như cũ. `key` theo
+ * `hasPassword` để form (schema + giá trị) dựng lại khi chuyển chế độ.
+ */
 export function PasswordTab() {
+  const { profile } = useMe();
+  // Chưa tải xong hồ sơ: coi như đã có mật khẩu để không nháy sang form "Đặt".
+  const hasPassword = profile?.hasPassword ?? true;
+
+  return <PasswordForm key={String(hasPassword)} hasPassword={hasPassword} />;
+}
+
+function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const { t } = useTranslation();
   const { changePassword, isChangePasswordPending } = useMe();
 
@@ -24,7 +38,7 @@ export function PasswordTab() {
     formState: { errors },
   } = useForm<ChangePasswordFormData>({
     resolver: zodResolver(
-      changePasswordFormSchema
+      hasPassword ? changePasswordFormSchema : setPasswordFormSchema
     ) as Resolver<ChangePasswordFormData>,
     defaultValues: {
       currentPassword: '',
@@ -42,7 +56,8 @@ export function PasswordTab() {
 
   const onSubmit = async (data: ChangePasswordFormData) => {
     await changePassword({
-      currentPassword: data.currentPassword,
+      // Đặt lần đầu thì không gửi currentPassword (BE bỏ qua kiểm tra).
+      ...(hasPassword ? { currentPassword: data.currentPassword } : {}),
       newPassword: data.newPassword,
     });
     reset();
@@ -56,21 +71,37 @@ export function PasswordTab() {
       className="space-y-5"
     >
       <Group
-        title={t('accountSettings.password.heading')}
-        hint={t('validation.passwordRule')}
+        title={t(
+          hasPassword
+            ? 'accountSettings.password.heading'
+            : 'accountSettings.password.setHeading'
+        )}
+        hint={
+          hasPassword
+            ? t('validation.passwordRule')
+            : t('accountSettings.password.setHint')
+        }
       >
-        <div className="px-[18px] py-4">
-          <Input
-            type="password"
-            label={t('accountSettings.password.currentPasswordLabel')}
-            requiredIndicator
-            error={getFieldError('currentPassword')}
-            {...register('currentPassword')}
-            disabled={isChangePasswordPending}
-            autoComplete="current-password"
-          />
-        </div>
-        <div className="grid gap-4 border-t border-line px-[18px] py-4 sm:grid-cols-2">
+        {hasPassword && (
+          <div className="px-[18px] py-4">
+            <Input
+              type="password"
+              label={t('accountSettings.password.currentPasswordLabel')}
+              requiredIndicator
+              error={getFieldError('currentPassword')}
+              {...register('currentPassword')}
+              disabled={isChangePasswordPending}
+              autoComplete="current-password"
+            />
+          </div>
+        )}
+        <div
+          className={
+            hasPassword
+              ? 'grid gap-4 border-t border-line px-[18px] py-4 sm:grid-cols-2'
+              : 'grid gap-4 px-[18px] py-4 sm:grid-cols-2'
+          }
+        >
           <Input
             type="password"
             label={t('accountSettings.password.newPasswordLabel')}
@@ -98,7 +129,11 @@ export function PasswordTab() {
           variant="primary"
           disabled={isChangePasswordPending}
         >
-          {t('accountSettings.password.save')}
+          {t(
+            hasPassword
+              ? 'accountSettings.password.save'
+              : 'accountSettings.password.setSave'
+          )}
         </Button>
       </div>
     </form>

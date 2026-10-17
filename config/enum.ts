@@ -55,3 +55,12 @@ export enum NotificationSessionReason {
   LOGGED_OUT = 'LOGGED_OUT',
   PASSWORD_CHANGED = 'PASSWORD_CHANGED',
 }
+
+/**
+ * Mirror GoogleAuthStatus của BE (POST /auth/google): đã có phiên, hay mới gửi mail
+ * xác minh (tài khoản mới / chưa xác minh) và chưa đăng nhập.
+ */
+export enum GoogleAuthStatus {
+  AUTHENTICATED = 'AUTHENTICATED',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+}
