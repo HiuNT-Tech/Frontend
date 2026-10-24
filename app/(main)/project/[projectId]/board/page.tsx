@@ -29,7 +29,10 @@ import type {
 import { useBoard } from '@/hooks/use-board';
 import { useParams } from 'next/navigation';
 import { toPositionPayload, withSequentialPositions } from '@/utils/sorts';
-import { restoreColumnPositions } from '@/utils/board-dnd';
+import {
+  restoreCardPlacement,
+  restoreColumnPositions,
+} from '@/utils/board-dnd';
 
 const EMPTY_BOARD_FILTERS: BoardFilterValue = {
   issueTypeId: '',
@@ -102,6 +105,23 @@ function BoardPageContent() {
     return <BoardSkeleton />;
   }
 
+  // BE không lưu (403 khi không đủ quyền, lỗi mạng...) → sửa lại board MỚI NHẤT
+  // trong store bằng `restore`, không dùng snapshot cả board, để không ghi đè
+  // thay đổi khác xảy ra trong lúc chờ request. Toast lỗi đã do interceptor
+  // axios hiện.
+  const rollbackBoard =
+    (restore: (columns: ColumnType[]) => ColumnType[]) => () => {
+      const latestBoard = selectCurrentActiveBoard(store.getState());
+      if (latestBoard?.id !== board.id) return;
+
+      dispatch(
+        updateCurrentActiveBoard({
+          ...latestBoard,
+          columns: restore(latestBoard.columns),
+        })
+      );
+    };
+
   const moveColumns = (dndOrderedColumns: ColumnType[]) => {
     const previousColumns = board.columns;
     const positionedColumns = withSequentialPositions(dndOrderedColumns);
@@ -112,26 +132,18 @@ function BoardPageContent() {
     updateBoardDetail({
       id: board.id,
       columns: toPositionPayload(positionedColumns),
-    }).catch(() => {
-      // BE không lưu (403 khi không còn quyền Manager, lỗi mạng...) → trả cột về
-      // thứ tự cũ. Toast lỗi đã do interceptor axios hiện. Đọc board mới nhất
-      // từ store để không ghi đè thay đổi card xảy ra trong lúc chờ request.
-      const latestBoard = selectCurrentActiveBoard(store.getState());
-      if (latestBoard?.id !== board.id) return;
-
-      dispatch(
-        updateCurrentActiveBoard({
-          ...latestBoard,
-          columns: restoreColumnPositions(latestBoard.columns, previousColumns),
-        })
-      );
-    });
+    }).catch(
+      rollbackBoard(columns => restoreColumnPositions(columns, previousColumns))
+    );
   };
 
   const moveCardInTheSameColumn = (
     dndOrderedCards: Card[],
     columnId: EntityId
   ) => {
+    const previousColumns = board.columns.filter(
+      column => column.id === columnId
+    );
     const positionedCards = withSequentialPositions(dndOrderedCards);
     const newBoard = cloneDeep(board);
     const columnToUpdate = newBoard.columns.find(
@@ -145,7 +157,9 @@ function BoardPageContent() {
     updateColumnDetails({
       id: columnId,
       cards: toPositionPayload(positionedCards),
-    });
+    }).catch(
+      rollbackBoard(columns => restoreCardPlacement(columns, previousColumns))
+    );
   };
 
   const moveCardToDifferentColumn = (
@@ -154,6 +168,9 @@ function BoardPageContent() {
     nextColumnId: EntityId,
     dndOrderedColumns: ColumnType[]
   ) => {
+    const previousColumns = board.columns.filter(
+      column => column.id === prevColumnId || column.id === nextColumnId
+    );
     const newBoard = cloneDeep(board);
     newBoard.columns = dndOrderedColumns;
     dispatch(updateCurrentActiveBoard(newBoard));
@@ -169,7 +186,9 @@ function BoardPageContent() {
       prevCards: toPositionPayload(prevCards),
       nextColumnId,
       nextCards: toPositionPayload(nextCards),
-    });
+    }).catch(
+      rollbackBoard(columns => restoreCardPlacement(columns, previousColumns))
+    );
   };
 
   return (

@@ -305,6 +305,32 @@ export const restoreColumnPositions = (
   );
 };
 
+/**
+ * Rollback khi lưu vị trí card thất bại: đưa mọi card của `previousColumns`
+ * (snapshot các cột bị ảnh hưởng trước khi kéo) về đúng cột và thứ tự cũ, gỡ
+ * chúng khỏi chỗ hiện tại để không bị trùng. Card không có trong snapshot (vd
+ * vừa tạo trong lúc chờ request) giữ nguyên, nối sau các card được khôi phục.
+ */
+export const restoreCardPlacement = (
+  columns: ColumnType[],
+  previousColumns: ColumnType[]
+): ColumnType[] => {
+  const previousCardsByColumnId = new Map(
+    previousColumns.map(column => [column.id, column.cards])
+  );
+  const restoredCardIds = new Set(
+    previousColumns.flatMap(column => column.cards.map(card => card.id))
+  );
+
+  return columns.map(column => ({
+    ...column,
+    cards: [
+      ...(previousCardsByColumnId.get(column.id) ?? []),
+      ...column.cards.filter(card => !restoredCardIds.has(card.id)),
+    ],
+  }));
+};
+
 // Drag item type constants
 export const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
