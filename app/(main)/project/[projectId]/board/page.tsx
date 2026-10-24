@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { BoardContent } from '@/components/board/board-content';
@@ -18,7 +18,7 @@ import {
   selectCurrentActiveBoard,
   updateCurrentActiveBoard,
 } from '@/redux/activeBoard/activeBoardSlice';
-import type { AppDispatch } from '@/redux/store';
+import type { AppDispatch, RootState } from '@/redux/store';
 import type {
   Board,
   BoardDetailParams,
@@ -29,6 +29,10 @@ import type {
 import { useBoard } from '@/hooks/use-board';
 import { useParams } from 'next/navigation';
 import { toPositionPayload, withSequentialPositions } from '@/utils/sorts';
+import {
+  restoreCardPlacement,
+  restoreColumnPositions,
+} from '@/utils/board-dnd';
 
 const EMPTY_BOARD_FILTERS: BoardFilterValue = {
   issueTypeId: '',
@@ -48,6 +52,7 @@ const countBoardCards = (board: Board): number =>
 
 function BoardPageContent() {
   const dispatch = useDispatch<AppDispatch>();
+  const store = useStore<RootState>();
   const board = useSelector(selectCurrentActiveBoard) as Board | null;
   const params = useParams<{ projectId: string }>();
   const boardId = params.projectId;
@@ -100,7 +105,25 @@ function BoardPageContent() {
     return <BoardSkeleton />;
   }
 
+  // BE không lưu (403 khi không đủ quyền, lỗi mạng...) → sửa lại board MỚI NHẤT
+  // trong store bằng `restore`, không dùng snapshot cả board, để không ghi đè
+  // thay đổi khác xảy ra trong lúc chờ request. Toast lỗi đã do interceptor
+  // axios hiện.
+  const rollbackBoard =
+    (restore: (columns: ColumnType[]) => ColumnType[]) => () => {
+      const latestBoard = selectCurrentActiveBoard(store.getState());
+      if (latestBoard?.id !== board.id) return;
+
+      dispatch(
+        updateCurrentActiveBoard({
+          ...latestBoard,
+          columns: restore(latestBoard.columns),
+        })
+      );
+    };
+
   const moveColumns = (dndOrderedColumns: ColumnType[]) => {
+    const previousColumns = board.columns;
     const positionedColumns = withSequentialPositions(dndOrderedColumns);
     const newBoard = cloneDeep(board);
     newBoard.columns = positionedColumns;
@@ -109,13 +132,18 @@ function BoardPageContent() {
     updateBoardDetail({
       id: board.id,
       columns: toPositionPayload(positionedColumns),
-    });
+    }).catch(
+      rollbackBoard(columns => restoreColumnPositions(columns, previousColumns))
+    );
   };
 
   const moveCardInTheSameColumn = (
     dndOrderedCards: Card[],
     columnId: EntityId
   ) => {
+    const previousColumns = board.columns.filter(
+      column => column.id === columnId
+    );
     const positionedCards = withSequentialPositions(dndOrderedCards);
     const newBoard = cloneDeep(board);
     const columnToUpdate = newBoard.columns.find(
@@ -129,7 +157,9 @@ function BoardPageContent() {
     updateColumnDetails({
       id: columnId,
       cards: toPositionPayload(positionedCards),
-    });
+    }).catch(
+      rollbackBoard(columns => restoreCardPlacement(columns, previousColumns))
+    );
   };
 
   const moveCardToDifferentColumn = (
@@ -138,6 +168,9 @@ function BoardPageContent() {
     nextColumnId: EntityId,
     dndOrderedColumns: ColumnType[]
   ) => {
+    const previousColumns = board.columns.filter(
+      column => column.id === prevColumnId || column.id === nextColumnId
+    );
     const newBoard = cloneDeep(board);
     newBoard.columns = dndOrderedColumns;
     dispatch(updateCurrentActiveBoard(newBoard));
@@ -153,7 +186,9 @@ function BoardPageContent() {
       prevCards: toPositionPayload(prevCards),
       nextColumnId,
       nextCards: toPositionPayload(nextCards),
-    });
+    }).catch(
+      rollbackBoard(columns => restoreCardPlacement(columns, previousColumns))
+    );
   };
 
   return (

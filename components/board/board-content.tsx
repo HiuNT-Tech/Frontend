@@ -81,8 +81,9 @@ export function BoardContent({
   });
   const allSensors = useSensors(mouseSensor, touchSensor);
   // GUEST chỉ đọc → không cho kéo-thả card/column (BE cũng chỉ cho Contributor
-  // move card). Truyền mảng sensor rỗng để vô hiệu hoá drag.
-  const { isContributor } = useBoardRole(board?.id);
+  // move card). Truyền mảng sensor rỗng để vô hiệu hoá drag. Đổi thứ tự cột
+  // chỉ dành cho Manager: `Column` khoá phần kéo của cột với MEMBER.
+  const { isManager, isContributor } = useBoardRole(board?.id);
   const sensors = isContributor ? allSensors : [];
 
   const [orderedColumns, setOrderedColumns] = useState<ColumnType[]>([]);
@@ -307,8 +308,8 @@ export function BoardContent({
           }
         }
 
-        // Handle column drag and drop
-        if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+        // Handle column drag and drop (PUT /boards/:id chỉ cho Manager)
+        if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && isManager) {
           if (active.id !== over.id) {
             const activeColId = resolveColumnId(active.id);
             const overColId = resolveColumnId(over.id);
@@ -342,6 +343,7 @@ export function BoardContent({
       activeDragItemType,
       findOrderedColumnByCardId,
       findOrderedColumnByDroppableId,
+      isManager,
       moveCardInTheSameColumn,
       moveCardToDifferentColumn,
       moveColumns,

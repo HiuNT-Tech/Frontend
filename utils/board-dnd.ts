@@ -284,6 +284,53 @@ export const reorderCardWithinColumn = ({
   );
 };
 
+/**
+ * Rollback khi lưu thứ tự cột thất bại (vd BE trả 403): trả mỗi cột về
+ * `position` trong `previousColumns` nhưng giữ nội dung hiện tại của cột (card
+ * có thể đã đổi trong lúc chờ request). Cột không có trong snapshot giữ nguyên.
+ */
+export const restoreColumnPositions = (
+  columns: ColumnType[],
+  previousColumns: ColumnType[]
+): ColumnType[] => {
+  const previousPositions = new Map(
+    previousColumns.map(column => [column.id, column.position])
+  );
+
+  return sortByPosition(
+    columns.map(column => ({
+      ...column,
+      position: previousPositions.get(column.id) ?? column.position,
+    }))
+  );
+};
+
+/**
+ * Rollback khi lưu vị trí card thất bại: đưa mọi card của `previousColumns`
+ * (snapshot các cột bị ảnh hưởng trước khi kéo) về đúng cột và thứ tự cũ, gỡ
+ * chúng khỏi chỗ hiện tại để không bị trùng. Card không có trong snapshot (vd
+ * vừa tạo trong lúc chờ request) giữ nguyên, nối sau các card được khôi phục.
+ */
+export const restoreCardPlacement = (
+  columns: ColumnType[],
+  previousColumns: ColumnType[]
+): ColumnType[] => {
+  const previousCardsByColumnId = new Map(
+    previousColumns.map(column => [column.id, column.cards])
+  );
+  const restoredCardIds = new Set(
+    previousColumns.flatMap(column => column.cards.map(card => card.id))
+  );
+
+  return columns.map(column => ({
+    ...column,
+    cards: [
+      ...(previousCardsByColumnId.get(column.id) ?? []),
+      ...column.cards.filter(card => !restoredCardIds.has(card.id)),
+    ],
+  }));
+};
+
 // Drag item type constants
 export const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',

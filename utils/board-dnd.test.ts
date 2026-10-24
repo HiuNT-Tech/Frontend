@@ -6,6 +6,8 @@ import {
   normalizeColumnsForDnd,
   reorderCardWithinColumn,
   resolveCardListColumnId,
+  restoreCardPlacement,
+  restoreColumnPositions,
   resolveColumnId,
   toCardListDndId,
   toColumnDndId,
@@ -152,5 +154,125 @@ describe('moveCardAcrossColumns', () => {
 
     expect(ids(result, 1)).toEqual([]);
     expect(ids(result, 2)).toEqual([1]);
+  });
+});
+
+describe('restoreColumnPositions', () => {
+  const previous = () => [
+    column(1, [card(1, 1)], 0),
+    column(2, [card(2, 2)], 1),
+    column(3, [], 2),
+  ];
+
+  it('puts columns back in their previous order and positions', () => {
+    const moved = [
+      column(3, [], 0),
+      column(1, [card(1, 1)], 1),
+      column(2, [card(2, 2)], 2),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(result.map(c => c.id)).toEqual([1, 2, 3]);
+    expect(result.map(c => c.position)).toEqual([0, 1, 2]);
+  });
+
+  it('keeps the current cards of each column', () => {
+    const moved = [
+      column(2, [card(2, 2), card(1, 2)], 0),
+      column(1, [], 1),
+      column(3, [], 2),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(ids(result, 1)).toEqual([]);
+    expect(ids(result, 2)).toEqual([2, 1]);
+    expect(result.map(c => c.id)).toEqual([1, 2, 3]);
+  });
+
+  it('leaves columns missing from the snapshot at their current position', () => {
+    const moved = [
+      column(2, [], 0),
+      column(1, [], 1),
+      column(3, [], 2),
+      column(4, [], 3),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(result.map(c => c.id)).toEqual([1, 2, 3, 4]);
+    expect(result.find(c => c.id === 4)?.position).toBe(3);
+  });
+});
+
+describe('restoreCardPlacement', () => {
+  // Trước khi kéo: cột 1 = [1, 2], cột 2 = [3]; cột 3 không bị ảnh hưởng.
+  const before = () => [
+    column(1, [card(1, 1, 0), card(2, 1, 1)]),
+    column(2, [card(3, 2, 0)]),
+    column(3, [card(5, 3, 0)]),
+  ];
+  const snapshot = (columnIds: number[]) =>
+    before().filter(c => columnIds.includes(c.id));
+
+  it('moves a card back to its previous column and index', () => {
+    // Card 1 đã được kéo sang đầu cột 2 rồi request thất bại.
+    const moved = [
+      column(1, [card(2, 1, 0)]),
+      column(2, [card(1, 2, 0), card(3, 2, 1)]),
+      column(3, [card(5, 3, 0)]),
+    ];
+
+    const result = restoreCardPlacement(moved, snapshot([1, 2]));
+
+    expect(ids(result, 1)).toEqual([1, 2]);
+    expect(ids(result, 2)).toEqual([3]);
+    expect(result[0].cards[0].columnId).toBe(1);
+    expect(ids(result, 3)).toEqual([5]);
+  });
+
+  it('restores the previous order within the same column', () => {
+    const moved = [
+      column(1, [card(2, 1, 0), card(1, 1, 1)]),
+      column(2, [card(3, 2, 0)]),
+      column(3, [card(5, 3, 0)]),
+    ];
+
+    const result = restoreCardPlacement(moved, snapshot([1]));
+
+    expect(ids(result, 1)).toEqual([1, 2]);
+    expect(result[0].cards.map(c => c.position)).toEqual([0, 1]);
+    expect(ids(result, 2)).toEqual([3]);
+  });
+
+  it('keeps cards that are not in the snapshot', () => {
+    // Card 9 được tạo ở cột 2 trong lúc chờ request.
+    const moved = [
+      column(1, [card(2, 1, 0)]),
+      column(2, [card(1, 2, 0), card(3, 2, 1), card(9, 2, 2)]),
+      column(3, [card(5, 3, 0)]),
+    ];
+
+    const result = restoreCardPlacement(moved, snapshot([1, 2]));
+
+    expect(ids(result, 1)).toEqual([1, 2]);
+    expect(ids(result, 2)).toEqual([3, 9]);
+  });
+
+  it('never duplicates a snapshot card that has since moved elsewhere', () => {
+    // Card 3 đã được kéo tiếp sang cột 3 trước khi request đầu thất bại.
+    const moved = [
+      column(1, [card(2, 1, 0)]),
+      column(2, [card(1, 2, 0)]),
+      column(3, [card(3, 3, 0), card(5, 3, 1)]),
+    ];
+
+    const result = restoreCardPlacement(moved, snapshot([1, 2]));
+    const allIds = result.flatMap(c => c.cards.map(x => x.id));
+
+    expect(ids(result, 2)).toEqual([3]);
+    expect(ids(result, 3)).toEqual([5]);
+    expect(allIds.sort()).toEqual([1, 2, 3, 5]);
   });
 });
