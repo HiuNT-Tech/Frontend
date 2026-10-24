@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { BoardContent } from '@/components/board/board-content';
@@ -18,7 +18,7 @@ import {
   selectCurrentActiveBoard,
   updateCurrentActiveBoard,
 } from '@/redux/activeBoard/activeBoardSlice';
-import type { AppDispatch } from '@/redux/store';
+import type { AppDispatch, RootState } from '@/redux/store';
 import type {
   Board,
   BoardDetailParams,
@@ -29,6 +29,7 @@ import type {
 import { useBoard } from '@/hooks/use-board';
 import { useParams } from 'next/navigation';
 import { toPositionPayload, withSequentialPositions } from '@/utils/sorts';
+import { restoreColumnPositions } from '@/utils/board-dnd';
 
 const EMPTY_BOARD_FILTERS: BoardFilterValue = {
   issueTypeId: '',
@@ -48,6 +49,7 @@ const countBoardCards = (board: Board): number =>
 
 function BoardPageContent() {
   const dispatch = useDispatch<AppDispatch>();
+  const store = useStore<RootState>();
   const board = useSelector(selectCurrentActiveBoard) as Board | null;
   const params = useParams<{ projectId: string }>();
   const boardId = params.projectId;
@@ -101,6 +103,7 @@ function BoardPageContent() {
   }
 
   const moveColumns = (dndOrderedColumns: ColumnType[]) => {
+    const previousColumns = board.columns;
     const positionedColumns = withSequentialPositions(dndOrderedColumns);
     const newBoard = cloneDeep(board);
     newBoard.columns = positionedColumns;
@@ -109,6 +112,19 @@ function BoardPageContent() {
     updateBoardDetail({
       id: board.id,
       columns: toPositionPayload(positionedColumns),
+    }).catch(() => {
+      // BE không lưu (403 khi không còn quyền Manager, lỗi mạng...) → trả cột về
+      // thứ tự cũ. Toast lỗi đã do interceptor axios hiện. Đọc board mới nhất
+      // từ store để không ghi đè thay đổi card xảy ra trong lúc chờ request.
+      const latestBoard = selectCurrentActiveBoard(store.getState());
+      if (latestBoard?.id !== board.id) return;
+
+      dispatch(
+        updateCurrentActiveBoard({
+          ...latestBoard,
+          columns: restoreColumnPositions(latestBoard.columns, previousColumns),
+        })
+      );
     });
   };
 

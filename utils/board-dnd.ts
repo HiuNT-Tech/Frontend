@@ -284,6 +284,27 @@ export const reorderCardWithinColumn = ({
   );
 };
 
+/**
+ * Rollback khi lưu thứ tự cột thất bại (vd BE trả 403): trả mỗi cột về
+ * `position` trong `previousColumns` nhưng giữ nội dung hiện tại của cột (card
+ * có thể đã đổi trong lúc chờ request). Cột không có trong snapshot giữ nguyên.
+ */
+export const restoreColumnPositions = (
+  columns: ColumnType[],
+  previousColumns: ColumnType[]
+): ColumnType[] => {
+  const previousPositions = new Map(
+    previousColumns.map(column => [column.id, column.position])
+  );
+
+  return sortByPosition(
+    columns.map(column => ({
+      ...column,
+      position: previousPositions.get(column.id) ?? column.position,
+    }))
+  );
+};
+
 // Drag item type constants
 export const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',

@@ -93,9 +93,12 @@ function ColumnBase({ column }: ColumnProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const board = useSelector(selectCurrentActiveBoard);
-  const { isContributor } = useBoardRole(board?.id);
+  const { isManager, isContributor } = useBoardRole(board?.id);
   const queryClient = useQueryClient();
 
+  // Đổi thứ tự cột = PUT /boards/:id, BE chỉ cho Manager (ADMIN/PM). MEMBER vẫn
+  // kéo được card nên sensor không tắt; chỉ khoá phần kéo của cột, vẫn giữ
+  // droppable để card thả vào cột như cũ.
   const {
     attributes,
     listeners,
@@ -106,6 +109,7 @@ function ColumnBase({ column }: ColumnProps) {
   } = useSortable({
     id: `column-${column.id}`,
     data: column,
+    disabled: { draggable: !isManager, droppable: false },
   });
 
   // Đang kéo một thẻ qua cột này → viền accent báo chỗ thả.
@@ -210,7 +214,7 @@ function ColumnBase({ column }: ColumnProps) {
         <ColumnHeader
           column={column}
           count={realCount}
-          handleProps={{ ...attributes, ...listeners }}
+          handleProps={isManager ? { ...attributes, ...listeners } : undefined}
           action={
             isContributor ? (
               <IconButton

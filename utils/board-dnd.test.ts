@@ -6,6 +6,7 @@ import {
   normalizeColumnsForDnd,
   reorderCardWithinColumn,
   resolveCardListColumnId,
+  restoreColumnPositions,
   resolveColumnId,
   toCardListDndId,
   toColumnDndId,
@@ -152,5 +153,54 @@ describe('moveCardAcrossColumns', () => {
 
     expect(ids(result, 1)).toEqual([]);
     expect(ids(result, 2)).toEqual([1]);
+  });
+});
+
+describe('restoreColumnPositions', () => {
+  const previous = () => [
+    column(1, [card(1, 1)], 0),
+    column(2, [card(2, 2)], 1),
+    column(3, [], 2),
+  ];
+
+  it('puts columns back in their previous order and positions', () => {
+    const moved = [
+      column(3, [], 0),
+      column(1, [card(1, 1)], 1),
+      column(2, [card(2, 2)], 2),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(result.map(c => c.id)).toEqual([1, 2, 3]);
+    expect(result.map(c => c.position)).toEqual([0, 1, 2]);
+  });
+
+  it('keeps the current cards of each column', () => {
+    const moved = [
+      column(2, [card(2, 2), card(1, 2)], 0),
+      column(1, [], 1),
+      column(3, [], 2),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(ids(result, 1)).toEqual([]);
+    expect(ids(result, 2)).toEqual([2, 1]);
+    expect(result.map(c => c.id)).toEqual([1, 2, 3]);
+  });
+
+  it('leaves columns missing from the snapshot at their current position', () => {
+    const moved = [
+      column(2, [], 0),
+      column(1, [], 1),
+      column(3, [], 2),
+      column(4, [], 3),
+    ];
+
+    const result = restoreColumnPositions(moved, previous());
+
+    expect(result.map(c => c.id)).toEqual([1, 2, 3, 4]);
+    expect(result.find(c => c.id === 4)?.position).toBe(3);
   });
 });
