@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Icons from '@/assets/icons';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { ConfirmContent } from './confirm-content';
 
 interface IConfirmModalProps {
   isOpen?: boolean;
@@ -18,7 +19,7 @@ interface IConfirmModalProps {
   okText?: string;
   loadingOnOk?: boolean;
   title?: any;
-  content?: any;
+  content?: React.ReactNode;
   type?: 'delete';
   icon?: any;
   completed?: boolean;
@@ -68,15 +69,7 @@ const ModalConfirm = ({
           </div>
         )}
         {content && (
-          <div
-            className={cn(
-              'text-base text-theme-neutral-11 leading-relaxed whitespace-break-spaces flex justify-center text-center',
-              classNameContent
-            )}
-            dangerouslySetInnerHTML={{
-              __html: content,
-            }}
-          />
+          <ConfirmContent content={content} className={classNameContent} />
         )}
         {bodyContent && <div className={classNameContent}>{bodyContent}</div>}
 
