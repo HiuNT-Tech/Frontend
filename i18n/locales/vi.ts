@@ -963,6 +963,8 @@ const vi = {
       emailPlaceholder: 'ban@congty.com',
       password: 'Mật khẩu',
       confirmPassword: 'Nhập lại mật khẩu',
+      showPassword: 'Hiện mật khẩu',
+      hidePassword: 'Ẩn mật khẩu',
     },
     login: {
       title: 'Đăng nhập',
