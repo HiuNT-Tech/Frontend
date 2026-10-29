@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AuthService } from '@/lib/apis/auth';
+import { stripAuthTokens } from '@/lib/auth-token';
 import { GoogleAuthStatus } from '@/config/enum';
 import {
   GoogleLoginRequest,
@@ -9,9 +10,9 @@ import {
 } from '@/config/interface';
 import { RootState } from '@/redux/store';
 
-// User type from API response
-// type User = LoginUserResponse['user'];
-type User = LoginUserResponse;
+// Thông tin user trong Redux KHÔNG có token: slice này được redux-persist ghi
+// xuống localStorage, còn access token chỉ sống trong bộ nhớ (lib/auth-token).
+export type User = Omit<LoginUserResponse, 'accessToken' | 'refreshToken'>;
 
 // 1. Define State Interface
 export interface UserState {
@@ -32,8 +33,9 @@ const initialState: UserState = {
 export const loginUserAPI = createAsyncThunk<User, LoginUserRequest>(
   'user/loginUserAPI',
   async (data: LoginUserRequest) => {
+    // AuthService đã cất access token vào bộ nhớ; Redux chỉ giữ thông tin user.
     const response = await AuthService.loginUser(data);
-    return response;
+    return stripAuthTokens(response);
   }
 );
 
@@ -44,7 +46,7 @@ export const loginWithGoogleAPI = createAsyncThunk<
   GoogleLoginRequest
 >('user/loginWithGoogleAPI', async (data: GoogleLoginRequest) => {
   const response = await AuthService.loginWithGoogle(data);
-  return response;
+  return stripAuthTokens(response) as GoogleLoginResponse;
 });
 
 // Logout (clear cookie + clear Redux user state)

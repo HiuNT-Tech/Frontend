@@ -1,5 +1,7 @@
 import { sendPost, sendDelete, sendGet } from '@/utils/authorizeAxios';
 import { API_ROOT } from '@/utils/constants';
+import { clearAccessToken, setAccessToken } from '@/lib/auth-token';
+import { GoogleAuthStatus } from '@/config/enum';
 import {
   GoogleLoginRequest,
   GoogleLoginResponse,
@@ -8,6 +10,8 @@ import {
   RefreshTokenResponse,
 } from '@/config/interface';
 
+// Mọi nơi nhận access token từ BE đều đi qua đây để lưu vào bộ nhớ (lib/auth-token);
+// Redux/persist không bao giờ giữ token.
 export const AuthService = {
   registerUser: async ({ user }: { user: Record<string, unknown> }) => {
     return await sendPost(`${API_ROOT}/v1/auth/register`, user);
@@ -18,21 +22,41 @@ export const AuthService = {
   },
 
   loginUser: async (user: LoginUserRequest): Promise<LoginUserResponse> => {
-    return await sendPost(`${API_ROOT}/v1/auth/login`, user);
+    const result: LoginUserResponse = await sendPost(
+      `${API_ROOT}/v1/auth/login`,
+      user
+    );
+    setAccessToken(result.accessToken);
+    return result;
   },
 
   /** Đăng nhập / đăng ký bằng Google; BE tự gửi mail xác minh với tài khoản mới. */
   loginWithGoogle: async (
     data: GoogleLoginRequest
   ): Promise<GoogleLoginResponse> => {
-    return await sendPost(`${API_ROOT}/v1/auth/google`, data);
+    const result: GoogleLoginResponse = await sendPost(
+      `${API_ROOT}/v1/auth/google`,
+      data
+    );
+    if (result.status === GoogleAuthStatus.AUTHENTICATED) {
+      setAccessToken(result.accessToken);
+    }
+    return result;
   },
 
   logout: async (): Promise<void> => {
-    await sendDelete(`${API_ROOT}/v1/auth/logout`);
+    try {
+      await sendDelete(`${API_ROOT}/v1/auth/logout`);
+    } finally {
+      clearAccessToken();
+    }
   },
 
   refreshToken: async (): Promise<RefreshTokenResponse> => {
-    return await sendGet(`${API_ROOT}/v1/auth/refresh_token`);
+    const result: RefreshTokenResponse = await sendGet(
+      `${API_ROOT}/v1/auth/refresh_token`
+    );
+    setAccessToken(result.accessToken);
+    return result;
   },
 };

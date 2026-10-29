@@ -1,6 +1,11 @@
 import axios, { AxiosError } from 'axios';
 import { toastHelpers } from '@/hooks/use-toast';
 import { API_ROOT } from '@/utils/constants';
+import {
+  authorizationHeader,
+  clearAccessToken,
+  setAccessToken,
+} from '@/lib/auth-token';
 import type { RefreshTokenResponse } from '@/config/interface';
 
 const defaultHeaders = {
@@ -36,9 +41,10 @@ const unwrapItem = (data: any) => {
 let refreshTokenPromise: Promise<RefreshTokenResponse> | null = null;
 
 /**
- * Gọi GET /v1/auth/refresh_token bằng axios gốc (không qua interceptor). Cookie mới do BE set.
- * Thất bại → toast + chuyển /login + reject (giữ nguyên hành vi cũ của interceptor).
- * Dùng cho interceptor 410 và cho socket (hooks/use-notification-socket.ts).
+ * Gọi GET /v1/auth/refresh_token bằng axios gốc (không qua interceptor); cookie
+ * refreshToken httpOnly đi kèm, BE xoay cookie và trả access token mới trong
+ * body → lưu vào bộ nhớ (lib/auth-token). Thất bại → xoá token, toast, chuyển
+ * /login, reject. Dùng cho interceptor 410, socket, AI SSE và AuthGuard bootstrap.
  */
 export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
   if (!refreshTokenPromise) {
@@ -46,10 +52,15 @@ export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
       .get(`${API_ROOT}/v1/auth/refresh_token`, {
         withCredentials: true,
       })
-      // BE trả { item: { accessToken, refreshToken } } (ResponseInterceptor bọc object đơn)
-      .then(res => unwrapItem(res.data) as RefreshTokenResponse)
+      // BE trả { item: { accessToken } } (ResponseInterceptor bọc object đơn)
+      .then(res => {
+        const tokens = unwrapItem(res.data) as RefreshTokenResponse;
+        setAccessToken(tokens.accessToken);
+        return tokens;
+      })
       .catch((refreshError: AxiosError) => {
         // Refresh thất bại → buộc logout
+        clearAccessToken();
         let refreshMessage = refreshError.message;
         if (
           refreshError.response?.data &&
@@ -78,9 +89,14 @@ export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
 };
 
 // Cấu hình Interceptors
-// Interceptor request: Can thiệp vào giữa những cái request API
+// Interceptor request: gắn access token trong bộ nhớ vào Authorization. BE chỉ
+// nhận Bearer (không còn cookie accessToken) nên request thiếu header này → 401.
 authorizedAxiosInstance.interceptors.request.use(
   config => {
+    const auth = authorizationHeader();
+    if (auth.Authorization && !config.headers.Authorization) {
+      config.headers.Authorization = auth.Authorization;
+    }
     return config;
   },
   error => {
@@ -139,6 +155,7 @@ authorizedAxiosInstance.interceptors.response.use(
     // 403 = đã đăng nhập nhưng không đủ quyền → giữ nguyên trang, chỉ hiện toast
     // lỗi (đã xử lý ở trên), KHÔNG đá user ra màn login.
     if (response?.status === 401) {
+      clearAccessToken();
       // Only redirect if we're in the browser
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname + window.location.search;

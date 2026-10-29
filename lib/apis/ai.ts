@@ -1,5 +1,10 @@
-import axios from 'axios';
-import { sendDelete, sendGet, sendPatch } from '@/utils/authorizeAxios';
+import {
+  refreshAccessToken,
+  sendDelete,
+  sendGet,
+  sendPatch,
+} from '@/utils/authorizeAxios';
+import { authorizationHeader } from '@/lib/auth-token';
 import { API_ROOT } from '@/utils/constants';
 import type { EntityId } from '@/config/interface';
 import type {
@@ -43,10 +48,11 @@ const readErrorBody = async (
 const postChat = (request: AiChatRequest, signal?: AbortSignal) =>
   fetch(`${API_ROOT}/v1/ai/chat`, {
     method: 'POST',
-    credentials: 'include', // gửi cookie accessToken
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
+      ...authorizationHeader(), // BE chỉ nhận Bearer; token lấy từ bộ nhớ
     },
     body: JSON.stringify(request),
     signal,
@@ -64,9 +70,8 @@ export const AiService = {
     let res = await postChat(request, signal);
 
     if (res.status === 410) {
-      await axios.get(`${API_ROOT}/v1/auth/refresh_token`, {
-        withCredentials: true,
-      });
+      // Dùng chung promise refresh với interceptor axios (dedupe + lưu token mới).
+      await refreshAccessToken();
       res = await postChat(request, signal);
     }
 
