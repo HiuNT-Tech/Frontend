@@ -1,6 +1,7 @@
 import { io, type Socket } from 'socket.io-client';
 import config from '@/config';
 import { API_ROOT } from '@/utils/constants';
+import { getAccessToken } from '@/lib/auth-token';
 import type {
   Notification,
   NotificationSessionEvent,
@@ -47,7 +48,11 @@ export type NotificationSocket = Socket<
 >;
 
 let socket: NotificationSocket | null = null;
-/** Token fallback cho handshake khi cookie không đi kèm (prod khác domain, README 4.6). */
+/**
+ * Token ghi đè cho handshake (test / trường hợp đặc biệt). Bình thường để null:
+ * callback `auth` đọc thẳng access token trong bộ nhớ (lib/auth-token) mỗi lần
+ * connect. BE chỉ nhận auth.token, không còn đọc cookie.
+ */
 let authToken: string | null = null;
 
 export const setNotificationSocketToken = (token: string | null) => {
@@ -81,13 +86,16 @@ export const getNotificationSocket = (): NotificationSocket | null => {
 
   socket = io(getNotificationSocketUrl(), {
     path: config.socketPath || DEFAULT_SOCKET_PATH,
-    withCredentials: true, // cookie accessToken đi kèm handshake
+    withCredentials: true,
     autoConnect: false,
     transports: ['websocket', 'polling'],
     // tránh storm khi BE down lâu
     reconnectionAttempts: 20,
     // hàm được gọi lại mỗi lần connect → luôn lấy token mới nhất
-    auth: cb => cb(authToken ? { token: authToken } : {}),
+    auth: cb => {
+      const token = authToken ?? getAccessToken();
+      cb(token ? { token } : {});
+    },
   });
 
   return socket;

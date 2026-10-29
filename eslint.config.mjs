@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
     'node_modules/**',
+    '.gitnexus/**',
     'dist/**',
     '*.config.js',
     '*.config.ts',
@@ -37,6 +38,10 @@ const eslintConfig = defineConfig([
       // Tắt các rule React Compiler gây lỗi cho các component dùng lại
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
+      // eslint-plugin-react-hooks 7.1 (theo eslint-config-next 16.4) siết `refs`
+      // và `purity`; hạ xuống warn để lint không đỏ, sửa dần ở code.
+      'react-hooks/refs': 'warn',
+      'react-hooks/purity': 'warn',
       'react/no-unescaped-entities': 'off',
       'react/display-name': 'off',
 

@@ -14,9 +14,10 @@ const publicRoutes = [
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  const accessToken = request.cookies.get('accessToken');
+  // Chỉ còn cookie refreshToken (httpOnly); access token sống trong bộ nhớ tab.
+  // Đây chỉ là gợi ý điều hướng, quyền thật do BE kiểm qua Bearer.
   const refreshToken = request.cookies.get('refreshToken');
-  const hasAuth = !!(accessToken?.value || refreshToken?.value);
+  const hasAuth = !!refreshToken?.value;
 
   const isGuestOnlyRoute = guestOnlyRoutes.some(route =>
     pathname.startsWith(route)
@@ -38,7 +39,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!accessToken && !refreshToken) {
+  if (!hasAuth) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname + search);
     return NextResponse.redirect(loginUrl);

@@ -3,15 +3,10 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import {
-  resetUser,
-  selectCurrentUser,
-  updateUser,
-} from '@/redux/user/userSlice';
+import { resetUser, selectCurrentUser } from '@/redux/user/userSlice';
 import { refreshAccessToken } from '@/utils/authorizeAxios';
 import {
   getNotificationSocket,
-  setNotificationSocketToken,
   SOCKET_AUTH_ERRORS,
   SOCKET_EVENTS,
 } from '@/lib/socket';
@@ -41,7 +36,6 @@ export const useNotificationSocket = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const userId = currentUser?.id;
-  const accessToken = currentUser?.accessToken;
 
   // ref để handler bên trong effect đọc user mới nhất mà không phải re-subscribe mỗi khi Redux đổi
   const currentUserRef = useRef(currentUser);
@@ -49,10 +43,8 @@ export const useNotificationSocket = () => {
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
-  // token fallback cho handshake (server vẫn ưu tiên cookie)
-  useEffect(() => {
-    setNotificationSocketToken(accessToken ?? null);
-  }, [accessToken]);
+  // Token handshake: lib/socket đọc thẳng lib/auth-token mỗi lần connect, không
+  // cần đẩy từ Redux (Redux không còn giữ token).
 
   // đổi user (A → null → B, hoặc A → B) → bỏ cache của user cũ
   const lastUserIdRef = useRef<number | undefined>(undefined);
@@ -83,18 +75,8 @@ export const useNotificationSocket = () => {
       }
       authRefreshAttempts += 1;
       try {
-        const tokens = await refreshAccessToken(); // dedupe với interceptor 410 của axios
-        setNotificationSocketToken(tokens.accessToken);
-        const user = currentUserRef.current;
-        if (user) {
-          dispatch(
-            updateUser({
-              ...user,
-              accessToken: tokens.accessToken,
-              refreshToken: tokens.refreshToken ?? user.refreshToken,
-            })
-          );
-        }
+        // dedupe với interceptor 410 của axios; token mới đã nằm trong lib/auth-token
+        await refreshAccessToken();
         socket.connect();
       } catch {
         // refreshAccessToken đã toast + chuyển /login; không reconnect

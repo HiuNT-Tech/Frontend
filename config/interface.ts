@@ -276,8 +276,10 @@ export interface LoginUserResponse {
   displayName: string;
   avatar: string | null;
   isActive: boolean;
+  /** Chỉ dùng ngay để cất vào lib/auth-token; không được đưa vào Redux. */
   accessToken: string;
-  refreshToken: string;
+  /** BE không còn trả (chỉ ở cookie httpOnly); giữ optional cho bản cũ. */
+  refreshToken?: string;
 }
 
 export interface GoogleLoginRequest {
@@ -296,7 +298,7 @@ export type GoogleLoginResponse =
 
 export interface RefreshTokenResponse {
   accessToken: string;
-  /** BE thực trả kèm (AuthService.refreshToken); socket hook dùng để cập nhật Redux. */
+  /** BE không còn trả (refresh token chỉ ở cookie httpOnly). */
   refreshToken?: string;
 }
 
