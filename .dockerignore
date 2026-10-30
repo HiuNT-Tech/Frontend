@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitnexus
+.claude
+.cursor
+.husky
+coverage
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+.github

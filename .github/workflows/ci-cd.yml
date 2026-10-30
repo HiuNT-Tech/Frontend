@@ -1,0 +1,94 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint · Type check · Test · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Lint
+        run: pnpm lint
+      - name: Unit test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: /api
+          NEXT_TELEMETRY_DISABLED: 1
+      # Sau build: next-env.d.ts (khai báo *.svg...) do next build sinh, không commit
+      - name: Type check
+        run: pnpm type-check
+
+  # Build image trên runner → `docker save` qua SSH sang EC2 (không cần registry).
+  # Key CI trên server bị khoá vào deploy/ci-deploy.sh (load | up | rollback).
+  deploy:
+    name: Deploy to EC2
+    needs: ci
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: deploy-fe
+      cancel-in-progress: false
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      APP_URL: ${{ vars.APP_URL }}
+      IMAGE: backlog-fe:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+          cache-from: type=gha,scope=fe
+          cache-to: type=gha,mode=max,scope=fe
+      - name: Set up SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -t ed25519 "$EC2_HOST" >> ~/.ssh/known_hosts
+      - name: Upload image
+        run: docker save "$IMAGE" | gzip -1 | ssh -i ~/.ssh/id_deploy "ubuntu@$EC2_HOST" load fe
+      - name: Restart fe
+        run: ssh -i ~/.ssh/id_deploy "ubuntu@$EC2_HOST" up fe "$GITHUB_SHA"
+      - name: Health check (rollback nếu lỗi)
+        run: |
+          for i in $(seq 1 24); do
+            if curl -fsS -o /dev/null "$APP_URL/login"; then echo ok; exit 0; fi
+            sleep 5
+          done
+          echo "::error::FE không phản hồi sau 2 phút — rollback"
+          ssh -i ~/.ssh/id_deploy "ubuntu@$EC2_HOST" rollback fe
+          exit 1
