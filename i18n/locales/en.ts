@@ -133,6 +133,8 @@ const en = {
     register: 'Register',
     verification: 'Verify account',
     invitation: 'Invitation',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
   },
   sidebar: {
     home: 'Home',
@@ -1084,6 +1086,151 @@ const en = {
         '{{actor}} changed your role in {{boardTitle}} from {{oldRole}} to {{newRole}}',
       CARD_DUE_SOON: '{{cardCode}} is due on {{dueDate}}',
       CARD_OVERDUE: '{{cardCode}} is {{days}} day(s) overdue',
+    },
+  },
+  legal: {
+    language: 'Language',
+    lastUpdated: 'Last updated: {{date}}',
+    updatedDate: 'October 31, 2026',
+    privacyLink: 'Privacy Policy',
+    termsLink: 'Terms of Service',
+    backToApp: 'Back to sign in',
+    privacy: {
+      title: 'Privacy Policy',
+      intro:
+        '{{appName}} ({{domain}}) is a project management app built and operated by TrungHieuDev as a graduation project. This policy explains what personal data we collect, why we collect it, who we share it with and the choices you have.',
+      sections: {
+        collect: {
+          title: 'Data we collect',
+          items: [
+            'Account details: email address, display name, avatar and, if you add it, phone number. Passwords are stored only as a one-way hash.',
+            'Google sign-in: if you sign in with Google, we receive your email address, name, profile picture and Google account ID. We never receive your Google password and we do not access your Gmail, Drive or any other Google data.',
+            'Content you create: projects, boards, issues, comments, attachments, notifications and your conversations with the AI assistant.',
+            'Technical data: a sign-in session cookie and server logs (such as IP address, browser type and time of request) used for security and troubleshooting.',
+          ],
+        },
+        use: {
+          title: 'How we use your data',
+          items: [
+            'To create your account, sign you in and keep your session secure.',
+            'To provide the service: show your projects to you and to the members you invite.',
+            'To send service emails such as account verification, password reset, project invitations and notifications you have turned on.',
+            'To run AI features when you use them.',
+            'To prevent abuse, fix errors and improve the app.',
+          ],
+          note: 'We do not sell your data and we do not use it for advertising.',
+        },
+        share: {
+          title: 'Who we share data with',
+          body: 'We only share data with the service providers needed to run {{appName}}:',
+          items: [
+            'Amazon Web Services (AWS): hosts our servers and database in the Sydney (Australia) region.',
+            'Google: verifies your identity when you choose Google sign-in.',
+            'Brevo: delivers service emails to your email address.',
+            'Anthropic: when you use the AI assistant or AI features, the text you send and the related project content are sent to Anthropic to generate a response.',
+            'Other members of a project can see the content you post in that project.',
+            'Authorities, if required by law.',
+          ],
+        },
+        storage: {
+          title: 'Where and how long we keep data',
+          body: 'Data is stored on AWS servers in Sydney, Australia. We keep your data while your account is active. When you ask us to delete your account, we delete your personal data and content within 30 days, except where the law requires us to keep it longer.',
+        },
+        cookies: {
+          title: 'Cookies and local storage',
+          items: [
+            'A secure, HTTP-only cookie keeps you signed in. Without it you cannot use your account.',
+            'Your browser’s local storage remembers preferences such as theme, language and sidebar state.',
+            'We do not use advertising or third-party tracking cookies. Google may set its own cookies when you use Google sign-in.',
+          ],
+        },
+        security: {
+          title: 'Security',
+          body: 'All traffic is encrypted with HTTPS, passwords are hashed and every project is only visible to its members. No system is completely secure, so please use a strong password and keep it private.',
+        },
+        rights: {
+          title: 'Your rights',
+          items: [
+            'View and update your profile at any time in Account settings.',
+            'Ask us for a copy of your data, to correct it or to delete your account and data by emailing {{email}}.',
+            'Revoke {{appName}}’s access to your Google account at any time at myaccount.google.com/permissions.',
+            'Withdraw your consent or object to processing, as provided by Vietnam’s Decree 13/2023/ND-CP on personal data protection.',
+          ],
+        },
+        children: {
+          title: 'Children',
+          body: '{{appName}} is not intended for children under 16 and we do not knowingly collect their data.',
+        },
+        changes: {
+          title: 'Changes to this policy',
+          body: 'We may update this policy. The date at the top shows the latest version; for significant changes we will notify you in the app or by email.',
+        },
+        contact: {
+          title: 'Contact',
+          body: 'Questions about this policy or your data: {{email}}.',
+        },
+      },
+    },
+    terms: {
+      title: 'Terms of Service',
+      intro:
+        'These terms govern your use of {{appName}} ({{domain}}), a project management app built and operated by TrungHieuDev as a graduation project.',
+      sections: {
+        acceptance: {
+          title: 'Acceptance',
+          body: 'By creating an account or using {{appName}}, you agree to these terms and to our Privacy Policy. If you do not agree, please do not use the service.',
+        },
+        service: {
+          title: 'The service',
+          body: '{{appName}} is provided free of charge for learning and demonstration purposes. Features may change, and the service may be paused or discontinued at any time.',
+        },
+        account: {
+          title: 'Your account',
+          items: [
+            'Provide accurate information and keep your email address up to date.',
+            'Keep your password secret; you are responsible for activity on your account.',
+            'Tell us at {{email}} if you think your account has been compromised.',
+          ],
+        },
+        content: {
+          title: 'Your content',
+          body: 'You keep ownership of everything you create in {{appName}}. You allow us to store, process and display it only as needed to run the service, including sending it to our AI provider when you use AI features. You are responsible for having the right to upload what you post.',
+        },
+        acceptableUse: {
+          title: 'Acceptable use',
+          body: 'You must not:',
+          items: [
+            'Post illegal, harmful, hateful or infringing content.',
+            'Upload malware or try to access other people’s accounts or data.',
+            'Probe, attack or overload the service, or bypass its security.',
+            'Use the service to send spam.',
+          ],
+        },
+        ai: {
+          title: 'AI features',
+          body: 'AI-generated content may be inaccurate or incomplete. Review it before relying on it; you are responsible for how you use it.',
+        },
+        termination: {
+          title: 'Ending your use',
+          body: 'You can stop using {{appName}} at any time and ask us to delete your account. We may suspend or delete accounts that break these terms.',
+        },
+        liability: {
+          title: 'Disclaimer and liability',
+          body: 'The service is provided “as is” without warranties of any kind. To the extent permitted by law, we are not liable for data loss, interruptions or indirect damages. Keep your own copies of important information.',
+        },
+        changes: {
+          title: 'Changes to these terms',
+          body: 'We may update these terms. Continuing to use {{appName}} after an update means you accept the new terms.',
+        },
+        law: {
+          title: 'Governing law',
+          body: 'These terms are governed by the laws of Vietnam.',
+        },
+        contact: {
+          title: 'Contact',
+          body: 'Questions about these terms: {{email}}.',
+        },
+      },
     },
   },
   notFound: {

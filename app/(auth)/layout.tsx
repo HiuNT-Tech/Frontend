@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import '@/i18n';
@@ -79,8 +80,22 @@ function AuthFrame({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-[12.5px] text-muted">
-          {t('auth.author')}
+        <p className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[12.5px] text-muted">
+          <span>{t('auth.author')}</span>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/privacy"
+            className="transition-colors duration-200 ease-soft hover:text-ink"
+          >
+            {t('legal.privacyLink')}
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/terms"
+            className="transition-colors duration-200 ease-soft hover:text-ink"
+          >
+            {t('legal.termsLink')}
+          </Link>
         </p>
       </main>
     </div>
