@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Bold,
@@ -222,10 +222,12 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorBoxRef = useRef<HTMLDivElement>(null);
   const mention = useMentionAutocomplete({
     value,
     onChange,
     textareaRef,
+    anchorRef: editorBoxRef,
     candidates: mentionCandidates,
   });
   const suggestionsId = useId();
@@ -233,6 +235,20 @@ export function MarkdownEditor({
   const textareaId = id ?? generatedId;
   const [isPreviewing, setIsPreviewing] = useState(false);
   const showPreview = previewable && isPreviewing;
+
+  // Popup mention định vị fixed theo textarea → đo lại khi cuộn (mọi khung, capture)
+  // hoặc đổi kích thước cửa sổ, nếu không popup sẽ "trôi" khỏi ô nhập.
+  const { isOpen: isMentionOpen, syncFromCaret } = mention;
+  useEffect(() => {
+    if (!isMentionOpen) return;
+    const reposition = () => syncFromCaret();
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [isMentionOpen, syncFromCaret]);
 
   const handleFormat = (action: FormatAction) => {
     const textarea = textareaRef.current;
@@ -283,6 +299,7 @@ export function MarkdownEditor({
         </div>
       )}
       <div
+        ref={editorBoxRef}
         className={cn(
           'relative max-w-full overflow-hidden bg-card transition-[border-color,box-shadow] duration-200 ease-soft',
           flush
@@ -352,6 +369,7 @@ export function MarkdownEditor({
           items={mention.items}
           activeIndex={mention.activeIndex}
           placement={mention.placement}
+          anchorRect={mention.anchorRect}
           onHover={mention.setActiveIndex}
           onSelect={mention.select}
         />
