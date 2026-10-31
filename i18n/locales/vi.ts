@@ -395,7 +395,6 @@ const vi = {
       },
       table: {
         member: 'Thành viên',
-        userCode: 'Mã người dùng',
         role: 'Vai trò',
         joinedOn: 'Ngày tham gia',
         empty: 'Không tìm thấy thành viên.',
@@ -704,7 +703,6 @@ const vi = {
       heading: 'Thông tin cá nhân',
       hint: 'Cập nhật tên hiển thị, ảnh đại diện và số điện thoại của bạn.',
       emailLabel: 'Email',
-      userCodeLabel: 'Mã người dùng',
       displayNameLabel: 'Tên hiển thị',
       displayNamePlaceholder: 'Nhập tên hiển thị',
       phoneLabel: 'Số điện thoại',

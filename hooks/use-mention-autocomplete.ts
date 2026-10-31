@@ -18,11 +18,20 @@ import {
 
 export const MENTION_SUGGESTION_LIMIT = 8;
 export type MentionPlacement = 'top' | 'bottom';
+/** Khung textarea theo viewport — popup render qua portal (position: fixed) bám theo khung này. */
+export interface MentionAnchorRect {
+  left: number;
+  top: number;
+  bottom: number;
+  width: number;
+}
 
 interface UseMentionAutocompleteArgs {
   value: string;
   onChange: (value: string) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
+  /** Phần tử để popup bám theo (khung editor gồm cả toolbar); mặc định là textarea. */
+  anchorRef?: RefObject<HTMLElement | null>;
   /** undefined → tắt hoàn toàn (description, add-issue) */
   candidates?: MentionCandidate[];
 }
@@ -31,6 +40,7 @@ export const useMentionAutocomplete = ({
   value,
   onChange,
   textareaRef,
+  anchorRef,
   candidates,
 }: UseMentionAutocompleteArgs) => {
   const enabled = candidates !== undefined;
@@ -41,6 +51,7 @@ export const useMentionAutocomplete = ({
   /** start của mention đã Escape → không mở lại cho tới khi gõ @ mới hoặc caret rời đi */
   const [dismissedStart, setDismissedStart] = useState<number | null>(null);
   const [placement, setPlacement] = useState<MentionPlacement>('bottom');
+  const [anchorRect, setAnchorRect] = useState<MentionAnchorRect | null>(null);
 
   const items = useMemo(
     () =>
@@ -78,11 +89,19 @@ export const useMentionAutocomplete = ({
         if (!prev || prev.start !== detected.start) setActiveIndex(0);
         return { ...detected, end: el.selectionStart ?? text.length };
       });
-      // Popup mở phía trên khi textarea gần đáy viewport (sticky comment bar)
-      const rect = el.getBoundingClientRect();
+      // Popup mở phía trên khi textarea gần đáy viewport (sticky comment bar).
+      // Lưu khung textarea để popup định vị fixed qua portal — không bị khung
+      // cha overflow (sticky bar cuộn được) cắt mất.
+      const rect = (anchorRef?.current ?? el).getBoundingClientRect();
       setPlacement(window.innerHeight - rect.bottom < 260 ? 'top' : 'bottom');
+      setAnchorRect({
+        left: rect.left,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+      });
     },
-    [enabled, textareaRef]
+    [anchorRef, enabled, textareaRef]
   );
 
   const close = useCallback(() => {
@@ -147,6 +166,7 @@ export const useMentionAutocomplete = ({
     activeIndex,
     setActiveIndex,
     placement,
+    anchorRect,
     query: range?.query ?? '',
     syncFromCaret,
     select,

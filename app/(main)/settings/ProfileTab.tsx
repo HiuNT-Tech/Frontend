@@ -139,14 +139,6 @@ export function ProfileTab() {
           </span>
         </SettingsRow>
 
-        {profile?.userCode && (
-          <SettingsRow label={t('accountSettings.profile.userCodeLabel')}>
-            <span className="text-[15px] text-muted tabular-nums">
-              {profile.userCode}
-            </span>
-          </SettingsRow>
-        )}
-
         <SettingsRow label={t('accountSettings.profile.displayNameLabel')}>
           <Input
             aria-label={t('accountSettings.profile.displayNameLabel')}

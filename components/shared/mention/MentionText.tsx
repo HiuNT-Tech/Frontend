@@ -19,8 +19,8 @@ export const MentionMembersContext = createContext<MentionMembersValue>({
 
 /**
  * Renderer cho <span> do remarkMention sinh (node.properties.dataMention). Span thường (không có
- * data-mention) trả về nguyên. Hiển thị `@displayName` khi biết member (text gốc `@userCode` giữ
- * trong `title`/data-mention để vẫn tra được); không biết (đã rời board) → giữ `@userCode`.
+ * data-mention) trả về nguyên. Hiển thị `@displayName` khi biết member (userCode chỉ còn trong
+ * data-mention để tra cứu, không hiện ra màn hình); không biết (đã rời board) → giữ text gốc.
  * Mention chính mình → thêm class `mention-self` (tô đỏ). Không dùng dangerouslySetInnerHTML.
  */
 type MentionSpanProps = React.ComponentPropsWithoutRef<'span'> & ExtraProps;
@@ -47,7 +47,6 @@ export const MentionText: React.FC<MentionSpanProps> = ({
       {...rest}
       className={cn(className, isSelf && 'mention-self')}
       data-mention={userCode}
-      title={displayName ? `@${userCode}` : undefined}
     >
       {displayName ? `@${displayName}` : children}
     </span>

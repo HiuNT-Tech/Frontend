@@ -67,19 +67,6 @@ export const MembersTable: React.FC<MembersTableProps> = ({
         },
       },
       {
-        key: 'userCode',
-        title: t('settings.members.table.userCode'),
-        dataIndex: 'userCode',
-        minWidth: 120,
-        render: value =>
-          value ? (
-            <span className="text-ink-2 tabular-nums">{value as string}</span>
-          ) : (
-            // User tạo trước khi có tính năng mã người dùng thì để trống.
-            <span className="text-faint">—</span>
-          ),
-      },
-      {
         key: 'role',
         title: t('settings.members.table.role'),
         dataIndex: 'role',
