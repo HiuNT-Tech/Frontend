@@ -86,7 +86,8 @@ jobs:
       - name: Health check (rollback nếu lỗi)
         run: |
           for i in $(seq 1 24); do
-            if curl -fsS -o /dev/null "$APP_URL/login"; then echo ok; exit 0; fi
+            # --max-time: URL sai/không phản hồi thì mỗi lần thử fail sau 10s thay vì treo ~2 phút
+            if curl -fsS --max-time 10 -o /dev/null "$APP_URL/login"; then echo ok; exit 0; fi
             sleep 5
           done
           echo "::error::FE không phản hồi sau 2 phút — rollback"
