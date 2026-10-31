@@ -1,6 +1,6 @@
 const en = {
   shell: {
-    appName: 'Backlog',
+    appName: 'Taskboardly',
     workspace: 'Workspace',
     searchIssues: 'Search issues',
     searchShortcut: 'Ctrl K',
