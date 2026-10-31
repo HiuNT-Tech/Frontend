@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Backlog', template: '%s | Backlog' },
+  title: { default: 'Taskboardly', template: '%s | Taskboardly' },
   description: 'Quản lý công việc theo board, cột và card cho nhóm của bạn.',
-  applicationName: 'Backlog',
+  applicationName: 'Taskboardly',
 };
 
 export const viewport: Viewport = {

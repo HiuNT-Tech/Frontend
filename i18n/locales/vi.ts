@@ -1,6 +1,6 @@
 const vi = {
   shell: {
-    appName: 'Backlog',
+    appName: 'Taskboardly',
     workspace: 'Không gian làm việc',
     searchIssues: 'Tìm công việc',
     searchShortcut: 'Ctrl K',

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentActiveBoard } from '@/redux/activeBoard/activeBoardSlice';
 
-const APP_NAME = 'Backlog';
+const APP_NAME = 'Taskboardly';
 
 const PAGE_KEY: Array<[RegExp, string]> = [
   [/^\/dashboard/, 'dashboard'],
@@ -29,7 +29,7 @@ const PAGE_KEY: Array<[RegExp, string]> = [
 /**
  * Đặt tiêu đề tab theo trang + ngôn ngữ + tên board, vì toàn bộ page là
  * client component nên không export `metadata` được. Dạng:
- * "Bảng · PIPC Board | Backlog" hoặc "Đăng nhập | Backlog".
+ * "Bảng · PIPC Board | Taskboardly" hoặc "Đăng nhập | Taskboardly".
  */
 export function DocumentTitle() {
   const { t, i18n } = useTranslation();
