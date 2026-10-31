@@ -28,10 +28,10 @@ const render = (
   );
 
 describe('MentionText', () => {
-  it('shows @displayName for a known member and keeps the code in title', () => {
+  it('shows @displayName for a known member without exposing the code on screen', () => {
     const html = render('U-000001', null);
     expect(html).toContain('>@Admin<');
-    expect(html).toContain('title="@U-000001"');
+    expect(html).not.toContain('title=');
     expect(html).toContain('data-mention="U-000001"');
     expect(html).not.toContain('mention-self');
   });

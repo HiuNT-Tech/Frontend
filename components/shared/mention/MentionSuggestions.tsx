@@ -86,9 +86,6 @@ export const MentionSuggestions: React.FC<MentionSuggestionsProps> = ({
             >
               {item.displayName}
             </span>
-            <span className="ml-auto shrink-0 text-xs tabular-nums text-muted">
-              @{item.userCode}
-            </span>
           </li>
         ))
       )}

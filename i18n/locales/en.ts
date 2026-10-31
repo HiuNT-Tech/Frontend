@@ -398,7 +398,6 @@ const en = {
       },
       table: {
         member: 'Member',
-        userCode: 'User code',
         role: 'Role',
         joinedOn: 'Joined on',
         empty: 'No members found.',
@@ -706,7 +705,6 @@ const en = {
       heading: 'Personal information',
       hint: 'Update your display name, avatar and phone number.',
       emailLabel: 'Email',
-      userCodeLabel: 'User code',
       displayNameLabel: 'Display name',
       displayNamePlaceholder: 'Enter your display name',
       phoneLabel: 'Phone number',
