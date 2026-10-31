@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import type React from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/password-input';
 import { Button } from '@/components/ui/button';
 import { AuthDivider } from '@/components/auth/auth-divider';
 import {
@@ -97,7 +97,6 @@ function LoginForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const appName = t('shell.appName');
-  const [showPassword, setShowPassword] = useState(false);
   const googleEnabled = isGoogleSignInEnabled();
   const { signInWithGoogle, isPending: isGooglePending } = useGoogleAuth({
     redirect,
@@ -211,12 +210,11 @@ function LoginForm() {
           label={t('auth.fields.password')}
           error={passwordError}
         >
-          <Input
+          <PasswordInput
             id="login-password"
-            type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             placeholder={t('auth.login.passwordPlaceholder')}
-            className={cn(INPUT_CLASS, 'pr-11')}
+            className={INPUT_CLASS}
             error={passwordError}
             notShowErrorMessage
             aria-describedby={describedBy('login-password', passwordError)}
@@ -227,25 +225,6 @@ function LoginForm() {
                 message: t('validation.passwordRule'),
               },
             })}
-            customNode={
-              <button
-                type="button"
-                onClick={() => setShowPassword(prev => !prev)}
-                aria-label={
-                  showPassword
-                    ? t('auth.fields.hidePassword')
-                    : t('auth.fields.showPassword')
-                }
-                aria-pressed={showPassword}
-                className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors duration-200 ease-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
-              >
-                {showPassword ? (
-                  <EyeOff className="size-[18px]" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-[18px]" aria-hidden="true" />
-                )}
-              </button>
-            }
           />
         </AuthField>
 
