@@ -55,3 +55,34 @@ describe('MentionText', () => {
     );
   });
 });
+
+describe('MentionText with an editor label (@[Tên] before posting)', () => {
+  const labelNode = (label: string): Element => ({
+    type: 'element',
+    tagName: 'span',
+    properties: { dataMentionLabel: label },
+    children: [],
+  });
+  const renderLabel = (label: string, selfUserCode: string | null) =>
+    renderToStaticMarkup(
+      <MentionMembersContext.Provider
+        value={{ members: new Map([['U-000001', 'Admin']]), selfUserCode }}
+      >
+        <MentionText node={labelNode(label)} className="mention">
+          {`@[${label}]`}
+        </MentionText>
+      </MentionMembersContext.Provider>
+    );
+
+  it('renders @Name without brackets and never shows a code', () => {
+    const html = renderLabel('Admin', null);
+    expect(html).toContain('>@Admin<');
+    expect(html).not.toContain('U-000001');
+    expect(html).not.toContain('mention-self');
+  });
+
+  it('highlights the label when it names the current user', () => {
+    expect(renderLabel('Admin', 'U-000001')).toContain('mention-self');
+    expect(renderLabel('Someone', 'U-000001')).not.toContain('mention-self');
+  });
+});

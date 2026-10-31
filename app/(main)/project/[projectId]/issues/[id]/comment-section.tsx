@@ -30,7 +30,11 @@ import {
 } from '@/components/shared/attachment-uploader';
 import { SystemCommentDiff } from '@/components/shared/system-comment-diff';
 import { MENTION_MARKDOWN_COMPONENTS } from '@/components/shared/mention/MentionText';
-import type { MentionCandidate } from '@/components/shared/mention/mention.utils';
+import {
+  toMentionCodes,
+  toMentionLabels,
+  type MentionCandidate,
+} from '@/components/shared/mention/mention.utils';
 import type { Comment, EntityId } from '@/config/interface';
 
 /* ─── Helpers ─── */
@@ -283,7 +287,8 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   const handleEditStart = (comment: Comment) => {
     setEditingId(comment.id);
-    setEditValue(comment.content);
+    // DB lưu @userCode; trong ô soạn hiện @[Tên] cho dễ đọc, lưu lại thì đổi về mã.
+    setEditValue(toMentionLabels(comment.content, mentionCandidates ?? []));
     setRemovedAttachmentIds([]);
     editUpload.clearFiles();
   };
@@ -305,7 +310,7 @@ export const CommentList: React.FC<CommentListProps> = ({
     try {
       await updateComment({
         commentId,
-        content: editValue.trim(),
+        content: toMentionCodes(editValue.trim(), mentionCandidates ?? []),
         attachments: editUpload.files,
         removeAttachmentIds: removedAttachmentIds,
       });
@@ -447,7 +452,8 @@ export const StickyCommentBar: React.FC<StickyCommentBarProps> = ({
     if (!commentValue.trim() && files.length === 0) return;
     try {
       await createComment({
-        content: commentValue.trim(),
+        // Ô soạn hiện @[Tên]; BE chỉ parse @userCode nên đổi về mã trước khi gửi.
+        content: toMentionCodes(commentValue.trim(), mentionCandidates ?? []),
         attachments: files,
       });
       setCommentValue('');
