@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/password-input';
 import { Button } from '@/components/ui/button';
 import { AuthDivider } from '@/components/auth/auth-divider';
 import {
@@ -216,9 +217,8 @@ function RegisterForm() {
           label={t('auth.fields.password')}
           error={passwordError}
         >
-          <Input
+          <PasswordInput
             id="register-password"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.register.passwordPlaceholder')}
             className={INPUT_CLASS}
@@ -237,9 +237,8 @@ function RegisterForm() {
           label={t('auth.fields.confirmPassword')}
           error={confirmationError}
         >
-          <Input
+          <PasswordInput
             id="register-password-confirmation"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.register.confirmPasswordPlaceholder')}
             className={INPUT_CLASS}
