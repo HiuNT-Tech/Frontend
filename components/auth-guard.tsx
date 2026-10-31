@@ -17,6 +17,8 @@ const PUBLIC_ROUTES = [
   '/register',
   '/account/verification',
   '/invitations',
+  '/privacy',
+  '/terms',
 ];
 
 function isPublicRoute(pathname: string) {

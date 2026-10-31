@@ -128,6 +128,8 @@ const vi = {
     register: 'Đăng ký',
     verification: 'Xác thực tài khoản',
     invitation: 'Lời mời tham gia',
+    privacy: 'Chính sách bảo mật',
+    terms: 'Điều khoản sử dụng',
   },
   sidebar: {
     home: 'Trang chủ',
@@ -1084,6 +1086,151 @@ const vi = {
         '{{actor}} đổi vai trò của bạn trong {{boardTitle}} từ {{oldRole}} sang {{newRole}}',
       CARD_DUE_SOON: '{{cardCode}} đến hạn vào {{dueDate}}',
       CARD_OVERDUE: '{{cardCode}} đã quá hạn {{days}} ngày',
+    },
+  },
+  legal: {
+    language: 'Ngôn ngữ',
+    lastUpdated: 'Cập nhật lần cuối: {{date}}',
+    updatedDate: '31/10/2026',
+    privacyLink: 'Chính sách bảo mật',
+    termsLink: 'Điều khoản sử dụng',
+    backToApp: 'Quay lại đăng nhập',
+    privacy: {
+      title: 'Chính sách bảo mật',
+      intro:
+        '{{appName}} ({{domain}}) là ứng dụng quản lý dự án do TrungHieuDev xây dựng và vận hành trong khuôn khổ đồ án tốt nghiệp. Chính sách này giải thích chúng tôi thu thập dữ liệu cá nhân nào, vì sao, chia sẻ với ai và bạn có những quyền gì.',
+      sections: {
+        collect: {
+          title: 'Dữ liệu chúng tôi thu thập',
+          items: [
+            'Thông tin tài khoản: email, tên hiển thị, ảnh đại diện và số điện thoại nếu bạn tự thêm. Mật khẩu chỉ được lưu dưới dạng băm một chiều.',
+            'Đăng nhập bằng Google: chúng tôi nhận email, họ tên, ảnh hồ sơ và mã tài khoản Google của bạn. Chúng tôi không bao giờ nhận mật khẩu Google và không truy cập Gmail, Drive hay dữ liệu Google nào khác.',
+            'Nội dung bạn tạo: dự án, board, công việc, bình luận, tệp đính kèm, thông báo và các cuộc trò chuyện với trợ lý AI.',
+            'Dữ liệu kỹ thuật: cookie phiên đăng nhập và nhật ký máy chủ (địa chỉ IP, loại trình duyệt, thời điểm truy cập) phục vụ bảo mật và xử lý lỗi.',
+          ],
+        },
+        use: {
+          title: 'Chúng tôi dùng dữ liệu để làm gì',
+          items: [
+            'Tạo tài khoản, đăng nhập và giữ phiên làm việc an toàn.',
+            'Cung cấp dịch vụ: hiển thị dự án cho bạn và các thành viên bạn mời.',
+            'Gửi email dịch vụ như xác thực tài khoản, đặt lại mật khẩu, lời mời tham gia dự án và các thông báo bạn đã bật.',
+            'Chạy các tính năng AI khi bạn sử dụng.',
+            'Ngăn chặn lạm dụng, sửa lỗi và cải thiện ứng dụng.',
+          ],
+          note: 'Chúng tôi không bán dữ liệu của bạn và không dùng dữ liệu cho quảng cáo.',
+        },
+        share: {
+          title: 'Chúng tôi chia sẻ dữ liệu với ai',
+          body: 'Chúng tôi chỉ chia sẻ dữ liệu với các nhà cung cấp cần thiết để vận hành {{appName}}:',
+          items: [
+            'Amazon Web Services (AWS): lưu trữ máy chủ và cơ sở dữ liệu tại khu vực Sydney (Úc).',
+            'Google: xác minh danh tính khi bạn chọn đăng nhập bằng Google.',
+            'Brevo: gửi email dịch vụ tới địa chỉ email của bạn.',
+            'Anthropic: khi bạn dùng trợ lý AI hoặc tính năng AI, nội dung bạn gửi và dữ liệu dự án liên quan được gửi tới Anthropic để tạo câu trả lời.',
+            'Các thành viên khác trong dự án xem được nội dung bạn đăng trong dự án đó.',
+            'Cơ quan nhà nước có thẩm quyền, khi pháp luật yêu cầu.',
+          ],
+        },
+        storage: {
+          title: 'Lưu trữ ở đâu và trong bao lâu',
+          body: 'Dữ liệu được lưu trên máy chủ AWS tại Sydney, Úc. Chúng tôi giữ dữ liệu trong thời gian tài khoản còn hoạt động. Khi bạn yêu cầu xoá tài khoản, dữ liệu cá nhân và nội dung của bạn sẽ được xoá trong vòng 30 ngày, trừ trường hợp pháp luật yêu cầu lưu giữ lâu hơn.',
+        },
+        cookies: {
+          title: 'Cookie và bộ nhớ trình duyệt',
+          items: [
+            'Một cookie bảo mật (HTTP-only) giữ trạng thái đăng nhập. Thiếu cookie này bạn không dùng được tài khoản.',
+            'Bộ nhớ cục bộ của trình duyệt ghi nhớ các tuỳ chọn như giao diện sáng/tối, ngôn ngữ và trạng thái thanh bên.',
+            'Chúng tôi không dùng cookie quảng cáo hay cookie theo dõi của bên thứ ba. Google có thể đặt cookie riêng khi bạn đăng nhập bằng Google.',
+          ],
+        },
+        security: {
+          title: 'Bảo mật',
+          body: 'Mọi kết nối đều được mã hoá HTTPS, mật khẩu được băm và mỗi dự án chỉ hiển thị với thành viên của dự án đó. Không hệ thống nào an toàn tuyệt đối, vì vậy hãy dùng mật khẩu mạnh và giữ bí mật.',
+        },
+        rights: {
+          title: 'Quyền của bạn',
+          items: [
+            'Xem và cập nhật hồ sơ bất cứ lúc nào trong Cài đặt tài khoản.',
+            'Yêu cầu nhận bản sao dữ liệu, chỉnh sửa, hoặc xoá tài khoản và dữ liệu bằng cách gửi email tới {{email}}.',
+            'Thu hồi quyền truy cập của {{appName}} vào tài khoản Google bất cứ lúc nào tại myaccount.google.com/permissions.',
+            'Rút lại sự đồng ý hoặc phản đối việc xử lý dữ liệu theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.',
+          ],
+        },
+        children: {
+          title: 'Trẻ em',
+          body: '{{appName}} không dành cho trẻ em dưới 16 tuổi và chúng tôi không chủ động thu thập dữ liệu của trẻ em.',
+        },
+        changes: {
+          title: 'Thay đổi chính sách',
+          body: 'Chính sách này có thể được cập nhật. Ngày ở đầu trang là phiên bản mới nhất; với thay đổi quan trọng, chúng tôi sẽ thông báo trong ứng dụng hoặc qua email.',
+        },
+        contact: {
+          title: 'Liên hệ',
+          body: 'Mọi câu hỏi về chính sách này hoặc dữ liệu của bạn: {{email}}.',
+        },
+      },
+    },
+    terms: {
+      title: 'Điều khoản sử dụng',
+      intro:
+        'Các điều khoản này áp dụng khi bạn sử dụng {{appName}} ({{domain}}), ứng dụng quản lý dự án do TrungHieuDev xây dựng và vận hành trong khuôn khổ đồ án tốt nghiệp.',
+      sections: {
+        acceptance: {
+          title: 'Chấp nhận điều khoản',
+          body: 'Khi tạo tài khoản hoặc sử dụng {{appName}}, bạn đồng ý với các điều khoản này và Chính sách bảo mật. Nếu không đồng ý, vui lòng không sử dụng dịch vụ.',
+        },
+        service: {
+          title: 'Dịch vụ',
+          body: '{{appName}} được cung cấp miễn phí cho mục đích học tập và trình diễn. Tính năng có thể thay đổi, dịch vụ có thể tạm dừng hoặc ngừng hoạt động bất cứ lúc nào.',
+        },
+        account: {
+          title: 'Tài khoản của bạn',
+          items: [
+            'Cung cấp thông tin chính xác và giữ địa chỉ email luôn cập nhật.',
+            'Giữ bí mật mật khẩu; bạn chịu trách nhiệm về mọi hoạt động trên tài khoản của mình.',
+            'Báo cho chúng tôi qua {{email}} nếu nghi ngờ tài khoản bị xâm nhập.',
+          ],
+        },
+        content: {
+          title: 'Nội dung của bạn',
+          body: 'Bạn giữ quyền sở hữu mọi nội dung bạn tạo trong {{appName}}. Bạn cho phép chúng tôi lưu trữ, xử lý và hiển thị nội dung đó chỉ trong phạm vi cần thiết để vận hành dịch vụ, bao gồm gửi tới nhà cung cấp AI khi bạn dùng tính năng AI. Bạn chịu trách nhiệm bảo đảm mình có quyền đăng tải nội dung đó.',
+        },
+        acceptableUse: {
+          title: 'Sử dụng hợp lệ',
+          body: 'Bạn không được:',
+          items: [
+            'Đăng nội dung vi phạm pháp luật, gây hại, thù ghét hoặc xâm phạm quyền của người khác.',
+            'Tải lên mã độc hoặc tìm cách truy cập tài khoản, dữ liệu của người khác.',
+            'Dò quét, tấn công, gây quá tải dịch vụ hoặc vượt qua các biện pháp bảo mật.',
+            'Dùng dịch vụ để gửi thư rác.',
+          ],
+        },
+        ai: {
+          title: 'Tính năng AI',
+          body: 'Nội dung do AI tạo ra có thể không chính xác hoặc chưa đầy đủ. Hãy kiểm tra lại trước khi sử dụng; bạn chịu trách nhiệm về cách mình dùng nội dung đó.',
+        },
+        termination: {
+          title: 'Ngừng sử dụng',
+          body: 'Bạn có thể ngừng sử dụng {{appName}} bất cứ lúc nào và yêu cầu xoá tài khoản. Chúng tôi có thể tạm khoá hoặc xoá tài khoản vi phạm các điều khoản này.',
+        },
+        liability: {
+          title: 'Miễn trừ và giới hạn trách nhiệm',
+          body: 'Dịch vụ được cung cấp “nguyên trạng”, không kèm bất kỳ bảo đảm nào. Trong phạm vi pháp luật cho phép, chúng tôi không chịu trách nhiệm về mất mát dữ liệu, gián đoạn dịch vụ hay thiệt hại gián tiếp. Hãy tự lưu bản sao các thông tin quan trọng.',
+        },
+        changes: {
+          title: 'Thay đổi điều khoản',
+          body: 'Các điều khoản này có thể được cập nhật. Việc tiếp tục sử dụng {{appName}} sau khi cập nhật đồng nghĩa với việc bạn chấp nhận điều khoản mới.',
+        },
+        law: {
+          title: 'Luật áp dụng',
+          body: 'Các điều khoản này được điều chỉnh bởi pháp luật Việt Nam.',
+        },
+        contact: {
+          title: 'Liên hệ',
+          body: 'Mọi câu hỏi về các điều khoản này: {{email}}.',
+        },
+      },
     },
   },
   notFound: {
