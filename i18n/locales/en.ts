@@ -968,6 +968,8 @@ const en = {
       emailPlaceholder: 'you@company.com',
       password: 'Password',
       confirmPassword: 'Confirm password',
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
     },
     login: {
       title: 'Login',

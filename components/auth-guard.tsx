@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { resetUser, selectCurrentUser } from '@/redux/user/userSlice';
+import {
+  resetUser,
+  selectCurrentUser,
+  updateUser,
+} from '@/redux/user/userSlice';
+import { AuthService } from '@/lib/apis/auth';
 import { hasAccessToken } from '@/lib/auth-token';
 import { refreshAccessToken } from '@/utils/authorizeAxios';
 
@@ -24,53 +29,53 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+/**
+ * Access token chỉ sống trong bộ nhớ, nên với trang cần đăng nhập mà RAM chưa
+ * có token (F5, tab mới, hoặc Redux trống vì localStorage bị dọn) guard phải
+ * đổi cookie refreshToken (httpOnly) lấy token mới TRƯỚC khi render; nếu
+ * Redux chưa có user thì lấy thêm /auth/me. Nếu refresh thất bại, BE đã xoá
+ * cookie nên chuyển về /login không bị proxy đẩy ngược lại /dashboard.
+ */
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const userId = currentUser?.id;
+  const publicRoute = isPublicRoute(pathname);
 
-  // Access token chỉ sống trong bộ nhớ, nên sau khi tải lại trang phải đổi
-  // cookie refreshToken lấy token mới TRƯỚC khi render phần cần đăng nhập;
-  // nếu không, các query React Query bắn ra không có Bearer → 401 → bị đá ra.
-  const [tokenReady, setTokenReady] = useState(
-    () => !userId || hasAccessToken()
-  );
+  const [tokenReady, setTokenReady] = useState(() => hasAccessToken());
 
   useEffect(() => {
-    if (!userId) {
-      setTokenReady(true);
-      return;
-    }
+    if (publicRoute) return;
     if (hasAccessToken()) {
       setTokenReady(true);
       return;
     }
 
     let cancelled = false;
-    refreshAccessToken()
-      .then(() => {
+    void (async () => {
+      try {
+        await refreshAccessToken({ silent: true });
+        if (!userId) {
+          const me = await AuthService.me();
+          if (cancelled) return;
+          dispatch(updateUser(me));
+        }
         if (!cancelled) setTokenReady(true);
-      })
-      .catch(() => {
-        // refreshAccessToken đã xoá token, toast và chuyển /login; bỏ user cũ
-        // để guard không giữ người dùng ở trang cần đăng nhập.
-        if (!cancelled) dispatch(resetUser());
-      });
+      } catch {
+        if (cancelled) return;
+        dispatch(resetUser());
+        router.push('/login');
+      }
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [userId, dispatch]);
+  }, [publicRoute, userId, dispatch, router]);
 
-  useEffect(() => {
-    if (currentUser) return;
-    if (isPublicRoute(pathname)) return;
-    router.push('/login');
-  }, [currentUser, pathname, router]);
-
-  if (isPublicRoute(pathname)) return <>{children}</>;
+  if (publicRoute) return <>{children}</>;
   if (currentUser && tokenReady) return <>{children}</>;
   return null;
 }

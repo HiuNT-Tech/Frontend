@@ -59,4 +59,14 @@ export const AuthService = {
     setAccessToken(result.accessToken);
     return result;
   },
+
+  /**
+   * User hiện tại theo Bearer. AuthGuard dùng để khôi phục Redux khi còn cookie
+   * refresh nhưng store trống (localStorage bị xoá, tab mới sau khi dọn site data).
+   */
+  me: async (): Promise<
+    Omit<LoginUserResponse, 'accessToken' | 'refreshToken'>
+  > => {
+    return await sendGet(`${API_ROOT}/v1/auth/me`);
+  },
 };

@@ -46,7 +46,9 @@ let refreshTokenPromise: Promise<RefreshTokenResponse> | null = null;
  * body → lưu vào bộ nhớ (lib/auth-token). Thất bại → xoá token, toast, chuyển
  * /login, reject. Dùng cho interceptor 410, socket, AI SSE và AuthGuard bootstrap.
  */
-export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
+export const refreshAccessToken = (
+  options: { silent?: boolean } = {}
+): Promise<RefreshTokenResponse> => {
   if (!refreshTokenPromise) {
     refreshTokenPromise = axios
       .get(`${API_ROOT}/v1/auth/refresh_token`, {
@@ -61,6 +63,11 @@ export const refreshAccessToken = (): Promise<RefreshTokenResponse> => {
       .catch((refreshError: AxiosError) => {
         // Refresh thất bại → buộc logout
         clearAccessToken();
+        // silent: caller tự xử lý (AuthGuard khôi phục phiên lúc tải trang),
+        // không toast/redirect ở đây.
+        if (options.silent) {
+          throw refreshError;
+        }
         let refreshMessage = refreshError.message;
         if (
           refreshError.response?.data &&
