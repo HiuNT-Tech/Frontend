@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { AuthService } from '@/lib/apis/auth';
 import { toastHelpers } from '@/hooks/use-toast';
 import { buttonVariants } from '@/components/ui/button';
+import { useAppDispatch } from '@/redux/hooks';
+import { verifyAccountAPI } from '@/redux/user/userSlice';
 
 /** Trạng thái trước, rồi điều gì xảy ra tiếp theo — cùng kiểu thẻ với đăng nhập. */
 function VerifyState({
@@ -40,21 +41,30 @@ function VerifyState({
 function VerifyContent() {
   const { t } = useTranslation();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const token = searchParams.get('token');
 
   const [verified, setVerified] = useState(false);
+  // Token xác minh dùng một lần: chốt để effect (StrictMode chạy 2 lần ở dev)
+  // không bắn 2 request song song, lần sau sẽ bị BE từ chối.
+  const requested = useRef(false);
 
+  // Xác minh xong là BE đã cấp phiên (cookie + access token, user vào Redux),
+  // nên vào thẳng dashboard thay vì bắt đăng nhập lại.
   useEffect(() => {
     const verifyAccount = async () => {
       if (email && token) {
+        if (requested.current) return;
+        requested.current = true;
         try {
-          await AuthService.verifyUser({ user: { email, token } });
+          await dispatch(verifyAccountAPI({ email, token })).unwrap();
           setVerified(true);
           toastHelpers.success({
             description: t('toast.success.userVerified'),
           });
+          router.replace('/dashboard');
         } catch (error) {
           toastHelpers.error({
             description: t('toast.error.userVerificationFailed'),
@@ -65,14 +75,7 @@ function VerifyContent() {
     };
 
     verifyAccount();
-  }, [email, token, router, t]);
-
-  // Redirect to login after verification
-  useEffect(() => {
-    if (verified && email) {
-      router.push(`/login?verifiedEmail=${email}`);
-    }
-  }, [verified, email, router]);
+  }, [email, token, dispatch, router, t]);
 
   // Link thiếu email/token: nói rõ thay vì quay vô tận.
   if (!email || !token) {

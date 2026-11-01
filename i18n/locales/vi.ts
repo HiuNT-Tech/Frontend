@@ -995,7 +995,7 @@ const vi = {
       loading: 'Đang xác minh tài khoản',
       loadingDescription: 'Đang kiểm tra liên kết gửi tới {{email}}.',
       doneTitle: 'Tài khoản đã được xác minh',
-      doneDescription: 'Đang đưa bạn tới trang đăng nhập.',
+      doneDescription: 'Đang đưa bạn vào bảng điều khiển.',
       incompleteTitle: 'Liên kết xác minh chưa đầy đủ',
       incompleteDescription:
         'Hãy mở liên kết trong email chúng tôi đã gửi, hoặc đăng nhập nếu tài khoản đã được xác minh.',
@@ -1005,7 +1005,7 @@ const vi = {
       dividerLogin: 'hoặc đăng nhập bằng email',
       dividerRegister: 'hoặc đăng ký bằng email',
       pending:
-        'Đã gửi liên kết xác minh tới {{email}}. Mở liên kết để kích hoạt tài khoản, rồi đăng nhập lại bằng Google.',
+        'Đã gửi liên kết xác minh tới {{email}}. Mở liên kết để kích hoạt tài khoản, bạn sẽ được đăng nhập ngay.',
       loadError:
         'Không tải được nút đăng nhập Google. Kiểm tra kết nối mạng rồi tải lại trang.',
     },

@@ -7,6 +7,7 @@ import {
   GoogleLoginResponse,
   LoginUserRequest,
   LoginUserResponse,
+  VerifyUserRequest,
 } from '@/config/interface';
 import { RootState } from '@/redux/store';
 
@@ -35,6 +36,15 @@ export const loginUserAPI = createAsyncThunk<User, LoginUserRequest>(
   async (data: LoginUserRequest) => {
     // AuthService đã cất access token vào bộ nhớ; Redux chỉ giữ thông tin user.
     const response = await AuthService.loginUser(data);
+    return stripAuthTokens(response);
+  }
+);
+
+// Xác minh email: BE kích hoạt tài khoản và cấp phiên luôn, nên coi như đã đăng nhập.
+export const verifyAccountAPI = createAsyncThunk<User, VerifyUserRequest>(
+  'user/verifyAccountAPI',
+  async (data: VerifyUserRequest) => {
+    const response = await AuthService.verifyUser({ user: data });
     return stripAuthTokens(response);
   }
 );
@@ -86,6 +96,19 @@ export const userSlice = createSlice({
       .addCase(loginUserAPI.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to login';
+      })
+      // Verify-account lifecycle (xác minh xong = đã đăng nhập)
+      .addCase(verifyAccountAPI.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyAccountAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload;
+      })
+      .addCase(verifyAccountAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to verify account';
       })
       // Google login lifecycle
       .addCase(loginWithGoogleAPI.pending, state => {

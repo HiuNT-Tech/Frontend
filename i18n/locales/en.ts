@@ -1001,7 +1001,7 @@ const en = {
       loading: 'Verifying your account',
       loadingDescription: 'Checking the link sent to {{email}}.',
       doneTitle: 'Account verified',
-      doneDescription: 'Taking you to sign in.',
+      doneDescription: 'Taking you to your dashboard.',
       incompleteTitle: 'This verification link is incomplete',
       incompleteDescription:
         'Open the link from the email we sent you, or sign in if your account is already verified.',
@@ -1011,7 +1011,7 @@ const en = {
       dividerLogin: 'or sign in with email',
       dividerRegister: 'or sign up with email',
       pending:
-        'We sent a verification link to {{email}}. Open it to activate your account, then sign in with Google again.',
+        'We sent a verification link to {{email}}. Open it to activate your account and you will be signed in right away.',
       loadError:
         'Could not load the Google sign-in button. Check your connection and reload the page.',
     },
