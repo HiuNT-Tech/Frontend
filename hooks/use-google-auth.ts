@@ -15,8 +15,8 @@ interface UseGoogleAuthOptions {
 /**
  * Nhận Google ID token từ nút GIS, gọi BE rồi điều hướng:
  * - AUTHENTICATED → vào app như đăng nhập thường.
- * - PENDING_VERIFICATION → BE đã gửi mail xác minh (giữ luồng cũ), đưa về /login
- *   kèm `registeredEmail` như vừa đăng ký để hiện thông báo "mở liên kết trước".
+ * - PENDING_VERIFICATION → BE đã gửi mail xác minh, đưa về /login kèm `registeredEmail`
+ *   như vừa đăng ký; mở liên kết trong mail là vào thẳng dashboard, không cần đăng nhập lại.
  */
 export function useGoogleAuth({ redirect }: UseGoogleAuthOptions = {}) {
   const { t } = useTranslation();

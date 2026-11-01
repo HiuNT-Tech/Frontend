@@ -6,8 +6,18 @@ import {
   insertMention,
   isInsideCode,
   isMentionableUserCode,
+  mentionInsertToken,
   parseMentions,
+  toMentionCodes,
+  toMentionLabels,
 } from './mention.utils';
+
+const member = (userCode: string, displayName: string) => ({
+  userCode,
+  displayName,
+  email: `${userCode.toLowerCase()}@example.com`,
+  avatar: null,
+});
 
 describe('MENTION_REGEX / parseMentions', () => {
   it('matches the BE regex: no email, no word prefix, dedupe in order', () => {
@@ -55,10 +65,14 @@ describe('isInsideCode', () => {
 });
 
 describe('insertMention / filter / isMentionableUserCode', () => {
-  it('replaces @query with @userCode and a trailing space', () => {
-    expect(insertMention('hi @me tail', 3, 6, 'U-000008')).toEqual({
+  it('replaces @query with the token and a trailing space', () => {
+    expect(insertMention('hi @me tail', 3, 6, '@U-000008')).toEqual({
       value: 'hi @U-000008  tail',
       caret: 13,
+    });
+    expect(insertMention('@me', 0, 3, '@[Hiếu Nguyễn]')).toEqual({
+      value: '@[Hiếu Nguyễn] ',
+      caret: 15,
     });
   });
 
@@ -97,5 +111,41 @@ describe('insertMention / filter / isMentionableUserCode', () => {
     expect(isMentionableUserCode('x'.repeat(33))).toBe(false);
     expect(isMentionableUserCode('bad code')).toBe(false);
     expect(isMentionableUserCode(null)).toBe(false);
+  });
+});
+
+describe('mention labels (@[Tên] in the editor ⇄ @userCode in the DB)', () => {
+  const hieu = member('U-000024', 'Hiếu Nguyễn');
+  const admin = member('U-000001', 'Admin');
+  const dupA = member('U-000010', 'Nam');
+  const dupB = member('U-000011', 'Nam');
+  const weird = member('U-000012', 'a[b]');
+  const all = [hieu, admin, dupA, dupB, weird];
+
+  it('inserts @[displayName] when unique and safe, else falls back to @userCode', () => {
+    expect(mentionInsertToken(hieu, all)).toBe('@[Hiếu Nguyễn]');
+    expect(mentionInsertToken(dupA, all)).toBe('@U-000010');
+    expect(mentionInsertToken(weird, all)).toBe('@U-000012');
+  });
+
+  it('toMentionCodes maps labels to codes and leaves unknown/ambiguous labels alone', () => {
+    expect(
+      toMentionCodes(
+        'cc @[Hiếu Nguyễn] và @[Admin], @[Nam] @[Ai đó] @U-000001',
+        all
+      )
+    ).toBe('cc @U-000024 và @U-000001, @[Nam] @[Ai đó] @U-000001');
+    expect(toMentionCodes('@[Hiếu Nguyễn]', [])).toBe('@[Hiếu Nguyễn]');
+  });
+
+  it('toMentionLabels maps codes back to labels, keeping unknown or duplicate-name codes', () => {
+    expect(toMentionLabels('@U-000024 @U-000010 @U-000099 a@b.com', all)).toBe(
+      '@[Hiếu Nguyễn] @U-000010 @U-000099 a@b.com'
+    );
+  });
+
+  it('round-trips editor text back to what the DB stores', () => {
+    const stored = 'hi @U-000024, xem giúp @U-000001';
+    expect(toMentionCodes(toMentionLabels(stored, all), all)).toBe(stored);
   });
 });

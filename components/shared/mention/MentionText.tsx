@@ -33,6 +33,20 @@ export const MentionText: React.FC<MentionSpanProps> = ({
 }) => {
   const { members, selfUserCode } = useContext(MentionMembersContext);
   const userCode = node?.properties?.dataMention;
+  const label = node?.properties?.dataMentionLabel;
+  // Nhãn `@[Tên]` chỉ có trong preview trước khi gửi: hiện `@Tên`, tô đỏ nếu là chính mình.
+  if (typeof label === 'string') {
+    const isSelf = selfUserCode !== null && members.get(selfUserCode) === label;
+    return (
+      <span
+        {...rest}
+        className={cn(className, isSelf && 'mention-self')}
+        data-mention-label={label}
+      >
+        @{label}
+      </span>
+    );
+  }
   if (typeof userCode !== 'string') {
     return (
       <span className={className} {...rest}>

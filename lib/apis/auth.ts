@@ -8,6 +8,7 @@ import {
   LoginUserRequest,
   LoginUserResponse,
   RefreshTokenResponse,
+  VerifyUserRequest,
 } from '@/config/interface';
 
 // Mọi nơi nhận access token từ BE đều đi qua đây để lưu vào bộ nhớ (lib/auth-token);
@@ -17,8 +18,18 @@ export const AuthService = {
     return await sendPost(`${API_ROOT}/v1/auth/register`, user);
   },
 
-  verifyUser: async ({ user }: { user: Record<string, unknown> }) => {
-    return await sendPost(`${API_ROOT}/v1/auth/verify-account`, user);
+  /** Kích hoạt tài khoản; BE cấp phiên luôn (cookie + access token) như login. */
+  verifyUser: async ({
+    user,
+  }: {
+    user: VerifyUserRequest;
+  }): Promise<LoginUserResponse> => {
+    const result: LoginUserResponse = await sendPost(
+      `${API_ROOT}/v1/auth/verify-account`,
+      user
+    );
+    setAccessToken(result.accessToken);
+    return result;
   },
 
   loginUser: async (user: LoginUserRequest): Promise<LoginUserResponse> => {

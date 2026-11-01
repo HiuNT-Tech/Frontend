@@ -7,6 +7,12 @@ export const MENTION_REGEX = /(?<![\w@.])@([A-Za-z0-9_-]{2,32})/g;
 export const MENTIONABLE_USER_CODE_REGEX = /^[A-Za-z0-9_-]{2,32}$/;
 /** Query đang gõ ngay trước caret: "@ab" → ab; cho phép rỗng để mở popup ngay khi gõ @. */
 const MENTION_TRIGGER_REGEX = /(?:^|[^\w@.])@([A-Za-z0-9_-]{0,32})$/;
+/**
+ * Nhãn mention trong ô soạn: `@[Tên hiển thị]`. Chỉ tồn tại phía FE để người dùng thấy tên
+ * thay vì mã; đổi về `@userCode` (toMentionCodes) trước khi gửi vì BE chỉ parse MENTION_REGEX.
+ */
+export const MENTION_LABEL_REGEX = /@\[([^[\]\n]{1,64})\]/g;
+const MENTION_LABEL_MAX_LENGTH = 64;
 
 export interface MentionCandidate {
   userCode: string;
@@ -53,18 +59,77 @@ export const detectMentionQuery = (
   return { start, query: match[1] };
 };
 
-/** Thay "@query" (từ start tới caret) bằng "@userCode " và trả caret mới. */
+/**
+ * Tên hiển thị dùng được làm nhãn `@[Tên]`: không rỗng, ≤ 64 ký tự, không chứa [ ] hay xuống
+ * dòng, và chỉ một member trong danh sách mang tên đó (trùng tên → null, dùng mã cho khỏi nhầm).
+ */
+export const mentionLabelFor = (
+  candidate: MentionCandidate,
+  candidates: readonly MentionCandidate[]
+): string | null => {
+  const name = candidate.displayName.trim();
+  if (!name || name.length > MENTION_LABEL_MAX_LENGTH || /[[\]\n]/.test(name)) {
+    return null;
+  }
+  const sameName = candidates.filter(c => c.displayName.trim() === name);
+  return sameName.length === 1 ? name : null;
+};
+
+/** Token chèn vào ô soạn khi chọn gợi ý: ưu tiên `@[Tên]`, không được thì `@userCode`. */
+export const mentionInsertToken = (
+  candidate: MentionCandidate,
+  candidates: readonly MentionCandidate[]
+): string => {
+  const label = mentionLabelFor(candidate, candidates);
+  return label ? `@[${label}]` : `@${candidate.userCode}`;
+};
+
+/** Thay "@query" (từ start tới caret) bằng `${token} ` và trả caret mới. */
 export const insertMention = (
   value: string,
   start: number,
   caret: number,
-  userCode: string
+  token: string
 ): { value: string; caret: number } => {
-  const token = `@${userCode} `;
+  const inserted = `${token} `;
   return {
-    value: value.slice(0, start) + token + value.slice(caret),
-    caret: start + token.length,
+    value: value.slice(0, start) + inserted + value.slice(caret),
+    caret: start + inserted.length,
   };
+};
+
+/**
+ * Trước khi gửi: `@[Tên]` → `@userCode` khi tên khớp đúng một member; không khớp (gõ tay,
+ * trùng tên, đã rời board) giữ nguyên chữ.
+ */
+export const toMentionCodes = (
+  content: string,
+  candidates: readonly MentionCandidate[]
+): string => {
+  if (!candidates.length || !content.includes('@[')) return content;
+  const codeByName = new Map<string, string | null>(); // null = trùng tên
+  for (const c of candidates) {
+    const name = c.displayName.trim();
+    codeByName.set(name, codeByName.has(name) ? null : c.userCode);
+  }
+  return content.replace(MENTION_LABEL_REGEX, (match, name: string) => {
+    const code = codeByName.get(name.trim());
+    return code ? `@${code}` : match;
+  });
+};
+
+/** Khi mở sửa comment: `@userCode` → `@[Tên]` để người dùng thấy tên; mã lạ giữ nguyên. */
+export const toMentionLabels = (
+  content: string,
+  candidates: readonly MentionCandidate[]
+): string => {
+  if (!candidates.length) return content;
+  const byCode = new Map(candidates.map(c => [c.userCode, c]));
+  return content.replace(MENTION_REGEX, (match, code: string) => {
+    const candidate = byCode.get(code);
+    const label = candidate && mentionLabelFor(candidate, candidates);
+    return label ? `@[${label}]` : match;
+  });
 };
 
 const rank = (c: MentionCandidate, q: string): number => {
@@ -109,8 +174,21 @@ type MentionTextNode = Text & {
   data: { hName: string; hProperties: Record<string, unknown> };
 };
 
+const mentionNode = (
+  value: string,
+  hProperties: Record<string, unknown>
+): MentionTextNode => ({
+  type: 'text',
+  value,
+  data: {
+    hName: 'span',
+    hProperties: { className: ['mention'], ...hProperties },
+  },
+});
+
 /**
- * Remark plugin: text node "@U-000001" → <span class="mention" data-mention="U-000001">@U-000001</span>.
+ * Remark plugin: text node "@U-000001" → <span class="mention" data-mention="U-000001">@U-000001</span>;
+ * nhãn trong ô soạn "@[Tên]" (preview trước khi gửi) → <span class="mention" data-mention-label="Tên">.
  * Chỉ duyệt node `text` (mdast-util-find-and-replace) nên inlineCode/code không bị đụng; bỏ qua link.
  * Không tạo HTML thô → react-markdown render bằng React element, không dangerouslySetInnerHTML.
  */
@@ -118,18 +196,16 @@ export const remarkMention = () => (tree: Root) => {
   findAndReplace(
     tree,
     [
-      MENTION_REGEX,
-      (match: string, userCode: string): PhrasingContent => {
-        const node: MentionTextNode = {
-          type: 'text',
-          value: match,
-          data: {
-            hName: 'span',
-            hProperties: { className: ['mention'], dataMention: userCode },
-          },
-        };
-        return node;
-      },
+      [
+        MENTION_LABEL_REGEX,
+        (match: string, label: string): PhrasingContent =>
+          mentionNode(match, { dataMentionLabel: label }),
+      ],
+      [
+        MENTION_REGEX,
+        (match: string, userCode: string): PhrasingContent =>
+          mentionNode(match, { dataMention: userCode }),
+      ],
     ],
     { ignore: ['link', 'linkReference'] }
   );

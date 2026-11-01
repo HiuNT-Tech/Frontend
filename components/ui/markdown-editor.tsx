@@ -21,6 +21,7 @@ import {
 } from '@/constant/markdown';
 import { useMentionAutocomplete } from '@/hooks/use-mention-autocomplete';
 import { MentionSuggestions } from '@/components/shared/mention/MentionSuggestions';
+import { MENTION_MARKDOWN_COMPONENTS } from '@/components/shared/mention/MentionText';
 import type { MentionCandidate } from '@/components/shared/mention/mention.utils';
 
 export interface MarkdownEditorProps {
@@ -316,7 +317,10 @@ export function MarkdownEditor({
             )}
           >
             {value ? (
-              <ReactMarkdown remarkPlugins={MARKDOWN_REMARK_PLUGINS}>
+              <ReactMarkdown
+                remarkPlugins={MARKDOWN_REMARK_PLUGINS}
+                components={MENTION_MARKDOWN_COMPONENTS}
+              >
                 {value}
               </ReactMarkdown>
             ) : (

@@ -12,6 +12,7 @@ import {
   detectMentionQuery,
   filterMentionCandidates,
   insertMention,
+  mentionInsertToken,
   type MentionCandidate,
   type MentionQuery,
 } from '@/components/shared/mention/mention.utils';
@@ -113,11 +114,12 @@ export const useMentionAutocomplete = ({
     (candidate: MentionCandidate) => {
       const el = textareaRef.current;
       if (!range || !el) return;
+      // Ô soạn hiện @[Tên] cho dễ đọc; đổi về @userCode lúc gửi (toMentionCodes).
       const next = insertMention(
         value,
         range.start,
         range.end,
-        candidate.userCode
+        mentionInsertToken(candidate, candidates ?? [])
       );
       onChange(next.value);
       setRange(null);
@@ -127,7 +129,7 @@ export const useMentionAutocomplete = ({
         el.setSelectionRange(next.caret, next.caret);
       });
     },
-    [onChange, range, textareaRef, value]
+    [candidates, onChange, range, textareaRef, value]
   );
 
   const handleKeyDown = useCallback(
